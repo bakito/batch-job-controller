@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+{{ include "batch-job-controller.monitoring" . | indent 4 }}
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+{{ include "batch-job-controller.monitoring" . | indent 4 }}
+  name: {{ template "batch-job-controller.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "batch-job-controller.name" . }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "9153"
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+{{ toYaml .Values.deployment.labels | trim | indent 8 }}
+{{ include "batch-job-controller.monitoring" . | indent 8 }}
+      labels:
+        app: {{ template "batch-job-controller.name" . }}
+        name: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.monitoring" . | indent 8 }}
+    spec:
+      containers:
+        - env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: CONFIG_MAP_NAME
+              value: {{ template "batch-job-controller.name" . }}
+          image: {{ .Values.deployment.image }}:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          name: {{ template "batch-job-controller.name" . }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: public
+            - containerPort: 8090
+              protocol: TCP
+              name: private
+            - containerPort: 9153
+              protocol: TCP
+              name: metrics
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+          volumeMounts:
+            - mountPath: /var/www
+              name: reports
+            - mountPath: /tmp
+              name: tmp-data
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        node-group: app
+      restartPolicy: Always
+      serviceAccount:  {{ template "batch-job-controller.name" . }}
+      serviceAccountName:  {{ template "batch-job-controller.name" . }}
+      volumes:
+        - name: tmp-data
+          emptyDir: {}
+        - name: reports
+{{- if .Values.deployment.withPersistentVolume }}
+          persistentVolumeClaim:
+            claimName: {{ template "batch-job-controller.name" . }}-pvc
+{{- else }}
+          emptyDir: {}
+{{- end }}

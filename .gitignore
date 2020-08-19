@@ -1,0 +1,9 @@
+__debug_bin
+batch-job-controller.exe
+tkb16
+dev-content
+pkg/lifecycle/main/
+.idea
+*.exe
+tmp
+*.out

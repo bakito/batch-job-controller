@@ -1,0 +1,24 @@
+### Send POST report
+POST http://localhost:8090/report/node/20200818154200/result
+content-type: application/json
+
+{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }
+
+
+
+### Send POST file with context disposition header -> filename will be : node-result.http
+POST http://localhost:8090/report/node/20200818154200/file
+Content-Disposition: attachment;filename="result.http"
+
+< ./result.http
+
+
+### Send POST file with name query parameter -> filename will be : node-result.http
+POST http://localhost:8090/report/node/20200818154200/file?name=result.http
+
+< ./result.http
+
+### Send POST file without name definition  -> filename will be : node-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+POST http://localhost:8090/report/node/20200818154200/file
+
+< ./result.http

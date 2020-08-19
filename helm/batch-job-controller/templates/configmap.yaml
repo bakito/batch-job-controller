@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+  name: {{ template "batch-job-controller.name" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  run.sh: |-
+{{ .Files.Get "bin/run.sh" | indent 4}}
+  pod-template.yaml: |-
+{{ .Files.Get "job-template/job-pod-template.yaml" | indent 4}}
+  config.yaml: |-
+    name:  {{ template "batch-job-controller.name" . }}
+    jobServiceAccount: ""
+    jobNodeSelector: {}
+    cronExpression: "{{ .Values.deployment.cronexpression }}"
+    reportHistory: {{ .Values.deployment.reportHistory }}
+    podPoolSize: {{ .Values.deployment.podPoolSize }}
+    runOnStartup: {{ .Values.deployment.runOnStartup }}
+    callbackServiceName: {{ template "batch-job-controller.name" . }}
+    reportDirectory: "/var/www"
+    callbackServicePort: 8090
+    metrics:
+      prefix: {{ include "batch-job-controller.name" . | replace "-" "_" }}
+      gauges:
+        my_metric:
+          help: "describe my metric"
+          labels:
+            - label_a
+            - label_b

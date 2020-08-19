@@ -1,0 +1,18 @@
+{{- if .Values.deployment.withPersistentVolume -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+    component: {{ template "batch-job-controller.name" . }}-controller
+  name: {{ template "batch-job-controller.name" . }}-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  storageClassName: {{ .Values.deployment.storageClassName }}
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+{{- end -}}

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - command:
+        - /bin/bash
+        - /opt/job/run.sh
+      image: registry.access.redhat.com/ubi8/ubi
+      imagePullPolicy: Always
+      name: openscap-scanner
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      volumeMounts:
+        - mountPath: /opt/job
+          name: batch-job-controller
+  volumes:
+    - configMap:
+        defaultMode: 420
+        name: batch-job-controller
+      name: batch-job-controller

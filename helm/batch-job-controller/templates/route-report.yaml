@@ -1,0 +1,21 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+  name: {{ template "batch-job-controller.name" . }}-reports
+  namespace: {{ .Release.Namespace }}
+spec:
+  host: "openscap-{{ .Release.Namespace }}.{{ .Values.route.hostSuffix }}"
+  port:
+    targetPort: public
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: batch-job-controller
+    weight: 100
+status:
+  ingress: []

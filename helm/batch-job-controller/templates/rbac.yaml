@@ -1,0 +1,113 @@
+---
+# Service account for controller
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+    component: {{ template "batch-job-controller.name" . }}-controller
+  name: {{ template "batch-job-controller.name" . }}
+  namespace: {{ .Release.Namespace }}
+
+---
+# Role creation which is limited to job/pod creation and deletion in namespcae
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: {{ template "batch-job-controller.name" . }}-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - list
+      - watch
+      - get
+      - create
+      - deletecollection
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "apps"
+    resources:
+      - replicasets
+      - deployments
+    verbs:
+      - get
+  - apiGroups:
+      - "apps.openshift.io"
+    resources:
+      - deploymentconfigs
+    verbs:
+      - get
+
+---
+# RoleBinding for the new role to the batch-job-controller service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "batch-job-controller.name" . }}-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+roleRef:
+  kind: Role
+  name: {{ template "batch-job-controller.name" . }}-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: batch-job-controller
+  namespace: {{ .Release.Namespace }}
+
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "batch-job-controller.name" . }}-list-nodes
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - "nodes"
+    verbs:
+      - "list"
+      - "get"
+      - "watch"
+
+---
+# ClusterRoleBinding for listing nodes required by openscap controller
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRoleBinding
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ template "batch-job-controller.name" . }}-reader
+  labels:
+    app: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.helm-labels" . | indent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "batch-job-controller.name" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ template "batch-job-controller.name" . }}-list-nodes
+userNames:
+- system:serviceaccount:{{ .Release.Namespace }}:{{ template "batch-job-controller.name" . }}
+groupNames: []
