@@ -59,7 +59,6 @@ func Setup() *Main {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: ":9153",
-		Port:               9443,
 		LeaderElection:     true,
 		LeaderElectionID:   "9a62a63a.bakito.ch",
 	})
