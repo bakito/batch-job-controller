@@ -8,7 +8,7 @@ metadata:
   name: {{ template "batch-job-controller.name" . }}-metrics
   namespace: {{ .Release.Namespace }}
 spec:
-  host: {{ template "batch-job-controller.name" . }}-metrics-{{ .Release.Namespace }}.{{ .Values.route.hostSuffix }}
+  host: {{ template "batch-job-controller.name" . }}-metrics-{{ .Release.Namespace }}.{{ .Values.routes.hostSuffix }}
   path: /metrics
   port:
     targetPort: metrics
