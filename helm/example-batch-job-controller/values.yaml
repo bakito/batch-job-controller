@@ -6,18 +6,21 @@ name: example-job-controller
 
 deployment:
   replicas: 1
-  image: quay.io/bakito/batch-job-controller
+  image: quay.io/bakito/batch-job-controller:master
   cronexpression: "* * * * *"
   reportHistory: 10 # number of reports to be used
   podPoolSize: 10 # number of pods allowed to run parallel
   runOnStartup: false
   withPersistentVolume: true
   storageClassName: ""
-  labels: {}
+  labels:
+  annotations:
+  env:
 
 
-monitoring: {}
-
-route:
+routes:
   metrics: true
   internal: true
+
+jobPod:
+  image: registry.access.redhat.com/ubi8/ubi

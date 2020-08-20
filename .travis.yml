@@ -5,6 +5,8 @@ os:
   - linux
 services:
   - docker
+before_script:
+  - make tools
 
 script:
   - make test

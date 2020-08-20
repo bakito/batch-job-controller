@@ -1,4 +1,4 @@
-{{- if .Values.route.metrics -}}
+{{- if .Values.routes.metrics -}}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -8,7 +8,7 @@ metadata:
   name: {{ template "batch-job-controller.name" . }}-metrics
   namespace: {{ .Release.Namespace }}
 spec:
-  host: {{ template "batch-job-controller.name" . }}-metrics-{{ .Release.Namespace }}.{{ .Values.route.hostSuffix }}
+  host: {{ template "batch-job-controller.name" . }}-metrics-{{ .Release.Namespace }}.{{ .Values.routes.hostSuffix }}
   path: /metrics
   port:
     targetPort: metrics

@@ -5,7 +5,7 @@ spec:
     - command:
         - /bin/bash
         - /opt/job/run.sh
-      image: registry.access.redhat.com/ubi8/ubi
+      image: {{ $.Values.jobPod.image }}
       imagePullPolicy: Always
       name: openscap-scanner
       resources:
@@ -15,7 +15,7 @@ spec:
         requests:
           cpu: 100m
           memory: 64Mi
-# volumen is only needed to add the run.sh to this generic pod. If a specific pod is used, this is obsolete
+# volume is only needed to add the run.sh to this generic pod. If a specific pod is used, this is obsolete
       volumeMounts:
         - mountPath: /opt/job/run.sh
           name: {{ template "batch-job-controller.name" . }}

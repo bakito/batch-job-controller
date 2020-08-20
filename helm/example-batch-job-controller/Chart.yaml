@@ -1,7 +1,7 @@
 apiVersion: v2
 name: batch-job-controller
 version: 1.0.0
-appVersion: v1.1.20200819160601
+appVersion: 1.0.0
 description: Install batch job controller
 sources:
   - https://github.com/bakito/batch-job-controller

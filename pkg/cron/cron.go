@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -15,6 +16,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var (
+	log = ctrl.Log.WithName("cron")
+)
+
 //Job prepare the static file server
 func Job(namespace string, cfg *config.Config, client client.Client, cache lifecycle.Cache, owner runtime.Object, extender ...job.CustomPodEnv) (*cron.Cron, error) {
 
@@ -26,7 +31,7 @@ func Job(namespace string, cfg *config.Config, client client.Client, cache lifec
 		extender:  extender,
 		owner:     owner,
 	}
-	cj.log.WithValues("expression", cfg.CronExpression).Info("starting cron")
+	log.WithValues("expression", cfg.CronExpression).Info("starting cron")
 
 	c := cron.New()
 	_, _ = c.AddFunc(cfg.CronExpression, cj.startPods)
@@ -34,7 +39,7 @@ func Job(namespace string, cfg *config.Config, client client.Client, cache lifec
 	if cfg.RunOnStartup {
 		go func() {
 			time.Sleep(time.Second * 10)
-			cj.log.Info("starting cron on startup")
+			log.Info("starting cron on startup")
 			cj.startPods()
 		}()
 	}
@@ -47,7 +52,6 @@ type cronJob struct {
 	client    client.Client
 	job       *cron.Cron
 	cache     lifecycle.Cache
-	log       logr.Logger
 	running   bool
 	cfg       config.Config
 	extender  []job.CustomPodEnv
@@ -63,7 +67,7 @@ func (j *cronJob) deleteAll(obj runtime.Object) error {
 
 func (j *cronJob) startPods() {
 	if j.running {
-		j.log.Info("last cronjob still running")
+		log.Info("last cronjob still running")
 		return
 	}
 	j.running = true
@@ -73,7 +77,7 @@ func (j *cronJob) startPods() {
 
 	executionID := j.cache.NewExecution()
 
-	jobLog := j.log.WithValues("id", executionID)
+	jobLog := log.WithValues("id", executionID)
 
 	err := j.deleteAll(&corev1.Pod{})
 	if err != nil {
@@ -147,9 +151,9 @@ func (j *podJob) Node() string {
 }
 
 func (j *podJob) Process() {
-	j.log.Info("create pod", "node", j.nodeName)
+	log.Info("create pod", "node", j.nodeName)
 	err := j.client.Create(context.TODO(), j.pod)
 	if err != nil {
-		j.log.Error(err, "unable to create pod", "node", j.nodeName)
+		log.Error(err, "unable to create pod", "node", j.nodeName)
 	}
 }

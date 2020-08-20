@@ -19,10 +19,10 @@ heritage: {{ .Release.Service }}
 release: {{ .Release.Name }}
 {{- end -}}
 
-{{/* monitoring labels / annotations */}}
-{{- define "batch-job-controller.monitoring" -}}
-{{- if .Values.monitoring -}}
-{{ toYaml .Values.monitoring | trim }}
+{{/* deployment annotations */}}
+{{- define "batch-job-controller.deployment-annotations" -}}
+{{- if .Values.deployment.annotations -}}
+{{ toYaml .Values.deployment.annotations | trim }}
 {{- end -}}
 {{- end }}
 
@@ -32,3 +32,13 @@ release: {{ .Release.Name }}
 {{ toYaml .Values.deployment.labels | trim }}
 {{- end -}}
 {{- end }}
+
+{{/* add env vars */}}
+{{- define "batch-job-controller.deployment-env" -}}
+{{- if .Values.deployment.env -}}
+{{- range $k, $v := .Values.deployment.env -}}
+- name: "{{ $k }}"
+  value: "{{ $v }}"
+{{- end -}}
+{{- end -}}
+{{- end -}}

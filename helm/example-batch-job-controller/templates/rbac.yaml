@@ -34,21 +34,31 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - configmaps
       - services
     verbs:
       - get
       - list
       - watch
   - apiGroups:
-      - "apps"
+      - ""
+    resources:
+      - configmaps
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - create
+  - apiGroups:
+      - apps
     resources:
       - replicasets
       - deployments
     verbs:
       - get
   - apiGroups:
-      - "apps.openshift.io"
+      - apps.openshift.io
     resources:
       - deploymentconfigs
     verbs:
@@ -59,7 +69,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ template "batch-job-controller.name" . }}-role
+  name: {{ template "batch-job-controller.name" . }}-rolebinding
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "batch-job-controller.name" . }}
@@ -70,7 +80,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 subjects:
 - kind: ServiceAccount
-  name: batch-job-controller
+  name: {{ template "batch-job-controller.name" . }}
   namespace: {{ .Release.Namespace }}
 
 ---
@@ -85,11 +95,11 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - "nodes"
+      - nodes
     verbs:
-      - "list"
-      - "get"
-      - "watch"
+      - list
+      - get
+      - watch
 
 ---
 # ClusterRoleBinding for listing nodes required by openscap controller

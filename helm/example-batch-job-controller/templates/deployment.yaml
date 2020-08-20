@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-{{ include "batch-job-controller.monitoring" . | indent 4 }}
+{{- include "batch-job-controller.deployment-annotations" . | indent 4 }}
   labels:
     app: {{ template "batch-job-controller.name" . }}
 {{ include "batch-job-controller.helm-labels" . | indent 4 }}
-{{ include "batch-job-controller.monitoring" . | indent 4 }}
+{{- include "batch-job-controller.deployment-labels" . | indent 4 }}
   name: {{ template "batch-job-controller.name" . }}
   namespace: {{ .Release.Namespace }}
 spec:
@@ -22,12 +22,11 @@ spec:
         prometheus.io/port: "9153"
         prometheus.io/scrape: "true"
         prometheus.io/path: /metrics
-{{ include "batch-job-controller.monitoring" . | indent 8 }}
+{{- include "batch-job-controller.deployment-annotations" . | indent 8 }}
       labels:
         app: {{ template "batch-job-controller.name" . }}
         name: {{ template "batch-job-controller.name" . }}
-{{ include "batch-job-controller.deployment-labels" . | indent 8 }}
-{{ include "batch-job-controller.monitoring" . | indent 8 }}
+{{- include "batch-job-controller.deployment-labels" . | indent 8 }}
     spec:
       containers:
         - env:
@@ -35,7 +34,8 @@ spec:
               value: {{ .Release.Namespace }}
             - name: CONFIG_MAP_NAME
               value: {{ template "batch-job-controller.name" . }}
-          image: {{ .Values.deployment.image }}:{{ .Chart.AppVersion }}
+{{ include "batch-job-controller.deployment-env" . | indent 12 }}
+          image: {{ .Values.deployment.image }}
           imagePullPolicy: Always
           name: {{ template "batch-job-controller.name" . }}
           ports:

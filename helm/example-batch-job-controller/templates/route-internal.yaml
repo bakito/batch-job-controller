@@ -1,4 +1,4 @@
-{{- if .Values.route.internal -}}
+{{- if .Values.routes.internal -}}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -8,7 +8,7 @@ metadata:
   name: {{ template "batch-job-controller.name" . }}-internal
   namespace: {{ .Release.Namespace }}
 spec:
-  host: {{ template "batch-job-controller.name" . }}-internal-{{ .Release.Namespace }}.{{ .Values.route.hostSuffix }}
+  host: {{ template "batch-job-controller.name" . }}-internal-{{ .Release.Namespace }}.{{ .Values.routes.hostSuffix }}
   path: /debug/pprof/
   port:
     targetPort: internal
