@@ -15,7 +15,7 @@ RUN if GIT_TAG=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null); then
     echo Building version ${VERSION} && \
     go build -a -installsuffix cgo -ldflags="-w -s -X github.com/bakito/batch-job-controller/version.Version=${VERSION}" -o batch-job-controller cmd/generic/main.go && \
     echo compress binary && \
-    upx --ultra-brute -q batch-job-controller
+    upx --ultra-brute batch-job-controller
 
 # application image
 
