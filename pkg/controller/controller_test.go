@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+
 	mock_cache "github.com/bakito/batch-job-controller/pkg/mocks/cache"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
@@ -38,16 +39,16 @@ var _ = Describe("Controller", func() {
 			p = &podPredicate{}
 		})
 		It("should match", func() {
-			Ω(p.Create(event.CreateEvent{Meta: m1})).To(BeTrue())
-			Ω(p.Update(event.UpdateEvent{MetaNew: m1})).To(BeTrue())
-			Ω(p.Delete(event.DeleteEvent{Meta: m1})).To(BeTrue())
-			Ω(p.Generic(event.GenericEvent{Meta: m1})).To(BeTrue())
+			Ω(p.Create(event.CreateEvent{Meta: m1})).Should(BeTrue())
+			Ω(p.Update(event.UpdateEvent{MetaNew: m1})).Should(BeTrue())
+			Ω(p.Delete(event.DeleteEvent{Meta: m1})).Should(BeTrue())
+			Ω(p.Generic(event.GenericEvent{Meta: m1})).Should(BeTrue())
 		})
 		It("should not match", func() {
-			Ω(p.Create(event.CreateEvent{Meta: m2})).To(BeFalse())
-			Ω(p.Update(event.UpdateEvent{MetaNew: m2})).To(BeFalse())
-			Ω(p.Delete(event.DeleteEvent{Meta: m2})).To(BeFalse())
-			Ω(p.Generic(event.GenericEvent{Meta: m2})).To(BeFalse())
+			Ω(p.Create(event.CreateEvent{Meta: m2})).Should(BeFalse())
+			Ω(p.Update(event.UpdateEvent{MetaNew: m2})).Should(BeFalse())
+			Ω(p.Delete(event.DeleteEvent{Meta: m2})).Should(BeFalse())
+			Ω(p.Generic(event.GenericEvent{Meta: m2})).Should(BeFalse())
 		})
 	})
 
@@ -74,9 +75,9 @@ var _ = Describe("Controller", func() {
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: ""}, ""))
 
 			result, err := r.Reconcile(ctrl.Request{})
-			Ω(err).ToNot(HaveOccurred())
-			Ω(result).ToNot(BeNil())
-			Ω(result.Requeue).To(BeFalse())
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(result).ShouldNot(BeNil())
+			Ω(result.Requeue).Should(BeFalse())
 		})
 		It("should return an error", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
@@ -84,9 +85,9 @@ var _ = Describe("Controller", func() {
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(fmt.Errorf(""))
 
 			result, err := r.Reconcile(ctrl.Request{})
-			Ω(err).To(HaveOccurred())
-			Ω(result).ToNot(BeNil())
-			Ω(result.Requeue).To(BeFalse())
+			Ω(err).Should(HaveOccurred())
+			Ω(result).ShouldNot(BeNil())
+			Ω(result.Requeue).Should(BeFalse())
 		})
 		It("should update cache on pod succeeded", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
@@ -101,9 +102,9 @@ var _ = Describe("Controller", func() {
 			mockCache.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded)
 
 			result, err := r.Reconcile(ctrl.Request{})
-			Ω(err).ToNot(HaveOccurred())
-			Ω(result).ToNot(BeNil())
-			Ω(result.Requeue).To(BeFalse())
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(result).ShouldNot(BeNil())
+			Ω(result.Requeue).Should(BeFalse())
 		})
 		It("should update cache on pod failed", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
@@ -118,9 +119,9 @@ var _ = Describe("Controller", func() {
 			mockCache.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodFailed)
 
 			result, err := r.Reconcile(ctrl.Request{})
-			Ω(err).ToNot(HaveOccurred())
-			Ω(result).ToNot(BeNil())
-			Ω(result.Requeue).To(BeFalse())
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(result).ShouldNot(BeNil())
+			Ω(result.Requeue).Should(BeFalse())
 		})
 		It("should return error on update cache error", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
@@ -135,9 +136,9 @@ var _ = Describe("Controller", func() {
 			mockCache.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
 
 			result, err := r.Reconcile(ctrl.Request{})
-			Ω(err).To(HaveOccurred())
-			Ω(result).ToNot(BeNil())
-			Ω(result.Requeue).To(BeFalse())
+			Ω(err).Should(HaveOccurred())
+			Ω(result).ShouldNot(BeNil())
+			Ω(result.Requeue).Should(BeFalse())
 		})
 	})
 })

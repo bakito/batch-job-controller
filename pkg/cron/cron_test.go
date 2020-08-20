@@ -44,7 +44,7 @@ var _ = Describe("Cron", func() {
 			mockClient.EXPECT().DeleteAllOf(gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{}), client.InNamespace(namespace), job.MatchingLabels(configName), client.PropagationPolicy(metav1.DeletePropagationBackground))
 
 			err := cj.deleteAll(&corev1.Pod{})
-			Ω(err).ToNot(HaveOccurred())
+			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
 

@@ -29,7 +29,7 @@ var _ = Describe("Config", func() {
 			}
 		})
 		It("should return a correct name", func() {
-			Ω(m.NameFor("name")).To(Equal("my_metric_name"))
+			Ω(m.NameFor("name")).Should(Equal("my_metric_name"))
 		})
 	})
 
@@ -61,9 +61,9 @@ var _ = Describe("Config", func() {
 					Return(fmt.Errorf("error"))
 
 				c, err := config.Get(namespace, mockReader)
-				Ω(c).To(BeNil())
-				Ω(err).To(HaveOccurred())
-				Ω(err.Error()).To(ContainSubstring("error getting configmap"))
+				Ω(c).Should(BeNil())
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("error getting configmap"))
 			})
 
 			It("should return an error if no config is found", func() {
@@ -74,9 +74,9 @@ var _ = Describe("Config", func() {
 					})
 
 				c, err := config.Get(namespace, mockReader)
-				Ω(c).To(BeNil())
-				Ω(err).To(HaveOccurred())
-				Ω(err.Error()).To(ContainSubstring("could not find config file"))
+				Ω(c).Should(BeNil())
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("could not find config file"))
 			})
 
 			It("should return an error if no config can not be parsed", func() {
@@ -89,9 +89,9 @@ var _ = Describe("Config", func() {
 					})
 
 				c, err := config.Get(namespace, mockReader)
-				Ω(c).To(BeNil())
-				Ω(err).To(HaveOccurred())
-				Ω(err.Error()).To(ContainSubstring("could not read config file"))
+				Ω(c).Should(BeNil())
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("could not read config file"))
 			})
 
 			It("should return an error if no pod template config is found", func() {
@@ -104,9 +104,9 @@ var _ = Describe("Config", func() {
 					})
 
 				c, err := config.Get(namespace, mockReader)
-				Ω(c).To(BeNil())
-				Ω(err).To(HaveOccurred())
-				Ω(err.Error()).To(ContainSubstring("could not find pod template"))
+				Ω(c).Should(BeNil())
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("could not find pod template"))
 			})
 		})
 
@@ -125,11 +125,11 @@ var _ = Describe("Config", func() {
 					Return(fmt.Errorf("pod not found"))
 
 				c, err := config.Get(namespace, mockReader)
-				Ω(c).ToNot(BeNil())
-				Ω(err).To(BeNil())
+				Ω(c).ShouldNot(BeNil())
+				Ω(err).Should(BeNil())
 
-				Ω(c.JobPodTemplate).To(Equal("kind: Pod"))
-				Ω(c.Owner).To(BeNil())
+				Ω(c.JobPodTemplate).Should(Equal("kind: Pod"))
+				Ω(c.Owner).Should(BeNil())
 			})
 
 			It("should return a config with owner", func() {
@@ -173,13 +173,13 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				c, err := config.Get(namespace, mockReader)
-				Ω(c).ToNot(BeNil())
-				Ω(err).To(BeNil())
+				Ω(c).ShouldNot(BeNil())
+				Ω(err).Should(BeNil())
 
-				Ω(c.JobPodTemplate).To(Equal("kind: Pod"))
-				Ω(c.Owner).ToNot(BeNil())
-				Ω(c.Owner.GetObjectKind().GroupVersionKind().Kind).To(Equal("Deployment"))
-				Ω(c.Owner).To(
+				Ω(c.JobPodTemplate).Should(Equal("kind: Pod"))
+				Ω(c.Owner).ShouldNot(BeNil())
+				Ω(c.Owner.GetObjectKind().GroupVersionKind().Kind).Should(Equal("Deployment"))
+				Ω(c.Owner).Should(
 					WithTransform(func(o runtime.Object) string {
 						return o.(metav1.Object).GetName()
 					}, Equal("deployment-1")))

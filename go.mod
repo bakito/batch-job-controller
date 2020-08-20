@@ -3,6 +3,7 @@ module github.com/bakito/batch-job-controller
 go 1.14
 
 require (
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.0
 	github.com/golang/mock v1.2.0

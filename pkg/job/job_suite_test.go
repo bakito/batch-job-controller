@@ -1,4 +1,4 @@
-package job_test
+package job
 
 import (
 	"testing"
