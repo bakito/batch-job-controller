@@ -13,10 +13,9 @@ deployment:
   runOnStartup: false
   withPersistentVolume: true
   storageClassName: ""
-  labels: {}
-
-
-monitoring: {}
+  labels:
+  annotations:
+  env:
 
 route:
   metrics: true

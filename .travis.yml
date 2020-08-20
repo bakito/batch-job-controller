@@ -5,9 +5,10 @@ os:
   - linux
 services:
   - docker
+before_script:
+  - make tools
 
 script:
-  - make tools
   - make test
   - make helm-template
   - make build-docker
