@@ -135,7 +135,7 @@ var _ = Describe("Controller", func() {
 			mockCache.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
 
 			result, err := r.Reconcile(ctrl.Request{})
-			Ω(err).ToNot(HaveOccurred())
+			Ω(err).To(HaveOccurred())
 			Ω(result).ToNot(BeNil())
 			Ω(result.Requeue).To(BeFalse())
 		})

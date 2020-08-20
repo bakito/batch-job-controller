@@ -3,7 +3,13 @@ package lifecycle
 import prom "github.com/prometheus/client_golang/prometheus"
 
 // ExecutionIDNotFound custom error
-type ExecutionIDNotFound error
+type ExecutionIDNotFound struct {
+	Err error
+}
+
+func (e ExecutionIDNotFound) Error() string {
+	return e.Err.Error()
+}
 
 // Result metrics result
 type Result struct {
