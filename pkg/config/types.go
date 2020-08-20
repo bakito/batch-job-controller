@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Config struct
 type Config struct {
 	Name                  string                 `json:"name"`
 	Namespace             string                 `json:"-"`
@@ -25,15 +26,18 @@ type Config struct {
 	Owner                 runtime.Object         `json:"-"`
 }
 
+// Metrics config
 type Metrics struct {
 	Prefix string            `json:"prefix"`
 	Gauges map[string]Metric `json:"gauges"`
 }
 
+// NameFor get the name of a metric
 func (m *Metrics) NameFor(name string) string {
 	return fmt.Sprintf("%s_%s", m.Prefix, name)
 }
 
+// Metric config
 type Metric struct {
 	Help   string   `json:"help"`
 	Labels []string `json:"labels"`

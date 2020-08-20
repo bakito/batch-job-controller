@@ -19,10 +19,14 @@ import (
 )
 
 const (
-	CallbackBasePath          = "/report/{node}/{executionID}"
+	// CallbackBasePath callback path
+	CallbackBasePath = "/report/{node}/{executionID}"
+	// CallbackBaseResultSubPath result sub path
 	CallbackBaseResultSubPath = "/result"
-	CallbackBaseFileSubPath   = "/file"
+	// CallbackBaseFileSubPath file sub path
+	CallbackBaseFileSubPath = "/file"
 
+	// FileName query parameter name
 	FileName = "name"
 )
 
@@ -73,6 +77,7 @@ func GenericAPIServer(port int, reportPath string, cache lifecycle.Cache) manage
 	return s
 }
 
+// SetupProfiling setup profiling
 func SetupProfiling(r *mux.Router) {
 	r.HandleFunc("/debug/pprof/", pprof.Index)
 	r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -87,12 +92,14 @@ func SetupProfiling(r *mux.Router) {
 	r.Handle("/debug/pprof/trace", pprof.Handler("trace"))
 }
 
+// PostServer post server
 type PostServer struct {
 	Server
 	Cache      lifecycle.Cache
 	ReportPath string
 }
 
+// Server default server
 type Server struct {
 	Port    int
 	Kind    string
@@ -202,6 +209,7 @@ func (s *PostServer) postGenericFile(w http.ResponseWriter, r *http.Request) {
 	postLog.WithValues("length", len(buf.Bytes())).Info("received file")
 }
 
+// SaveFile save a received file
 func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, error) {
 	fileName := filepath.Join(s.ReportPath, executionID, name)
 	return fileName, ioutil.WriteFile(fileName, data, 0644)

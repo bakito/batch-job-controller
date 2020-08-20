@@ -1,16 +1,4 @@
-# find or install mockgen
-ifeq (, $(shell which mockgen))
- $(shell go get github.com/golang/mock/mockgen@v1.4.3)
-endif
-ifeq (, $(shell which ginkgo))
- $(shell go get github.com/onsi/ginkgo/ginkgo)
-endif
-ifeq (, $(shell which gopherbadger))
- $(shell go get github.com/jpoles1/gopherbadger)
-endif
-ifeq (, $(shell which helm))
- $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
-endif
+
 
 # generate mocks
 mocks:
@@ -40,3 +28,22 @@ build-docker:
 # Build podman image
 build-podman:
 	podman build -t batch-job-controller .
+
+tools: mockgen ginkgo gopherbadger helm
+
+mockgen:
+ifeq (, $(shell which mockgen))
+ $(shell go get github.com/golang/mock/mockgen@v1.4.3)
+endif
+ginkgo:
+ifeq (, $(shell which ginkgo))
+ $(shell go get github.com/onsi/ginkgo/ginkgo)
+endif
+gopherbadger:
+ifeq (, $(shell which gopherbadger))
+ $(shell go get github.com/jpoles1/gopherbadger)
+endif
+helm:
+ifeq (, $(shell which helm))
+ $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
+endif

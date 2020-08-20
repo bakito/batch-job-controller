@@ -16,16 +16,21 @@ import (
 )
 
 const (
-	EnvHostname      = "HOSTNAME"
+	// EnvHostname hostname env variable
+	EnvHostname = "HOSTNAME"
+	// EnvConfigMapName configmap name env variable
 	EnvConfigMapName = "CONFIG_MAP_NAME"
-	PodTemplateName  = "pod-template.yaml"
-	ConfigFileName   = "config.yaml"
+	// PodTemplateName key of the pod template in the configmap
+	PodTemplateName = "pod-template.yaml"
+	// ConfigFileName key of the config yaml file in the configmap
+	ConfigFileName = "config.yaml"
 )
 
 var (
 	log = ctrl.Log.WithName("config")
 )
 
+// Get read the config from the configmap
 func Get(namespace string, cl client.Reader) (*Config, error) {
 
 	cm, err := configMap(namespace, cl)
@@ -41,10 +46,10 @@ func Get(namespace string, cl client.Reader) (*Config, error) {
 			return nil, fmt.Errorf("could not read config file %q in configmap %q: %v", ConfigFileName, os.Getenv(EnvConfigMapName), err)
 		}
 
-		if t, ok := cm.Data[PodTemplateName]; !ok {
-			return nil, fmt.Errorf("could not find pod template %q in configmap %q", PodTemplateName, os.Getenv(EnvConfigMapName))
-		} else {
+		if t, ok := cm.Data[PodTemplateName]; ok {
 			cfg.JobPodTemplate = t
+		} else {
+			return nil, fmt.Errorf("could not find pod template %q in configmap %q", PodTemplateName, os.Getenv(EnvConfigMapName))
 		}
 
 		cfg.Namespace = namespace

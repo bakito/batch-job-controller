@@ -18,16 +18,20 @@ import (
 )
 
 const (
-	LabelOwner       = "batch-job-controller.bakito.github.com/owner"
+	// LabelOwner owner label
+	LabelOwner = "batch-job-controller.bakito.github.com/owner"
+	// LabelExecutionID execution id label
 	LabelExecutionID = "batch-job-controller.bakito.github.com/execution-id"
 )
 
+// PodReconciler reconciler
 type PodReconciler struct {
 	client.Client
 	Log   logr.Logger
 	Cache lifecycle.Cache
 }
 
+// SetupWithManager setup
 func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
@@ -36,6 +40,7 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// Reconcile reconcile pods
 func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	podLog := r.Log.WithValues("pod", req.NamespacedName)
