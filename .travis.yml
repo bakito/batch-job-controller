@@ -8,3 +8,5 @@ services:
 
 script:
   - make test
+  - make helm-template
+  - make build-docker

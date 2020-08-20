@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-name: batch-job-controller
+name: example-job-controller
 
 deployment:
   replicas: 1
@@ -13,10 +13,11 @@ deployment:
   runOnStartup: false
   withPersistentVolume: true
   storageClassName: ""
-  labels: []
+  labels: {}
+
 
 monitoring: {}
 
 route:
-  metrics: false
-  internal: false
+  metrics: true
+  internal: true

@@ -22,11 +22,11 @@ spec:
         prometheus.io/port: "9153"
         prometheus.io/scrape: "true"
         prometheus.io/path: /metrics
-{{ toYaml .Values.deployment.labels | trim | indent 8 }}
 {{ include "batch-job-controller.monitoring" . | indent 8 }}
       labels:
         app: {{ template "batch-job-controller.name" . }}
         name: {{ template "batch-job-controller.name" . }}
+{{ include "batch-job-controller.deployment-labels" . | indent 8 }}
 {{ include "batch-job-controller.monitoring" . | indent 8 }}
     spec:
       containers:

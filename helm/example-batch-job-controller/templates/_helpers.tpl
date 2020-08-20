@@ -26,9 +26,9 @@ release: {{ .Release.Name }}
 {{- end -}}
 {{- end }}
 
-{{/* metric labels / annotations */}}
-{{- define "batch-job-controller.metric-labels" -}}
-{{- if .Values.metric -}}
-{{ toYaml .Values.metric | trim }}
+{{/* deployment labels */}}
+{{- define "batch-job-controller.deployment-labels" -}}
+{{- if .Values.deployment.labels -}}
+{{ toYaml .Values.deployment.labels | trim }}
 {{- end -}}
 {{- end }}

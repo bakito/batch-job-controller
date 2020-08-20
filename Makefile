@@ -8,6 +8,9 @@ endif
 ifeq (, $(shell which gopherbadger))
  $(shell go get github.com/jpoles1/gopherbadger)
 endif
+ifeq (, $(shell which helm))
+ $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
+endif
 
 # generate mocks
 mocks:
@@ -25,3 +28,15 @@ vet:
 # Run tests
 test: mocks fmt vet
 	gopherbadger -md="README.md" -png=false
+
+# Run tests
+helm-template:
+	helm template helm/example-batch-job-controller/ --debug
+
+# Build docker image
+build-docker:
+	docker build -t batch-job-controller .
+
+# Build podman image
+build-podman:
+	podman build -t batch-job-controller .

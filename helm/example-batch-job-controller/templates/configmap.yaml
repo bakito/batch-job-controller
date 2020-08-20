@@ -10,7 +10,7 @@ data:
   run.sh: |-
 {{ .Files.Get "bin/run.sh" | indent 4}}
   pod-template.yaml: |-
-{{ .Files.Get "job-template/job-pod-template.yaml" | indent 4}}
+{{ include (print $.Template.BasePath "/job-template/_job-pod-template.yaml") . | indent 4 }}
   config.yaml: |-
     name:  {{ template "batch-job-controller.name" . }}
     jobServiceAccount: ""

@@ -15,11 +15,13 @@ spec:
         requests:
           cpu: 100m
           memory: 64Mi
+# volumen is only needed to add the run.sh to this generic pod. If a specific pod is used, this is obsolete
       volumeMounts:
-        - mountPath: /opt/job
-          name: batch-job-controller
+        - mountPath: /opt/job/run.sh
+          name: {{ template "batch-job-controller.name" . }}
+          subPath: run.sh
   volumes:
     - configMap:
         defaultMode: 420
-        name: batch-job-controller
-      name: batch-job-controller
+        name: {{ template "batch-job-controller.name" . }}
+      name: {{ template "batch-job-controller.name" . }}

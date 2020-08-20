@@ -15,7 +15,7 @@ spec:
     termination: edge
   to:
     kind: Service
-    name: batch-job-controller
+    name: {{ template "batch-job-controller.name" . }}
     weight: 100
 status:
   ingress: []
