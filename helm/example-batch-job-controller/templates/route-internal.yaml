@@ -1,4 +1,4 @@
-{{- if .Values.route.internal -}}
+{{- if .Values.routes.internal -}}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:

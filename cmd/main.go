@@ -2,13 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"os"
 	"reflect"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"strings"
 
 	bjcc "github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/controller"
@@ -17,6 +13,11 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/bakito/batch-job-controller/version"
 	"github.com/go-logr/zapr"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -43,7 +44,7 @@ func init() {
 func Setup() *Main {
 	o := func(o *zap.Options) {
 		o.DestWritter = os.Stderr
-		o.Development = os.Getenv(EnvDevMode) == "true"
+		o.Development = strings.ToLower(os.Getenv(EnvDevMode)) == "true"
 	}
 
 	ctrl.SetLogger(zapr.NewLogger(zap.NewRaw(o)))
@@ -64,6 +65,7 @@ func Setup() *Main {
 		LeaderElection:          true,
 		LeaderElectionID:        "9a62a63a.bakito.ch",
 		LeaderElectionNamespace: namespace,
+		Namespace:               namespace,
 	})
 
 	if err != nil {
