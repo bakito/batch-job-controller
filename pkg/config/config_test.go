@@ -35,9 +35,8 @@ var _ = Describe("Config", func() {
 
 	Context("Get", func() {
 		var (
-			ctx      context.Context
-			mockCtrl *gm.Controller //gomock struct
-			//			mockLog    *mock_logr.MockLogger
+			ctx        context.Context
+			mockCtrl   *gm.Controller //gomock struct
 			mockReader *mock_client.MockReader
 			namespace  string
 			cmName     string
@@ -50,7 +49,6 @@ var _ = Describe("Config", func() {
 			cmName = uuid.New().String()
 			podName = uuid.New().String()
 			mockCtrl = gm.NewController(GinkgoT())
-			//			mockLog = mock_logr.NewMockLogger(mockCtrl)
 			mockReader = mock_client.NewMockReader(mockCtrl)
 			_ = os.Setenv(config.EnvConfigMapName, cmName)
 			_ = os.Setenv(config.EnvHostname, podName)
