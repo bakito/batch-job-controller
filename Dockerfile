@@ -1,5 +1,5 @@
 FROM golang:1.14 as builder
-
+ARG upx_brute="--ultra-brute"
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y upx
@@ -15,7 +15,7 @@ RUN if GIT_TAG=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null); then
     echo Building version ${VERSION} && \
     go build -a -installsuffix cgo -ldflags="-w -s -X github.com/bakito/batch-job-controller/version.Version=${VERSION}" -o batch-job-controller cmd/generic/main.go && \
     echo compress binary && \
-    upx --ultra-brute batch-job-controller
+    upx ${upx_brute} -q batch-job-controller
 
 # application image
 

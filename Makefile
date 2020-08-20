@@ -23,11 +23,11 @@ helm-template:
 
 # Build docker image
 build-docker:
-	docker build -t batch-job-controller .
+	docker build --build-arg upx_brute= -t batch-job-controller .
 
 # Build podman image
 build-podman:
-	podman build -t batch-job-controller .
+	podman build --build-arg upx_brute= -t batch-job-controller .
 
 tools: mockgen ginkgo gopherbadger helm
 
