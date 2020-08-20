@@ -1,9 +1,6 @@
 package version
 
-const (
-	Name = "batch-job-controller"
-)
-
 var (
+	// Version the controller version
 	Version = "v1.1.0"
 )

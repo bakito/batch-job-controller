@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	// EnvNamespace namespace env variable name
 	EnvNamespace = "NAMESPACE"
 )
 
@@ -38,6 +39,7 @@ func init() {
 	utilruntime.Must(corev1.AddToScheme(scheme))
 }
 
+// Setup setup main
 func Setup() *Main {
 	o := func(o *zap.Options) {
 		o.DestWritter = os.Stderr
@@ -75,6 +77,10 @@ func Setup() *Main {
 	}
 
 	pc, err := lifecycle.NewPromCollector(namespace, cfg)
+	if err != nil {
+		setupLog.Error(err, "error creating prometheus collector")
+		os.Exit(1)
+	}
 	cache := lifecycle.NewCache(cfg, pc)
 
 	return &Main{
@@ -84,6 +90,7 @@ func Setup() *Main {
 	}
 }
 
+// Start start main
 func (m *Main) Start(runnables ...manager.Runnable) {
 
 	var envExtender []job.CustomPodEnv
@@ -126,6 +133,7 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 	}
 }
 
+// CustomConfigValue get a custom config value
 func (m *Main) CustomConfigValue(name string) interface{} {
 	if v, ok := m.Config.Custom[name]; ok {
 		return v
@@ -135,6 +143,7 @@ func (m *Main) CustomConfigValue(name string) interface{} {
 	return nil
 }
 
+// CustomConfigString get a custom config value string
 func (m *Main) CustomConfigString(name string) string {
 	v := m.CustomConfigValue(name)
 	if s, ok := v.(string); ok {
@@ -145,6 +154,7 @@ func (m *Main) CustomConfigString(name string) string {
 	return ""
 }
 
+// Main struct
 type Main struct {
 	Config  *bjcc.Config
 	Cache   lifecycle.Cache

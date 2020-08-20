@@ -52,8 +52,8 @@ var _ = Describe("Config", func() {
 			mockCtrl = gm.NewController(GinkgoT())
 			//			mockLog = mock_logr.NewMockLogger(mockCtrl)
 			mockReader = mock_client.NewMockReader(mockCtrl)
-			os.Setenv(config.EnvConfigMapName, cmName)
-			os.Setenv(config.EnvHostname, podName)
+			_ = os.Setenv(config.EnvConfigMapName, cmName)
+			_ = os.Setenv(config.EnvHostname, podName)
 			cmKey = client.ObjectKey{Namespace: namespace, Name: cmName}
 		})
 

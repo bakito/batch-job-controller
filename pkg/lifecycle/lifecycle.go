@@ -56,10 +56,12 @@ type cache struct {
 // verify interface is implemented
 var _ Cache = &cache{}
 
+// Config get the config
 func (c *cache) Config() config.Config {
 	return c.config
 }
 
+// NewExecution setup a new execution
 func (c *cache) NewExecution() string {
 	//                             yyyyMMddHHmmss
 	id := time.Now().Format("20060102150400")
@@ -98,6 +100,7 @@ func (c *cache) NewExecution() string {
 	return id
 }
 
+//  AllAdded start the processing
 func (c *cache) AllAdded(executionID string) error {
 	e, err := c.forID(executionID)
 	if err != nil {
@@ -152,6 +155,7 @@ func (e *execution) worker(id int) {
 	}
 }
 
+// AddPod add a new pod
 func (c *cache) AddPod(job Job) error {
 	e, err := c.forID(job.ID())
 	if err != nil {
@@ -164,6 +168,7 @@ func (c *cache) AddPod(job Job) error {
 	return nil
 }
 
+// PodTerminated pod was terminated
 func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) error {
 	p, err := c.podForID(executionID, node)
 	if err != nil {
@@ -190,6 +195,7 @@ func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) e
 	return nil
 }
 
+// ReportReceived report was received
 func (c *cache) ReportReceived(executionID, node string, processingError error, results map[string][]Result) {
 	for k := range results {
 		for _, r := range results[k] {
@@ -263,6 +269,7 @@ type pod struct {
 	status         string
 }
 
+// Job interface
 type Job interface {
 	Process()
 	ID() string
