@@ -7,7 +7,7 @@ metadata:
   name: {{ template "batch-job-controller.name" . }}-reports
   namespace: {{ .Release.Namespace }}
 spec:
-  host: "openscap-{{ .Release.Namespace }}.{{ required "A valid .Values.routes.hostSuffix entry required!" .Values.routes.hostSuffix }}"
+  host: "report-{{ .Release.Namespace }}.{{ required "A valid .Values.routes.hostSuffix entry required!" .Values.routes.hostSuffix }}"
   port:
     targetPort: public
   tls:
