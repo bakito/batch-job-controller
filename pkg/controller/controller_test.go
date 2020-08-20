@@ -122,7 +122,7 @@ var _ = Describe("Controller", func() {
 			Ω(result).ToNot(BeNil())
 			Ω(result.Requeue).To(BeFalse())
 		})
-		FIt("should return error on update cache error", func() {
+		It("should return error on update cache error", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
