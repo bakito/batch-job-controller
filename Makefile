@@ -20,7 +20,7 @@ test: mocks fmt vet
 
 # Run tests
 helm-template:
-	helm template helm/example-batch-job-controller/ --debug
+	helm template helm/example-batch-job-controller/ --debug --set routes.hostSuffix=test.com
 
 # Build docker image
 build-docker:
