@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "hello",
-  "message": "sweet world",
+  "label": "coverage",
+  "message": "43%",
   "color": "orange"
 }
