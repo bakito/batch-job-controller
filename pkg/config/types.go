@@ -9,11 +9,9 @@ import (
 // Config struct
 type Config struct {
 	Name                  string                 `json:"name"`
-	Namespace             string                 `json:"-"`
 	JobServiceAccount     string                 `json:"jobServiceAccount"`
 	JobNodeSelector       map[string]string      `json:"jobNodeSelector"`
 	RunOnUnscheduledNodes bool                   `json:"runOnUnscheduledNodes"`
-	JobPodTemplate        string                 `json:"-"`
 	CronExpression        string                 `json:"cronExpression"`
 	ReportDirectory       string                 `json:"reportDirectory"`
 	ReportHistory         int                    `json:"reportHistory"`
@@ -23,7 +21,10 @@ type Config struct {
 	Custom                map[string]interface{} `json:"custom"`
 	CallbackServiceName   string                 `json:"callbackServiceName"`
 	CallbackServicePort   int                    `json:"callbackServicePort"`
-	Owner                 runtime.Object         `json:"-"`
+
+	Namespace      string         `json:"-"`
+	JobPodTemplate string         `json:"-"`
+	Owner          runtime.Object `json:"-"`
 }
 
 // Metrics config

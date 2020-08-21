@@ -137,9 +137,9 @@ func mergeEnv(cfg config.Config, nodeName string, id string, serviceIP string, c
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceName, Value: serviceIP})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServicePort, Value: fmt.Sprintf("%d", cfg.CallbackServicePort)})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceResultURL,
-		Value: fmt.Sprintf(" http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath)})
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath)})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceFileURL,
-		Value: fmt.Sprintf(" http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath)})
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath)})
 
 	return newEnv
 }

@@ -222,7 +222,7 @@ func (c *cache) ReportReceived(executionID, node string, processingError error, 
 func (c *cache) forID(id string) (*execution, error) {
 	e, ok := c.executions[id]
 	if !ok {
-		return nil, ExecutionIDNotFound(fmt.Errorf("execution with id: '%s' not found", id))
+		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("execution with id: '%s' not found", id)}
 	}
 	return e, nil
 }

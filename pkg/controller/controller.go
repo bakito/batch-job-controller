@@ -2,8 +2,6 @@ package controller
 
 import (
 	"context"
-	"errors"
-
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +45,6 @@ func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	pod := &corev1.Pod{}
 	err := r.Get(ctx, req.NamespacedName, pod)
 	if err != nil {
-
 		if k8serrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
@@ -55,8 +52,8 @@ func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return reconcile.Result{}, nil
 		}
 
-		podLog.Error(err, "")
-		return reconcile.Result{}, nil
+		podLog.Error(err, "unexpected error")
+		return reconcile.Result{}, err
 	}
 
 	executionID := pod.GetLabels()[LabelExecutionID]
@@ -69,8 +66,10 @@ func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		err = r.Cache.PodTerminated(executionID, node, pod.Status.Phase)
 	}
 	if err != nil {
-		if !errors.Is(err, lifecycle.ExecutionIDNotFound(err)) {
-			podLog.Error(err, "")
+
+		if _, ok := err.(*lifecycle.ExecutionIDNotFound); !ok {
+			podLog.Error(err, "unexpected error")
+			return reconcile.Result{}, err
 		}
 	}
 

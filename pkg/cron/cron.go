@@ -59,10 +59,13 @@ type cronJob struct {
 }
 
 func (j *cronJob) deleteAll(obj runtime.Object) error {
-	return j.client.DeleteAllOf(context.TODO(), obj,
+	return j.client.DeleteAllOf(
+		context.TODO(),
+		obj,
 		client.InNamespace(j.namespace),
 		job.MatchingLabels(j.cfg.Name),
-		client.PropagationPolicy(metav1.DeletePropagationBackground)) // set propagation policy to also delete assigned pods
+		client.PropagationPolicy(metav1.DeletePropagationBackground),
+	) // set propagation policy to also delete assigned pods
 }
 
 func (j *cronJob) startPods() {

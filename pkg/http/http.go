@@ -59,11 +59,11 @@ func GenericAPIServer(port int, reportPath string, cache lifecycle.Cache) manage
 
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
 
-	rep.HandleFunc(CallbackBaseResultSubPath, s.postGenericReport).
+	rep.HandleFunc(CallbackBaseResultSubPath, s.postReport).
 		Methods("POST").
 		HeadersRegexp("Content-Type", "application/json")
 
-	rep.HandleFunc(CallbackBaseFileSubPath, s.postGenericFile).
+	rep.HandleFunc(CallbackBaseFileSubPath, s.postFile).
 		Methods("POST")
 
 	log.Info("starting callback",
@@ -136,7 +136,7 @@ func (s *Server) Start(stop <-chan struct{}) error {
 	return nil
 }
 
-func (s *PostServer) postGenericReport(w http.ResponseWriter, r *http.Request) {
+func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 
 	result := make(map[string][]lifecycle.Result)
 
@@ -174,7 +174,7 @@ func (s *PostServer) postGenericReport(w http.ResponseWriter, r *http.Request) {
 	postLog.Info("received report")
 }
 
-func (s *PostServer) postGenericFile(w http.ResponseWriter, r *http.Request) {
+func (s *PostServer) postFile(w http.ResponseWriter, r *http.Request) {
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
@@ -187,6 +187,8 @@ func (s *PostServer) postGenericFile(w http.ResponseWriter, r *http.Request) {
 	}
 	if fileName == "" {
 		fileName = uuid.New().String()
+
+		fileName += s.evaluateExtension(r)
 	}
 
 	node := vars["node"]
@@ -206,7 +208,21 @@ func (s *PostServer) postGenericFile(w http.ResponseWriter, r *http.Request) {
 		postLog.Error(err, "error receiving file")
 		return
 	}
-	postLog.WithValues("length", len(buf.Bytes())).Info("received file")
+	postLog.Info("received file")
+}
+
+func (s *PostServer) evaluateExtension(r *http.Request) string {
+	ct := r.Header.Get("Content-Type")
+
+	mt, _, _ := mime.ParseMediaType(ct)
+	if mt == "text/plain" {
+		return ".txt"
+	}
+	ext, _ := mime.ExtensionsByType(ct)
+	if len(ext) > 0 {
+		return ext[0]
+	}
+	return ".file"
 }
 
 // SaveFile save a received file
