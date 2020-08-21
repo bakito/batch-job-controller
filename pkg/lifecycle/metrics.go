@@ -143,5 +143,4 @@ func enrichLabels(labels []string) []string {
 	}
 
 	return out
-
 }
