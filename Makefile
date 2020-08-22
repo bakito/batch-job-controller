@@ -19,11 +19,15 @@ vet:
 tidy:
 	go mod tidy
 
-# Run testsm
+# Run tests
 test: mocks tidy fmt vet
 	go test ./...  -coverprofile=coverage.out
 	go tool cover -func=coverage.out
 	goverage-badge generate
+
+# Run ci tests
+test-ci: test
+	goveralls -service=travis-ci -v -coverprofile=coverage.out
 
 # Run tests
 helm-template:
@@ -37,7 +41,7 @@ build-docker:
 build-podman:
 	podman build --build-arg upx_brute=" " -t batch-job-controller .
 
-tools: mockgen ginkgo goverage-badge helm
+tools: mockgen ginkgo goverage-badge helm goveralls
 
 mockgen:
 ifeq (, $(shell which mockgen))
@@ -50,6 +54,10 @@ endif
 goverage-badge:
 ifeq (, $(shell which goverage-badge))
  $(shell go get github.com/bakito/goverage-badge)
+endif
+goveralls:
+ifeq (, $(shell which goveralls))
+ $(shell go get github.com/mattn/goveralls)
 endif
 helm:
 ifeq (, $(shell which helm))
