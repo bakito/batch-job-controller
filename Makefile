@@ -16,7 +16,8 @@ vet:
 
 # Run tests
 test: mocks fmt vet
-	gopherbadger -md="README.md" -png=false
+	go test ./...  -coverprofile=coverage.out
+	goverage-badge generate -q
 
 # Run tests
 helm-template:
@@ -30,7 +31,7 @@ build-docker:
 build-podman:
 	podman build --build-arg upx_brute=" " -t batch-job-controller .
 
-tools: mockgen ginkgo gopherbadger helm
+tools: mockgen ginkgo goverage-badge helm
 
 mockgen:
 ifeq (, $(shell which mockgen))
@@ -40,9 +41,9 @@ ginkgo:
 ifeq (, $(shell which ginkgo))
  $(shell go get github.com/onsi/ginkgo/ginkgo)
 endif
-gopherbadger:
-ifeq (, $(shell which gopherbadger))
- $(shell go get github.com/jpoles1/gopherbadger)
+goverage-badge:
+ifeq (, $(shell which goverage-badge))
+ $(shell go get github.com/bakito/goverage-badge)
 endif
 helm:
 ifeq (, $(shell which helm))
