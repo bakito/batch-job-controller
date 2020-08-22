@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,8 +23,8 @@ import (
 
 const (
 	reportJSON          = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
-	eventMessageJSON    = `{ "eventtype": "Warning", "reason": "TestReason", "message": "test message" }`
-	eventMessageFmtJSON = `{ "eventtype": "Warning", "reason": "TestReason", "messageFmt": "test message: %s" ,"args" : ["a1"]}`
+	eventMessageJSON    = `{ "eventType": "Warning", "reason": "TestReason", "message": "test message" }`
+	eventMessageFmtJSON = `{ "eventType": "Warning", "reason": "TestReason", "messageFmt": "test message: %s" ,"args" : ["a1"]}`
 )
 
 var _ = Describe("HTTP", func() {
@@ -193,7 +194,9 @@ var _ = Describe("HTTP", func() {
 		BeforeEach(func() {
 			mockRecord = mock_record.NewMockEventRecorder(mockCtrl)
 			s.EventRecorder = mockRecord
-			s.Config = &config.Config{}
+			s.Config = &config.Config{
+				Owner: &corev1.Pod{},
+			}
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
 
@@ -241,10 +244,25 @@ var _ = Describe("HTTP", func() {
 			router.ServeHTTP(rr, req)
 
 			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
+			Ω(rr.Body.String()).Should(HavePrefix("error decoding event"))
+		})
 
-			files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
+		It("fails if now owner is set", func() {
+
+			s.Config.Owner = nil
+
+			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+
+			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(files).Should(HaveLen(0))
+
+			router.ServeHTTP(rr, req)
+
+			Ω(rr.Code).Should(Equal(http.StatusNotAcceptable))
+			Ω(strings.TrimSpace(rr.Body.String())).Should(Equal("resource not available due to missing owner reference"))
 		})
 	})
 })

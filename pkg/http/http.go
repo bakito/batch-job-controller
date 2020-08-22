@@ -152,7 +152,6 @@ func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
 }
 
 func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
-	results := new(lifecycle.Results)
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
@@ -164,6 +163,8 @@ func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 		"id", executionID,
 		"length", len(buf.Bytes()),
 	)
+
+	results := new(lifecycle.Results)
 
 	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&results)
 	if err != nil {
@@ -227,7 +228,6 @@ func (s *PostServer) postFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
-	event := new(Event)
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
@@ -239,10 +239,17 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 		"id", executionID,
 		"length", len(buf.Bytes()),
 	)
+	if s.Config.Owner == nil {
+		err := fmt.Errorf("resource not available due to missing owner reference")
+		http.Error(w, err.Error(), http.StatusNotAcceptable)
+		postLog.Error(err, "")
+		return
+	}
 
+	event := new(Event)
 	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&event)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("error decoding event: %s", err.Error()), http.StatusBadRequest)
 		postLog.WithValues("result", string(buf.Bytes())).Error(err, "error decoding event")
 		return
 	}

@@ -7,7 +7,7 @@ import (
 
 // Event to be sent as k8s event
 type Event struct {
-	Eventtype  string   `json:"eventtype" validate:"oneof=Normal Warning"`
+	Eventtype  string   `json:"eventType" validate:"oneof=Normal Warning"`
 	Reason     string   `json:"reason" validate:"required,first_is_upper"`
 	Message    string   `json:"message,omitEmpty" validate:"one_message_required=MessageFmt"`
 	MessageFmt string   `json:"messageFmt,omitEmpty"`
