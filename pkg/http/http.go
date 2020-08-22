@@ -14,6 +14,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -25,6 +26,8 @@ const (
 	CallbackBaseResultSubPath = "/result"
 	// CallbackBaseFileSubPath file sub path
 	CallbackBaseFileSubPath = "/file"
+	// CallbackBaseEventSubPath event sub path
+	CallbackBaseEventSubPath = "/event"
 
 	// FileName query parameter name
 	FileName = "name"
@@ -66,6 +69,10 @@ func GenericAPIServer(port int, reportPath string, cache lifecycle.Cache) manage
 	rep.HandleFunc(CallbackBaseFileSubPath, s.postFile).
 		Methods("POST")
 
+	rep.HandleFunc(CallbackBaseEventSubPath, s.postEvent).
+		Methods("POST").
+		HeadersRegexp("Content-Type", "application/json")
+
 	log.Info("starting callback",
 		"port", port,
 		"method", "POST",
@@ -95,8 +102,9 @@ func SetupProfiling(r *mux.Router) {
 // PostServer post server
 type PostServer struct {
 	Server
-	Cache      lifecycle.Cache
-	ReportPath string
+	Cache         lifecycle.Cache
+	ReportPath    string
+	EventRecorder record.EventRecorder
 }
 
 // Server default server
@@ -136,16 +144,17 @@ func (s *Server) Start(stop <-chan struct{}) error {
 	return nil
 }
 
-func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
+func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
+	s.EventRecorder = er
+}
 
-	result := make(map[string][]lifecycle.Result)
+func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
+	results := new(lifecycle.Results)
 
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
-	vars := mux.Vars(r)
-	node := vars["node"]
-	executionID := vars["executionID"]
+	node, executionID := s.nodeAndID(r)
 
 	postLog := log.WithValues(
 		"node", node,
@@ -153,10 +162,17 @@ func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 		"length", len(buf.Bytes()),
 	)
 
-	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&result)
+	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&results)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		postLog.WithValues("result", string(buf.Bytes())).Error(err, "error decoding result json")
+		postLog.WithValues("result", string(buf.Bytes())).Error(err, "error decoding results json")
+		return
+	}
+
+	err = results.Validate()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		postLog.Error(err, "results is invalid")
 		return
 	}
 
@@ -170,16 +186,14 @@ func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 		postLog.Error(err, "error receiving file")
 		return
 	}
-	s.Cache.ReportReceived(executionID, node, err, result)
+	s.Cache.ReportReceived(executionID, node, err, *results)
 	postLog.Info("received report")
 }
 
 func (s *PostServer) postFile(w http.ResponseWriter, r *http.Request) {
-
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
-	vars := mux.Vars(r)
 	fileName := r.URL.Query().Get(FileName)
 	if fileName == "" {
 		_, params, _ := mime.ParseMediaType(r.Header.Get("Content-Disposition"))
@@ -190,9 +204,7 @@ func (s *PostServer) postFile(w http.ResponseWriter, r *http.Request) {
 
 		fileName += s.evaluateExtension(r)
 	}
-
-	node := vars["node"]
-	executionID := vars["executionID"]
+	node, executionID := s.nodeAndID(r)
 
 	var err error
 	fileName, err = s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), buf.Bytes())
@@ -209,6 +221,49 @@ func (s *PostServer) postFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postLog.Info("received file")
+}
+
+func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
+	event := new(Event)
+
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(r.Body)
+
+	node, executionID := s.nodeAndID(r)
+
+	postLog := log.WithValues(
+		"node", node,
+		"id", executionID,
+		"length", len(buf.Bytes()),
+	)
+
+	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&event)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		postLog.WithValues("result", string(buf.Bytes())).Error(err, "error decoding event")
+		return
+	}
+
+	err = event.validate()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		postLog.Error(err, "event is invalid")
+		return
+	}
+
+	if event.MessageFmt != "" {
+		s.EventRecorder.Eventf(nil, event.Eventtype, event.Reason, event.MessageFmt, event.args()...)
+	} else {
+		s.EventRecorder.Event(nil, event.Eventtype, event.Reason, event.Message)
+	}
+	postLog.Info("received event")
+}
+
+func (s *PostServer) nodeAndID(r *http.Request) (string, string) {
+	vars := mux.Vars(r)
+	node := vars["node"]
+	executionID := vars["executionID"]
+	return node, executionID
 }
 
 func (s *PostServer) evaluateExtension(r *http.Request) string {

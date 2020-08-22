@@ -17,6 +17,12 @@ type Result struct {
 	Labels map[string]string `json:"labels"`
 }
 
+type Results map[string][]Result
+
+func (r *Results) Validate() error {
+	return nil
+}
+
 type customMetric struct {
 	gauge  *prom.GaugeVec
 	labels []string

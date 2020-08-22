@@ -11,6 +11,7 @@ import (
 
 	mock_cache "github.com/bakito/batch-job-controller/pkg/mocks/cache"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
+	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -19,7 +20,9 @@ import (
 )
 
 const (
-	reportJSON = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
+	reportJSON          = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
+	eventMessageJSON    = `{ "eventtype": "Warning", "reason": "TestReason", "message": "test message" }`
+	eventMessageFmtJSON = `{ "eventtype": "Warning", "reason": "TestReason", "messageFmt": "test message: %s" ,"args" : ["a1"]}`
 )
 
 var _ = Describe("HTTP", func() {
@@ -172,6 +175,67 @@ var _ = Describe("HTTP", func() {
 			router.ServeHTTP(rr, req)
 		})
 
+	})
+	Context("postEvent", func() {
+		var (
+			path       string
+			mockRecord *mock_record.MockEventRecorder
+		)
+		BeforeEach(func() {
+			mockRecord = mock_record.NewMockEventRecorder(mockCtrl)
+			s.EventRecorder = mockRecord
+			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
+			router.HandleFunc(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
+
+			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+		})
+		It("succeed if event with message is sent", func() {
+
+			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
+			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
+			mockLog.EXPECT().Info("received event")
+
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageJSON))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			Ω(rr.Code).Should(Equal(http.StatusOK))
+		})
+		It("succeed if event with messageFmt is sent", func() {
+
+			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
+			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
+			mockLog.EXPECT().Info("received event")
+
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageFmtJSON))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			Ω(rr.Code).Should(Equal(http.StatusOK))
+		})
+
+		It("fails if json is invalid", func() {
+
+			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+
+			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
+
+			files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(files).Should(HaveLen(0))
+		})
 	})
 })
 

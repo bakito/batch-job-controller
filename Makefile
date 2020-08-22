@@ -5,6 +5,7 @@ mocks:
 	mockgen -destination pkg/mocks/logr/mock.go   github.com/go-logr/logr                              Logger
 	mockgen -destination pkg/mocks/client/mock.go sigs.k8s.io/controller-runtime/pkg/client            Client,Reader
 	mockgen -destination pkg/mocks/cache/mock.go  github.com/bakito/batch-job-controller/pkg/lifecycle Cache
+	mockgen -destination pkg/mocks/record/mock.go  k8s.io/client-go/tools/record                        EventRecorder
 
 # Run go fmt against code
 fmt:
@@ -14,10 +15,15 @@ fmt:
 vet:
 	go vet ./...
 
-# Run tests
-test: mocks fmt vet
+# Run go mod tidy
+tidy:
+	go mod tidy
+
+# Run testsm
+test: mocks tidy fmt vet
 	go test ./...  -coverprofile=coverage.out
-	goverage-badge generate -q
+	go tool cover -func=coverage.out
+	goverage-badge generate
 
 # Run tests
 helm-template:

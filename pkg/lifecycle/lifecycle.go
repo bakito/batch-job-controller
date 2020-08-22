@@ -39,7 +39,7 @@ type Cache interface {
 	AllAdded(executionID string) error
 	AddPod(job Job) error
 	PodTerminated(executionID, node string, phase corev1.PodPhase) error
-	ReportReceived(executionID, node string, processingError error, results map[string][]Result)
+	ReportReceived(executionID, node string, processingError error, results Results)
 	Config() config.Config
 }
 
@@ -196,7 +196,7 @@ func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) e
 }
 
 // ReportReceived report was received
-func (c *cache) ReportReceived(executionID, node string, processingError error, results map[string][]Result) {
+func (c *cache) ReportReceived(executionID, node string, processingError error, results Results) {
 	for k := range results {
 		for _, r := range results[k] {
 			c.prom.metricFor(executionID, node, k, r)
