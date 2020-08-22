@@ -11,6 +11,7 @@ import (
 	"net/http/pprof"
 	"path/filepath"
 
+	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -47,17 +48,18 @@ func StaticFileServer(port int, path string) manager.Runnable {
 }
 
 //GenericAPIServer prepare the generic api server
-func GenericAPIServer(port int, reportPath string, cache lifecycle.Cache) manager.Runnable {
+func GenericAPIServer(cfg *config.Config, cache lifecycle.Cache) manager.Runnable {
 
 	r := mux.NewRouter()
 	s := &PostServer{
 		Server: Server{
-			Port:    port,
+			Port:    cfg.CallbackServicePort,
 			Kind:    "internal",
 			Handler: r,
 		},
-		ReportPath: reportPath,
+		ReportPath: cfg.ReportDirectory,
 		Cache:      cache,
+		Config:     cfg,
 	}
 
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
@@ -74,7 +76,7 @@ func GenericAPIServer(port int, reportPath string, cache lifecycle.Cache) manage
 		HeadersRegexp("Content-Type", "application/json")
 
 	log.Info("starting callback",
-		"port", port,
+		"port", cfg.CallbackServicePort,
 		"method", "POST",
 		"path", fmt.Sprintf("%s/%s", CallbackBasePath, CallbackBaseResultSubPath),
 	)
@@ -105,6 +107,7 @@ type PostServer struct {
 	Cache         lifecycle.Cache
 	ReportPath    string
 	EventRecorder record.EventRecorder
+	Config        *config.Config
 }
 
 // Server default server
@@ -252,9 +255,9 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if event.MessageFmt != "" {
-		s.EventRecorder.Eventf(nil, event.Eventtype, event.Reason, event.MessageFmt, event.args()...)
+		s.EventRecorder.Eventf(s.Config.Owner, event.Eventtype, event.Reason, event.MessageFmt, event.args()...)
 	} else {
-		s.EventRecorder.Event(nil, event.Eventtype, event.Reason, event.Message)
+		s.EventRecorder.Event(s.Config.Owner, event.Eventtype, event.Reason, event.Message)
 	}
 	postLog.Info("received event")
 }

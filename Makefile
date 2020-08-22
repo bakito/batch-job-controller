@@ -23,7 +23,6 @@ tidy:
 test: mocks tidy fmt vet
 	go test ./...  -coverprofile=coverage.out
 	go tool cover -func=coverage.out
-	goverage-badge generate
 
 # Run ci tests
 test-ci: test
@@ -41,7 +40,7 @@ build-docker:
 build-podman:
 	podman build --build-arg upx_brute=" " -t batch-job-controller .
 
-tools: mockgen ginkgo goverage-badge helm goveralls
+tools: mockgen ginkgo helm goveralls
 
 mockgen:
 ifeq (, $(shell which mockgen))
@@ -50,10 +49,6 @@ endif
 ginkgo:
 ifeq (, $(shell which ginkgo))
  $(shell go get github.com/onsi/ginkgo/ginkgo)
-endif
-goverage-badge:
-ifeq (, $(shell which goverage-badge))
- $(shell go get github.com/bakito/goverage-badge)
 endif
 goveralls:
 ifeq (, $(shell which goveralls))

@@ -109,6 +109,7 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 			}
 			er.InjectEventRecorder(eventRecorder)
 		}
+
 		_ = m.Manager.Add(r)
 		if e, ok := r.(job.CustomPodEnv); ok {
 			c := reflect.TypeOf(r)

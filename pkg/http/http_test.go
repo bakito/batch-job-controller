@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/bakito/batch-job-controller/pkg/config"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -184,6 +185,7 @@ var _ = Describe("HTTP", func() {
 		BeforeEach(func() {
 			mockRecord = mock_record.NewMockEventRecorder(mockCtrl)
 			s.EventRecorder = mockRecord
+			s.Config = &config.Config{}
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
 
