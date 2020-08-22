@@ -22,7 +22,8 @@ func (e *Event) args() []interface{} {
 	return args
 }
 
-func (e *Event) validate() error {
+// Validate the event
+func (e *Event) Validate() error {
 	validate := validator.New()
 	_ = validate.RegisterValidation("first_is_upper", firstIsUpper)
 	_ = validate.RegisterValidation("one_message_required", oneMessageRequired)

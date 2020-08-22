@@ -172,7 +172,7 @@ func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = results.Validate()
+	err = results.Validate(s.Config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		postLog.Error(err, "results is invalid")
@@ -247,7 +247,7 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = event.validate()
+	err = event.Validate()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		postLog.Error(err, "event is invalid")

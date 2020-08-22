@@ -63,12 +63,20 @@ var _ = Describe("HTTP", func() {
 	Context("postReport", func() {
 		var (
 			path string
+			cfg  *config.Config
 		)
 		BeforeEach(func() {
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, s.postReport)
 
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
+
+			cfg = &config.Config{
+				Metrics: config.Metrics{
+					Prefix: "foo",
+				},
+			}
+			s.Config = cfg
 		})
 		It("succeed if file is saved", func() {
 
