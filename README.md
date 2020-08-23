@@ -118,7 +118,7 @@ k8s Event can be created from each job pod by calling the event endpoint.
 Simple Message:
 ```json
 {
-  "eventType": "Warning",
+  "warning": false,
   "reason": "TestReason",
   "message": "test message"
 }
@@ -126,9 +126,9 @@ Simple Message:
 Massage with parameters
 ```json
 {
-  "eventType": "Warning",
+  "warning": true,
   "reason": "TestReason",
-  "messageFmt": "test message: %s",
+  "message": "test message: %s",
   "args": [
     "a1"
   ]
