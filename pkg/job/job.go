@@ -26,7 +26,7 @@ const (
 	envCallbackServicePort      = "CALLBACK_SERVICE_PORT"
 	envCallbackServiceResultURL = "CALLBACK_SERVICE_RESULT_URL"
 	envCallbackServiceFileURL   = "CALLBACK_SERVICE_FILE_URL"
-        envCallbackServiceEventURL  = "CALLBACK_SERVICE_EVENT_URL"
+	envCallbackServiceEventURL  = "CALLBACK_SERVICE_EVENT_URL"
 )
 
 var (
@@ -141,9 +141,8 @@ func mergeEnv(cfg config.Config, nodeName string, id string, serviceIP string, c
 		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath)})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceFileURL,
 		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath)})
-        newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceEventURL,
+	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceEventURL,
 		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseEventSubPath)})
-
 
 	return newEnv
 }

@@ -265,6 +265,35 @@ var _ = Describe("HTTP", func() {
 			Ω(strings.TrimSpace(rr.Body.String())).Should(Equal("resource not available due to missing owner reference"))
 		})
 	})
+
+	Context("StaticFileServer", func() {
+		It("returns a file server", func() {
+			sfs := StaticFileServer(1234, "path")
+			Ω(sfs).ShouldNot(BeNil())
+			Ω(sfs.(*Server).Port).Should(Equal(1234))
+			Ω(sfs.(*Server).Kind).Should(Equal("public"))
+			Ω(sfs.(*Server).Handler).ShouldNot(BeNil())
+		})
+	})
+
+	Context("GenericAPIServer", func() {
+		BeforeEach(func() {
+			s.Config = &config.Config{
+				Owner:               &corev1.Pod{},
+				CallbackServicePort: 1234,
+			}
+			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
+		})
+		It("returns a server", func() {
+			sfs := GenericAPIServer(s.Config, mockCache)
+			Ω(sfs).ShouldNot(BeNil())
+			Ω(sfs.(*PostServer).Port).Should(Equal(1234))
+			Ω(sfs.(*PostServer).Kind).Should(Equal("internal"))
+			Ω(sfs.(*PostServer).Handler).ShouldNot(BeNil())
+			Ω(sfs.(*PostServer).Config).ShouldNot(BeNil())
+			Ω(sfs.(*PostServer).Cache).ShouldNot(BeNil())
+		})
+	})
 })
 
 func tempDir(id string) string {
