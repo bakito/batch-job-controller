@@ -2,7 +2,7 @@ name: Go
 
 on:
   push:
-    branches: [ master, Github-workflow ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.x
+    - name: Set up Go 1.14
       uses: actions/setup-go@v2
       with:
         go-version: ^1.14
