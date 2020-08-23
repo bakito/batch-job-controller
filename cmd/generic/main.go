@@ -9,6 +9,6 @@ func main() {
 	main := cmd.Setup()
 	main.Start(
 		http.StaticFileServer(8080, main.Config.ReportDirectory),
-		http.GenericAPIServer(main.Config, main.Cache, main.Manager.GetAPIReader()),
+		http.GenericAPIServer(main.Config.CallbackServicePort, main.Config.ReportDirectory),
 	)
 }

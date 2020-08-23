@@ -38,7 +38,8 @@ var _ = Describe("HTTP", func() {
 		executionID string
 		node        string
 
-		s *PostServer
+		s   *PostServer
+		cfg *config.Config
 
 		rr     *httptest.ResponseRecorder
 		router *mux.Router
@@ -51,11 +52,18 @@ var _ = Describe("HTTP", func() {
 		mockCache = mock_cache.NewMockCache(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
+		cfg = &config.Config{
+			Metrics: config.Metrics{
+				Prefix: "foo",
+			},
+		}
+
 		s = &PostServer{
 			ReportPath: tempDir(executionID),
-			Cache:      mockCache,
-			Client:     mockReader,
 		}
+		s.InjectReader(mockReader)
+		s.InjectCache(mockCache)
+		s.InjectConfig(cfg)
 
 		rr = httptest.NewRecorder()
 
@@ -69,20 +77,12 @@ var _ = Describe("HTTP", func() {
 	Context("postReport", func() {
 		var (
 			path string
-			cfg  *config.Config
 		)
 		BeforeEach(func() {
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, s.postReport)
 
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
-
-			cfg = &config.Config{
-				Metrics: config.Metrics{
-					Prefix: "foo",
-				},
-			}
-			s.Config = cfg
 		})
 		It("succeed if file is saved", func() {
 
@@ -198,10 +198,7 @@ var _ = Describe("HTTP", func() {
 		)
 		BeforeEach(func() {
 			mockRecord = mock_record.NewMockEventRecorder(mockCtrl)
-			s.EventRecorder = mockRecord
-			s.Config = &config.Config{
-				Owner: &corev1.Pod{},
-			}
+			s.InjectEventRecorder(mockRecord)
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
 
@@ -258,8 +255,6 @@ var _ = Describe("HTTP", func() {
 
 		It("fails if pod not found", func() {
 
-			s.Config.Owner = nil
-
 			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
@@ -290,20 +285,13 @@ var _ = Describe("HTTP", func() {
 
 	Context("GenericAPIServer", func() {
 		BeforeEach(func() {
-			s.Config = &config.Config{
-				Owner:               &corev1.Pod{},
-				CallbackServicePort: 1234,
-			}
 			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
 		})
 		It("returns a server", func() {
-			sfs := GenericAPIServer(s.Config, mockCache, mockReader)
+			sfs := GenericAPIServer(1234, "")
 			Ω(sfs).ShouldNot(BeNil())
 			Ω(sfs.(*PostServer).Port).Should(Equal(1234))
 			Ω(sfs.(*PostServer).Kind).Should(Equal("internal"))
-			Ω(sfs.(*PostServer).Handler).ShouldNot(BeNil())
-			Ω(sfs.(*PostServer).Config).ShouldNot(BeNil())
-			Ω(sfs.(*PostServer).Cache).ShouldNot(BeNil())
 		})
 	})
 })

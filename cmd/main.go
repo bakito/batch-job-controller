@@ -110,6 +110,16 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 			er.InjectEventRecorder(eventRecorder)
 		}
 
+		if c, ok := r.(inject.Config); ok {
+			c.InjectConfig(m.Config)
+		}
+		if c, ok := r.(inject.Cache); ok {
+			c.InjectCache(m.Cache)
+		}
+		if r, ok := r.(inject.Reader); ok {
+			r.InjectReader(m.Manager.GetAPIReader())
+		}
+
 		_ = m.Manager.Add(r)
 		if e, ok := r.(job.CustomPodEnv); ok {
 			c := reflect.TypeOf(r)

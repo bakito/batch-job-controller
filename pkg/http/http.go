@@ -50,19 +50,16 @@ func StaticFileServer(port int, path string) manager.Runnable {
 }
 
 //GenericAPIServer prepare the generic api server
-func GenericAPIServer(cfg *config.Config, cache lifecycle.Cache, client client.Reader) manager.Runnable {
+func GenericAPIServer(port int, reportPath string) manager.Runnable {
 
 	r := mux.NewRouter()
 	s := &PostServer{
 		Server: Server{
-			Port:    cfg.CallbackServicePort,
+			Port:    port,
 			Kind:    "internal",
 			Handler: r,
 		},
-		ReportPath: cfg.ReportDirectory,
-		Cache:      cache,
-		Config:     cfg,
-		Client:     client,
+		ReportPath: reportPath,
 	}
 
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
@@ -79,7 +76,7 @@ func GenericAPIServer(cfg *config.Config, cache lifecycle.Cache, client client.R
 		HeadersRegexp("Content-Type", "application/json")
 
 	log.Info("starting callback",
-		"port", cfg.CallbackServicePort,
+		"port", port,
 		"method", "POST",
 		"path", fmt.Sprintf("%s/%s", CallbackBasePath, CallbackBaseResultSubPath),
 	)
@@ -153,6 +150,18 @@ func (s *Server) Start(stop <-chan struct{}) error {
 
 func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
 	s.EventRecorder = er
+}
+
+func (s *PostServer) InjectCache(cache lifecycle.Cache) {
+	s.Cache = cache
+}
+
+func (s *PostServer) InjectReader(reader client.Reader) {
+	s.Client = reader
+}
+
+func (s *PostServer) InjectConfig(cfg *config.Config) {
+	s.Config = cfg
 }
 
 func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
