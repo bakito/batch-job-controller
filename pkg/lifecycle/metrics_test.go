@@ -20,7 +20,7 @@ var _ = Describe("metrics", func() {
 			}
 		})
 		It("should be valid", func() {
-			_, err := lifecycle.NewPromCollector("ns", cfg)
+			_, err := lifecycle.NewPromCollector(cfg)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})

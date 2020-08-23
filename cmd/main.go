@@ -81,7 +81,7 @@ func Setup() *Main {
 		os.Exit(1)
 	}
 
-	pc, err := lifecycle.NewPromCollector(namespace, cfg)
+	pc, err := lifecycle.NewPromCollector(cfg)
 	if err != nil {
 		setupLog.Error(err, "error creating prometheus collector")
 		os.Exit(1)
