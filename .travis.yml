@@ -7,7 +7,6 @@ services:
   - docker
 before_script:
   - make tools
-
 script:
   - make test-ci
   - make helm-template

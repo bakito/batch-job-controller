@@ -34,7 +34,7 @@ var _ = Describe("Cron", func() {
 			namespace: namespace,
 			client:    mockClient,
 			cache:     mockCache,
-			cfg: config.Config{
+			cfg: &config.Config{
 				Name: configName,
 			},
 		}

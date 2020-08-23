@@ -26,7 +26,7 @@ func Job(namespace string, cfg *config.Config, client client.Client, cache lifec
 	var cj = &cronJob{
 		namespace: namespace,
 		cache:     cache,
-		cfg:       *cfg,
+		cfg:       cfg,
 		client:    client,
 		extender:  extender,
 		owner:     owner,
@@ -53,7 +53,7 @@ type cronJob struct {
 	job       *cron.Cron
 	cache     lifecycle.Cache
 	running   bool
-	cfg       config.Config
+	cfg       *config.Config
 	extender  []job.CustomPodEnv
 	owner     runtime.Object
 }

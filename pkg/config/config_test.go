@@ -32,6 +32,27 @@ var _ = Describe("Config", func() {
 			Ω(m.NameFor("name")).Should(Equal("my_metric_name"))
 		})
 	})
+	Context("PodName", func() {
+		var (
+			c        *config.Config
+			name     string
+			nodeName string
+			node     string
+			id       string
+		)
+		BeforeEach(func() {
+			name = uuid.New().String()
+			nodeName = uuid.New().String()
+			node = nodeName + "." + uuid.New().String()
+			id = uuid.New().String()
+			c = &config.Config{
+				Name: name,
+			}
+		})
+		It("should return a correct name", func() {
+			Ω(c.PodName(node, id)).Should(Equal(fmt.Sprintf("%s-job-%s-%s", name, nodeName, id)))
+		})
+	})
 
 	Context("Get", func() {
 		var (

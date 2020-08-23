@@ -9,6 +9,7 @@ import (
 	bjcc "github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/controller"
 	"github.com/bakito/batch-job-controller/pkg/cron"
+	"github.com/bakito/batch-job-controller/pkg/inject"
 	"github.com/bakito/batch-job-controller/pkg/job"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/bakito/batch-job-controller/version"
@@ -17,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -79,7 +81,7 @@ func Setup() *Main {
 		os.Exit(1)
 	}
 
-	pc, err := lifecycle.NewPromCollector(namespace, cfg)
+	pc, err := lifecycle.NewPromCollector(cfg)
 	if err != nil {
 		setupLog.Error(err, "error creating prometheus collector")
 		os.Exit(1)
@@ -98,8 +100,26 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 
 	var envExtender []job.CustomPodEnv
 
+	var eventRecorder record.EventRecorder
 	// setup runnables
 	for _, r := range runnables {
+		if er, ok := r.(inject.EventRecorder); ok {
+			if eventRecorder == nil {
+				eventRecorder = m.Manager.GetEventRecorderFor(m.Config.Name)
+			}
+			er.InjectEventRecorder(eventRecorder)
+		}
+
+		if c, ok := r.(inject.Config); ok {
+			c.InjectConfig(m.Config)
+		}
+		if c, ok := r.(inject.Cache); ok {
+			c.InjectCache(m.Cache)
+		}
+		if r, ok := r.(inject.Reader); ok {
+			r.InjectReader(m.Manager.GetAPIReader())
+		}
+
 		_ = m.Manager.Add(r)
 		if e, ok := r.(job.CustomPodEnv); ok {
 			c := reflect.TypeOf(r)

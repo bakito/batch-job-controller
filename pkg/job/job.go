@@ -3,7 +3,6 @@ package job
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -26,6 +25,7 @@ const (
 	envCallbackServicePort      = "CALLBACK_SERVICE_PORT"
 	envCallbackServiceResultURL = "CALLBACK_SERVICE_RESULT_URL"
 	envCallbackServiceFileURL   = "CALLBACK_SERVICE_FILE_URL"
+	envCallbackServiceEventURL  = "CALLBACK_SERVICE_EVENT_URL"
 )
 
 var (
@@ -50,10 +50,9 @@ func MatchingLabels(name string) client.MatchingLabels {
 }
 
 // New create a new job
-func New(cfg config.Config, nodeName, id, serviceIP string, owner runtime.Object, extender ...CustomPodEnv) (*corev1.Pod, error) {
+func New(cfg *config.Config, nodeName, id, serviceIP string, owner runtime.Object, extender ...CustomPodEnv) (*corev1.Pod, error) {
 
-	nameParts := strings.Split(nodeName, ".")
-	podName := fmt.Sprintf("%s-job-%s-%s", cfg.Name, nameParts[0], id)
+	podName := cfg.PodName(nodeName, id)
 
 	data := map[string]string{
 		"Namespace":   cfg.Namespace,
@@ -118,7 +117,7 @@ func New(cfg config.Config, nodeName, id, serviceIP string, owner runtime.Object
 	return pod, err
 }
 
-func mergeEnv(cfg config.Config, nodeName string, id string, serviceIP string, container corev1.Container, extender []CustomPodEnv) []corev1.EnvVar {
+func mergeEnv(cfg *config.Config, nodeName string, id string, serviceIP string, container corev1.Container, extender []CustomPodEnv) []corev1.EnvVar {
 	var newEnv []corev1.EnvVar
 	for _, e := range container.Env {
 		// keep all non reserved env variables
@@ -140,6 +139,8 @@ func mergeEnv(cfg config.Config, nodeName string, id string, serviceIP string, c
 		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath)})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceFileURL,
 		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath)})
+	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceEventURL,
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseEventSubPath)})
 
 	return newEnv
 }

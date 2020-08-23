@@ -16,7 +16,7 @@ import (
 var _ = Describe("Job", func() {
 	Context("New", func() {
 		var (
-			cfg       config.Config
+			cfg       *config.Config
 			name      string
 			namespace string
 			nodeName  string
@@ -28,7 +28,7 @@ var _ = Describe("Job", func() {
 			name = uuid.New().String()
 			namespace = uuid.New().String()
 			sacc = uuid.New().String()
-			cfg = config.Config{
+			cfg = &config.Config{
 				Name:                name,
 				Namespace:           namespace,
 				JobServiceAccount:   sacc,
@@ -91,6 +91,7 @@ var _ = Describe("Job", func() {
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServicePort, "12345"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
+				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar("FOO", "bar"))
 
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envExecutionId, id))
@@ -100,6 +101,7 @@ var _ = Describe("Job", func() {
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServicePort, "12345"))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
+				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar("BAR", "foo"))
 			})
 
@@ -130,7 +132,7 @@ var _ = Describe("Job", func() {
 
 type customEnv struct{}
 
-func (ce *customEnv) ExtendEnv(cfg config.Config, nodeName string, id string, serviceIP string, containers corev1.Container) []corev1.EnvVar {
+func (ce *customEnv) ExtendEnv(cfg *config.Config, nodeName string, id string, serviceIP string, containers corev1.Container) []corev1.EnvVar {
 	return []corev1.EnvVar{{Name: envNamespace, Value: "notMyNamespace"}, {Name: "CUSTOM", Value: "VALUE"}}
 }
 

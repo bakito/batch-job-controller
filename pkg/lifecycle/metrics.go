@@ -83,11 +83,11 @@ func (c *Collector) pods(cnt float64) {
 }
 
 // NewPromCollector create a new prom collector
-func NewPromCollector(namespace string, cfg *config.Config) (*Collector, error) {
+func NewPromCollector(cfg *config.Config) (*Collector, error) {
 
 	c := &Collector{
 		gauges:    make(map[string]customMetric),
-		namespace: namespace,
+		namespace: cfg.Namespace,
 	}
 	c.procErrorGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),

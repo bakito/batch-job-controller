@@ -106,7 +106,7 @@ func (mr *MockCacheMockRecorder) PodTerminated(arg0, arg1, arg2 interface{}) *go
 }
 
 // ReportReceived mocks base method
-func (m *MockCache) ReportReceived(arg0, arg1 string, arg2 error, arg3 map[string][]lifecycle.Result) {
+func (m *MockCache) ReportReceived(arg0, arg1 string, arg2 error, arg3 lifecycle.Results) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ReportReceived", arg0, arg1, arg2, arg3)
 }
