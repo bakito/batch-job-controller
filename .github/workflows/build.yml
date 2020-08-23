@@ -26,7 +26,7 @@ jobs:
         run: make tools
 
       - name: Test
-        run: make test-ci
+        run: make test
 
       - name: Verify Helm Chart
         run: make helm-template
