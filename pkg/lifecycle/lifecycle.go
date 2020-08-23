@@ -126,6 +126,9 @@ func (c *cache) AllAdded(executionID string) error {
 	if len(files) > c.reportHistory {
 		pruneCnt := len(files) - c.reportHistory
 		for i := 0; i < pruneCnt; i++ {
+			// delete the execution
+			delete(c.executions, files[i].Name())
+
 			dir := c.reportDir + "/" + files[i].Name()
 			c.log.WithValues("dir", dir).Info("deleting report directory")
 			err = os.RemoveAll(dir)
