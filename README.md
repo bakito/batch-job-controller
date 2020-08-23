@@ -1,4 +1,5 @@
 ![Github Build](https://github.com/bakito/batch-job-controller/workflows/Github%20Build/badge.svg) [![Build Status](https://travis-ci.com/bakito/batch-job-controller.svg?branch=master)](https://travis-ci.com/bakito/batch-job-controller) [![Docker Repository on Quay](https://quay.io/repository/bakito/batch-job-controller/status "Docker Repository on Quay")](https://quay.io/repository/bakito/batch-job-controller) [![Go Report Card](https://goreportcard.com/badge/github.com/bakito/batch-job-controller)](https://goreportcard.com/report/github.com/bakito/batch-job-controller) [![GitHub Release](https://img.shields.io/github/release/bakito/batch-job-controller.svg?style=flat)](https://github.com/bakito/batch-job-controller/releases) [![Coverage Status](https://coveralls.io/repos/github/bakito/batch-job-controller/badge.svg?branch=master)](https://coveralls.io/github/bakito/batch-job-controller?branch=master)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fbakito%2Fbatch-job-controller.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fbakito%2Fbatch-job-controller?ref=badge_shield)
 
 # Batch Job Controller
 
@@ -142,3 +143,7 @@ The event URL is by default: **${CALLBACK_SERVICE_EVENT_URL}**
 ### Examples
 
 [test-queries.http](./testdata/test-queries.http)
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fbakito%2Fbatch-job-controller.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fbakito%2Fbatch-job-controller?ref=badge_large)
