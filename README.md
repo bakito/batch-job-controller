@@ -1,4 +1,9 @@
-![Github Build](https://github.com/bakito/batch-job-controller/workflows/Github%20Build/badge.svg) [![Build Status](https://travis-ci.com/bakito/batch-job-controller.svg?branch=master)](https://travis-ci.com/bakito/batch-job-controller) [![Docker Repository on Quay](https://quay.io/repository/bakito/batch-job-controller/status "Docker Repository on Quay")](https://quay.io/repository/bakito/batch-job-controller) [![Go Report Card](https://goreportcard.com/badge/github.com/bakito/batch-job-controller)](https://goreportcard.com/report/github.com/bakito/batch-job-controller) [![GitHub Release](https://img.shields.io/github/release/bakito/batch-job-controller.svg?style=flat)](https://github.com/bakito/batch-job-controller/releases) [![Coverage Status](https://coveralls.io/repos/github/bakito/batch-job-controller/badge.svg?branch=master)](https://coveralls.io/github/bakito/batch-job-controller?branch=master)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bakito/batch-job-controller/Github%20Build?logo=github)](https://github.com/bakito/batch-job-controller/actions?query=workflow%3A%22Github+Build%22)
+[![Travis (.com)](https://img.shields.io/travis/com/bakito/batch-job-controller?logo=travis)](https://travis-ci.com/bakito/batch-job-controller)
+[![Docker Repository on Quay](https://quay.io/repository/bakito/batch-job-controller/status "Docker Repository on Quay")](https://quay.io/repository/bakito/batch-job-controller)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bakito/batch-job-controller)](https://goreportcard.com/report/github.com/bakito/batch-job-controller)
+[![Coveralls github](https://img.shields.io/coveralls/github/bakito/batch-job-controller?logo=coveralls)](https://coveralls.io/github/bakito/batch-job-controller?branch=master)
+[![GitHub Release](https://img.shields.io/github/release/bakito/batch-job-controller.svg?style=flat)](https://github.com/bakito/batch-job-controller/releases)
 
 # Batch Job Controller
 
