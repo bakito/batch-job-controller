@@ -1,0 +1,35 @@
+name: Github Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.14
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Setup Tools
+        run: make tools
+
+      - name: Test
+        run: make test-ci
+
+      - name: Verify Helm Chart
+        run: make helm-template
+
+      - name: Build the Docker image
+        run: make build-docker
