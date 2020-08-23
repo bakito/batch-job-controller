@@ -1,0 +1,8 @@
+{
+  "eventType": "Warning",
+  "reason": "TestReason",
+  "messageFmt": "test message: %s",
+  "args": [
+    "a1"
+  ]
+}

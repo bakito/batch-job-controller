@@ -112,6 +112,33 @@ Each filename is prepended with the node name.
 
 The report URL is by default: **${CALLBACK_SERVICE_FILE_URL}**
 
+### Create k8s Events from job pod
+k8s Event can be created from each job pod by calling the event endpoint.
+
+Simple Message:
+```json
+{
+  "eventType": "Warning",
+  "reason": "TestReason",
+  "message": "test message"
+}
+```
+Massage with parameters
+```json
+{
+  "eventType": "Warning",
+  "reason": "TestReason",
+  "messageFmt": "test message: %s",
+  "args": [
+    "a1"
+  ]
+}
+```
+
+#### URL
+
+The event URL is by default: **${CALLBACK_SERVICE_EVENT_URL}**
+
 ### Examples
 
 [test-queries.http](./testdata/test-queries.http)
