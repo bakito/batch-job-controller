@@ -40,7 +40,14 @@ build-docker:
 build-podman:
 	podman build --build-arg upx_brute=" " -t batch-job-controller .
 
-tools: mockgen ginkgo helm goveralls
+release: goreleaser
+	goreleaser --rm-dist
+
+test-release: goreleaser
+	goreleaser --skip-publish --snapshot --rm-dist
+
+
+tools: mockgen ginkgo helm goveralls goreleaser
 
 mockgen:
 ifeq (, $(shell which mockgen))
@@ -54,7 +61,7 @@ goveralls:
 ifeq (, $(shell which goveralls))
  $(shell go get github.com/mattn/goveralls)
 endif
-goveralls:
+goreleaser:
 ifeq (, $(shell which goreleaser))
  $(shell go get github.com/goreleaser/goreleaser)
 endif

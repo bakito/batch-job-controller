@@ -31,5 +31,8 @@ jobs:
       - name: Verify Helm Chart
         run: make helm-template
 
+      - name: Test Release
+        run: make test-release
+
       - name: Build the Docker image
         run: make build-docker

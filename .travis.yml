@@ -10,4 +10,5 @@ before_script:
 script:
   - make test-ci
   - make helm-template
+  - make test-release
   - make build-docker
