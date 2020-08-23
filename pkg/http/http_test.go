@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	reportJSON          = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
-	eventMessageJSON    = `{ "eventType": "Warning", "reason": "TestReason", "message": "test message" }`
-	eventMessageFmtJSON = `{ "eventType": "Warning", "reason": "TestReason", "messageFmt": "test message: %s" ,"args" : ["a1"]}`
+	reportJSON              = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
+	eventMessageJSON        = `{ "eventType": "Warning", "reason": "TestReason", "message": "test message" }`
+	eventMessageInvalidJSON = `{ "eventType": "Info", "reason": "TestReason", "message": "test message" }`
+	eventMessageFmtJSON     = `{ "eventType": "Warning", "reason": "TestReason", "messageFmt": "test message: %s" ,"args" : ["a1"]}`
 )
 
 var _ = Describe("HTTP", func() {
@@ -251,6 +252,22 @@ var _ = Describe("HTTP", func() {
 
 			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
 			Ω(rr.Body.String()).Should(HavePrefix("error decoding event"))
+		})
+
+		It("fails if event is invalid", func() {
+
+			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageInvalidJSON))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
+			Ω(rr.Body.String()).Should(ContainSubstring("'Eventtype' failed on the 'oneof' tag"))
 		})
 
 		It("fails if pod not found", func() {
