@@ -13,9 +13,8 @@ require (
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
 	github.com/prometheus/client_golang v1.7.1
-	github.com/prometheus/common v0.10.0
+	github.com/prometheus/common v0.13.0
 	github.com/robfig/cron/v3 v3.0.1
-	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	k8s.io/api v0.18.8
 	k8s.io/apimachinery v0.18.8
