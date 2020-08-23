@@ -8,3 +8,4 @@ pkg/lifecycle/main/
 tmp
 *.out
 dist
+dependency-licenses.csv

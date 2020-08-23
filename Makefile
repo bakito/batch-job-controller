@@ -46,8 +46,10 @@ release: goreleaser
 test-release: goreleaser
 	goreleaser --skip-publish --snapshot --rm-dist
 
+licenses: go-licenses
+	go-licenses csv "github.com/bakito/batch-job-controller/cmd/generic"  2>/dev/null | sort > dependency-licenses.csv
 
-tools: mockgen ginkgo helm goveralls goreleaser
+tools: mockgen ginkgo helm goveralls goreleaser go-licenses
 
 mockgen:
 ifeq (, $(shell which mockgen))
@@ -60,6 +62,10 @@ endif
 goveralls:
 ifeq (, $(shell which goveralls))
  $(shell go get github.com/mattn/goveralls)
+endif
+go-licenses:
+ifeq (, $(shell which go-licenses))
+ $(shell go get github.com/google/go-licenses)
 endif
 goreleaser:
 ifeq (, $(shell which goreleaser))
