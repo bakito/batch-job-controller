@@ -72,7 +72,7 @@ var _ = Describe("lifecycle", func() {
 					id2 := c.NewExecution()
 					Ω(id).ShouldNot(BeEmpty())
 					_, err := os.Stat(filepath.Join(repDir, id2))
-					Ω(err).ShouldNot(HaveOccurred(
+					Ω(err).ShouldNot(HaveOccurred())
 				})
 	})
 })
