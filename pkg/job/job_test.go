@@ -91,6 +91,7 @@ var _ = Describe("Job", func() {
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServicePort, "12345"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
+                                Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar("FOO", "bar"))
 
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envExecutionId, id))
@@ -100,6 +101,7 @@ var _ = Describe("Job", func() {
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServicePort, "12345"))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
+                                Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar("BAR", "foo"))
 			})
 
