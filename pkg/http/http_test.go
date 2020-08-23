@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"github.com/bakito/batch-job-controller/pkg/config"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"net/http"
@@ -11,7 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bakito/batch-job-controller/pkg/config"
 	mock_cache "github.com/bakito/batch-job-controller/pkg/mocks/cache"
+	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
 	gm "github.com/golang/mock/gomock"
@@ -19,6 +20,7 @@ import (
 	"github.com/gorilla/mux"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -32,6 +34,7 @@ var _ = Describe("HTTP", func() {
 		mockCtrl    *gm.Controller //gomock struct
 		mockLog     *mock_logr.MockLogger
 		mockCache   *mock_cache.MockCache
+		mockReader  *mock_client.MockReader
 		executionID string
 		node        string
 
@@ -43,6 +46,7 @@ var _ = Describe("HTTP", func() {
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
 		mockLog = mock_logr.NewMockLogger(mockCtrl)
+		mockReader = mock_client.NewMockReader(mockCtrl)
 		log = mockLog
 		mockCache = mock_cache.NewMockCache(mockCtrl)
 		executionID = uuid.New().String()
@@ -50,6 +54,7 @@ var _ = Describe("HTTP", func() {
 		s = &PostServer{
 			ReportPath: tempDir(executionID),
 			Cache:      mockCache,
+			Client:     mockReader,
 		}
 
 		rr = httptest.NewRecorder()
@@ -208,6 +213,8 @@ var _ = Describe("HTTP", func() {
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
 			mockLog.EXPECT().Info("received event")
+			mockReader.EXPECT().
+				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageJSON))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -222,6 +229,8 @@ var _ = Describe("HTTP", func() {
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
 			mockLog.EXPECT().Info("received event")
+			mockReader.EXPECT().
+				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageFmtJSON))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -247,7 +256,7 @@ var _ = Describe("HTTP", func() {
 			Ω(rr.Body.String()).Should(HavePrefix("error decoding event"))
 		})
 
-		It("fails if now owner is set", func() {
+		It("fails if pod not found", func() {
 
 			s.Config.Owner = nil
 
@@ -255,14 +264,17 @@ var _ = Describe("HTTP", func() {
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+			mockReader.EXPECT().
+				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{})).
+				Return(fmt.Errorf("error"))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageFmtJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
 
-			Ω(rr.Code).Should(Equal(http.StatusNotAcceptable))
-			Ω(strings.TrimSpace(rr.Body.String())).Should(Equal("resource not available due to missing owner reference"))
+			Ω(rr.Code).Should(Equal(http.StatusNotFound))
+			Ω(strings.TrimSpace(rr.Body.String())).Should(HavePrefix("error finding pod"))
 		})
 	})
 
@@ -285,7 +297,7 @@ var _ = Describe("HTTP", func() {
 			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
 		})
 		It("returns a server", func() {
-			sfs := GenericAPIServer(s.Config, mockCache)
+			sfs := GenericAPIServer(s.Config, mockCache, mockReader)
 			Ω(sfs).ShouldNot(BeNil())
 			Ω(sfs.(*PostServer).Port).Should(Equal(1234))
 			Ω(sfs.(*PostServer).Kind).Should(Equal("internal"))

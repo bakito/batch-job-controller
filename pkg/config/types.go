@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -25,6 +26,13 @@ type Config struct {
 	Namespace      string         `json:"-"`
 	JobPodTemplate string         `json:"-"`
 	Owner          runtime.Object `json:"-"`
+}
+
+// PodName get the name of the pod
+func (cfg *Config) PodName(nodeName string, id string) string {
+	nameParts := strings.Split(nodeName, ".")
+	podName := fmt.Sprintf("%s-job-%s-%s", cfg.Name, nameParts[0], id)
+	return podName
 }
 
 // Metrics config

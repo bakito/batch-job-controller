@@ -15,8 +15,10 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -48,7 +50,7 @@ func StaticFileServer(port int, path string) manager.Runnable {
 }
 
 //GenericAPIServer prepare the generic api server
-func GenericAPIServer(cfg *config.Config, cache lifecycle.Cache) manager.Runnable {
+func GenericAPIServer(cfg *config.Config, cache lifecycle.Cache, client client.Reader) manager.Runnable {
 
 	r := mux.NewRouter()
 	s := &PostServer{
@@ -60,6 +62,7 @@ func GenericAPIServer(cfg *config.Config, cache lifecycle.Cache) manager.Runnabl
 		ReportPath: cfg.ReportDirectory,
 		Cache:      cache,
 		Config:     cfg,
+		Client:     client,
 	}
 
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
@@ -108,6 +111,7 @@ type PostServer struct {
 	ReportPath    string
 	EventRecorder record.EventRecorder
 	Config        *config.Config
+	Client        client.Reader
 }
 
 // Server default server
@@ -239,12 +243,6 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 		"id", executionID,
 		"length", len(buf.Bytes()),
 	)
-	if s.Config.Owner == nil {
-		err := fmt.Errorf("resource not available due to missing owner reference")
-		http.Error(w, err.Error(), http.StatusNotAcceptable)
-		postLog.Error(err, "")
-		return
-	}
 
 	event := new(Event)
 	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&event)
@@ -260,11 +258,22 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 		postLog.Error(err, "event is invalid")
 		return
 	}
+	podName := s.Config.PodName(node, executionID)
+
+	pod := &corev1.Pod{}
+	err = s.Client.Get(r.Context(), client.ObjectKey{Namespace: s.Config.Namespace, Name: podName}, pod)
+
+	if err != nil {
+		err = fmt.Errorf("error finding pod: %v", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		postLog.Error(err, "")
+		return
+	}
 
 	if event.MessageFmt != "" {
-		s.EventRecorder.Eventf(s.Config.Owner, event.Eventtype, event.Reason, event.MessageFmt, event.args()...)
+		s.EventRecorder.Eventf(pod, event.Eventtype, event.Reason, event.MessageFmt, event.args()...)
 	} else {
-		s.EventRecorder.Event(s.Config.Owner, event.Eventtype, event.Reason, event.Message)
+		s.EventRecorder.Event(pod, event.Eventtype, event.Reason, event.Message)
 	}
 	postLog.Info("received event")
 }
