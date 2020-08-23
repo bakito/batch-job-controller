@@ -52,6 +52,8 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 		ReportPath: reportPath,
 	}
 
+	r.Use(s.middleware)
+
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
 
 	rep.HandleFunc(CallbackBaseResultSubPath, s.postReport).
@@ -231,13 +233,12 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 		postLog.Error(err, "")
 		return
 	}
-
-	if event.MessageFmt != "" {
-		s.EventRecorder.Eventf(pod, event.Eventtype, event.Reason, event.MessageFmt, event.args()...)
+	if len(event.Args) > 0 {
+		s.EventRecorder.Eventf(pod, event.Type(), event.Reason, event.Message, event.args()...)
 	} else {
-		s.EventRecorder.Event(pod, event.Eventtype, event.Reason, event.Message)
+		s.EventRecorder.Event(pod, event.Type(), event.Reason, event.Message)
 	}
-	postLog.Info("received event")
+	postLog.Info("event created")
 }
 
 func (s *PostServer) nodeAndID(r *http.Request) (string, string) {

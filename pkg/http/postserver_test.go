@@ -26,9 +26,9 @@ import (
 
 const (
 	reportJSON              = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
-	eventMessageJSON        = `{ "eventType": "Warning", "reason": "TestReason", "message": "test message" }`
-	eventMessageInvalidJSON = `{ "eventType": "Info", "reason": "TestReason", "message": "test message" }`
-	eventMessageFmtJSON     = `{ "eventType": "Warning", "reason": "TestReason", "messageFmt": "test message: %s" ,"args" : ["a1"]}`
+	eventMessageJSON        = `{ "warning": true, "reason": "TestReason", "message": "test message" }`
+	eventMessageInvalidJSON = `{ "warning": true, "reason": "testReason", "message": "test message" }`
+	eventMessageArgsJSON    = `{ "warning": true, "reason": "TestReason", "message": "test message: %s" ,"args" : ["a1"]}`
 )
 
 var _ = Describe("HTTP", func() {
@@ -134,7 +134,7 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("should allow the request", func() {
-			mockCache.EXPECT().Has(executionID).Return(true)
+			mockCache.EXPECT().Has(node, executionID).Return(true)
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -144,7 +144,7 @@ var _ = Describe("HTTP", func() {
 			handler.ValidateRequestCount(GinkgoT(), 1)
 		})
 		It("should allow the request if cache is nil", func() {
-			mockCache.EXPECT().Has(executionID).Return(true)
+			mockCache.EXPECT().Has(node, executionID).Return(true)
 			s.InjectCache(nil)
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -154,14 +154,15 @@ var _ = Describe("HTTP", func() {
 			handler.ValidateRequestCount(GinkgoT(), 1)
 		})
 		It("should deny if execution is not known", func() {
-			mockCache.EXPECT().Has(executionID).Return(false)
+			mockCache.EXPECT().Has(node, executionID).Return(false)
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
 
-			Ω(rr.Code).Should(Equal(http.StatusUnauthorized))
+			Ω(rr.Code).Should(Equal(http.StatusNotAcceptable))
+			Ω(rr.Body.String()).Should(HavePrefix(errorMiddlewareNotAcceptable))
 			handler.ValidateRequestCount(GinkgoT(), 0)
 		})
 	})
@@ -251,7 +252,7 @@ var _ = Describe("HTTP", func() {
 			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
-			mockLog.EXPECT().Info("received event")
+			mockLog.EXPECT().Info("event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
@@ -262,16 +263,16 @@ var _ = Describe("HTTP", func() {
 
 			Ω(rr.Code).Should(Equal(http.StatusOK))
 		})
-		It("succeed if event with messageFmt is sent", func() {
+		It("succeed if event with message with args is sent", func() {
 
 			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
-			mockLog.EXPECT().Info("received event")
+			mockLog.EXPECT().Info("event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageFmtJSON))
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageArgsJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -308,7 +309,7 @@ var _ = Describe("HTTP", func() {
 			router.ServeHTTP(rr, req)
 
 			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
-			Ω(rr.Body.String()).Should(ContainSubstring("'Eventtype' failed on the 'oneof' tag"))
+			Ω(rr.Body.String()).Should(ContainSubstring("'Reason' failed on the 'first_char_must_be_uppercase' tag"))
 		})
 
 		It("fails if pod not found", func() {
@@ -321,7 +322,7 @@ var _ = Describe("HTTP", func() {
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{})).
 				Return(fmt.Errorf("error"))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageFmtJSON))
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageArgsJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)

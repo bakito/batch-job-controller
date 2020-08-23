@@ -24,6 +24,7 @@ var (
 func NewCache(cfg *config.Config, prom *Collector) Cache {
 	return &cache{
 		executions:    make(map[string]*execution),
+		nodes:         make(map[string]bool),
 		prom:          prom,
 		log:           log.WithName("cache"),
 		reportHistory: cfg.ReportHistory + 1, // 1+ for latest
@@ -41,12 +42,14 @@ type Cache interface {
 	PodTerminated(executionID, node string, phase corev1.PodPhase) error
 	ReportReceived(executionID, node string, processingError error, results Results)
 	Config() config.Config
-	Has(executionId string) bool
+	// Has return true if the executionId is known
+	Has(node string, executionId string) bool
 }
 
 type cache struct {
 	prom          *Collector
 	executions    map[string]*execution
+	nodes         map[string]bool
 	log           logr.Logger
 	reportDir     string
 	reportHistory int
@@ -162,6 +165,7 @@ func (c *cache) AddPod(job Job) error {
 	if err != nil {
 		return err
 	}
+	c.nodes[job.Node()] = true
 	e.Store(job.Node(), &pod{
 		node: job.Node(),
 	})
@@ -220,8 +224,10 @@ func (c *cache) ReportReceived(executionID, node string, processingError error, 
 	p.status = "ReportReceived"
 }
 
-// Has return true if the executionId is known
-func (c *cache) Has(executionId string) bool {
+func (c *cache) Has(node string, executionId string) bool {
+	if _, ok := c.nodes[node]; !ok {
+		return false
+	}
 	_, ok := c.executions[executionId]
 	return ok
 }

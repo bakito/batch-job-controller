@@ -78,17 +78,17 @@ func (mr *MockCacheMockRecorder) Config() *gomock.Call {
 }
 
 // Has mocks base method
-func (m *MockCache) Has(arg0 string) bool {
+func (m *MockCache) Has(arg0, arg1 string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Has", arg0)
+	ret := m.ctrl.Call(m, "Has", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // Has indicates an expected call of Has
-func (mr *MockCacheMockRecorder) Has(arg0 interface{}) *gomock.Call {
+func (mr *MockCacheMockRecorder) Has(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockCache)(nil).Has), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockCache)(nil).Has), arg0, arg1)
 }
 
 // NewExecution mocks base method

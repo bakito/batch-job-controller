@@ -4,6 +4,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/http"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var _ = Describe("types", func() {
@@ -12,25 +13,15 @@ var _ = Describe("types", func() {
 	)
 	BeforeEach(func() {
 		event = &http.Event{
-			Eventtype: "Normal",
-			Reason:    "AnyReason",
-			Message:   "message",
+			Waring:  false,
+			Reason:  "AnyReason",
+			Message: "message",
 		}
 	})
 	Context("Event.Validate", func() {
 		It("should be valid", func() {
 			err := event.Validate()
 			Ω(err).ShouldNot(HaveOccurred())
-		})
-		It("should fail with an invalid eventtype", func() {
-			event.Eventtype = "foo"
-			err := event.Validate()
-			Ω(err).Should(HaveOccurred())
-		})
-		It("should fail with an empty eventtype", func() {
-			event.Eventtype = ""
-			err := event.Validate()
-			Ω(err).Should(HaveOccurred())
 		})
 		It("should fail with an empty reason", func() {
 			event.Reason = ""
@@ -42,24 +33,20 @@ var _ = Describe("types", func() {
 			err := event.Validate()
 			Ω(err).Should(HaveOccurred())
 		})
-		It("should fail with with both messages empty", func() {
+		It("should fail with with message empty", func() {
 			event.Message = ""
-			event.MessageFmt = ""
 			err := event.Validate()
 			Ω(err).Should(HaveOccurred())
 		})
-		It("should be valid with messages", func() {
-			event.Message = "foo"
-			event.MessageFmt = ""
-			err := event.Validate()
-			Ω(err).ShouldNot(HaveOccurred())
+	})
+	Context("Event.Validate", func() {
+		It("is Normal type", func() {
+			event.Waring = false
+			Ω(event.Type()).Should(Equal(corev1.EventTypeNormal))
 		})
-		It("should be valid with messagesFmt", func() {
-			event.Message = ""
-			event.MessageFmt = "foo %s"
-			event.Args = []string{"bar"}
-			err := event.Validate()
-			Ω(err).ShouldNot(HaveOccurred())
+		It("is Warning type", func() {
+			event.Waring = true
+			Ω(event.Type()).Should(Equal(corev1.EventTypeWarning))
 		})
 	})
 })
