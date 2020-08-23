@@ -24,6 +24,7 @@ var (
 func NewCache(cfg *config.Config, prom *Collector) Cache {
 	return &cache{
 		executions:    make(map[string]*execution),
+		nodes:         make(map[string]bool),
 		prom:          prom,
 		log:           log.WithName("cache"),
 		reportHistory: cfg.ReportHistory + 1, // 1+ for latest
@@ -41,11 +42,14 @@ type Cache interface {
 	PodTerminated(executionID, node string, phase corev1.PodPhase) error
 	ReportReceived(executionID, node string, processingError error, results Results)
 	Config() config.Config
+	// Has return true if the executionId is known
+	Has(node string, executionId string) bool
 }
 
 type cache struct {
 	prom          *Collector
 	executions    map[string]*execution
+	nodes         map[string]bool
 	log           logr.Logger
 	reportDir     string
 	reportHistory int
@@ -122,6 +126,9 @@ func (c *cache) AllAdded(executionID string) error {
 	if len(files) > c.reportHistory {
 		pruneCnt := len(files) - c.reportHistory
 		for i := 0; i < pruneCnt; i++ {
+			// delete the execution
+			delete(c.executions, files[i].Name())
+
 			dir := c.reportDir + "/" + files[i].Name()
 			c.log.WithValues("dir", dir).Info("deleting report directory")
 			err = os.RemoveAll(dir)
@@ -161,6 +168,7 @@ func (c *cache) AddPod(job Job) error {
 	if err != nil {
 		return err
 	}
+	c.nodes[job.Node()] = true
 	e.Store(job.Node(), &pod{
 		node: job.Node(),
 	})
@@ -217,6 +225,14 @@ func (c *cache) ReportReceived(executionID, node string, processingError error, 
 	t := time.Now()
 	p.reportReceived = &t
 	p.status = "ReportReceived"
+}
+
+func (c *cache) Has(node string, executionId string) bool {
+	if _, ok := c.nodes[node]; !ok {
+		return false
+	}
+	_, ok := c.executions[executionId]
+	return ok
 }
 
 func (c *cache) forID(id string) (*execution, error) {

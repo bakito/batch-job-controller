@@ -2,7 +2,17 @@
 POST http://localhost:8090/report/node/20200818154200/result
 content-type: application/json
 
-{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }
+{
+  "test": [
+    {
+      "value": 1.0,
+      "labels": {
+        "label_a": "AAA",
+        "label_b": "BBB"
+      }
+    }
+  ]
+}
 
 
 
@@ -22,3 +32,14 @@ POST http://localhost:8090/report/node/20200818154200/file?name=result.http
 POST http://localhost:8090/report/node/20200818154200/file
 
 < ./result.http
+
+### Send POST eventcrc-fd5nx-master-0-example-job-controller-job-crc-fd5nx-master-0-20200823184100
+POST http://localhost:8090/report/crcd-fd5nx-master-0/20200823184100/event
+content-type: application/json
+
+{
+  "warning": false,
+  "reason": "TestReason",
+  "message": "test message"
+}
+

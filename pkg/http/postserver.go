@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -40,15 +39,6 @@ var (
 	log = ctrl.Log.WithName("http-server")
 )
 
-//StaticFileServer prepare the static file server
-func StaticFileServer(port int, path string) manager.Runnable {
-	return &Server{
-		Port:    port,
-		Kind:    "public",
-		Handler: http.FileServer(http.Dir(path)),
-	}
-}
-
 //GenericAPIServer prepare the generic api server
 func GenericAPIServer(port int, reportPath string) manager.Runnable {
 
@@ -61,6 +51,8 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 		},
 		ReportPath: reportPath,
 	}
+
+	r.Use(s.middleware)
 
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
 
@@ -109,43 +101,6 @@ type PostServer struct {
 	EventRecorder record.EventRecorder
 	Config        *config.Config
 	Client        client.Reader
-}
-
-// Server default server
-type Server struct {
-	Port    int
-	Kind    string
-	Handler http.Handler
-}
-
-// Start the server
-func (s *Server) Start(stop <-chan struct{}) error {
-	log.Info("starting http server", "port", s.Port, "type", s.Kind)
-
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", s.Port),
-		Handler: s.Handler,
-	}
-
-	idleConnsClosed := make(chan struct{})
-	go func() {
-		<-stop
-		log.Info("shutting down server")
-
-		if err := srv.Shutdown(context.Background()); err != nil {
-			// Error from closing listeners, or context timeout
-			log.Error(err, "error shutting down the HTTP server")
-		}
-		close(idleConnsClosed)
-	}()
-
-	err := srv.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		return err
-	}
-
-	<-idleConnsClosed
-	return nil
 }
 
 func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
@@ -278,13 +233,12 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 		postLog.Error(err, "")
 		return
 	}
-
-	if event.MessageFmt != "" {
-		s.EventRecorder.Eventf(pod, event.Eventtype, event.Reason, event.MessageFmt, event.args()...)
+	if len(event.Args) > 0 {
+		s.EventRecorder.Eventf(pod, event.Type(), event.Reason, event.Message, event.args()...)
 	} else {
-		s.EventRecorder.Event(pod, event.Eventtype, event.Reason, event.Message)
+		s.EventRecorder.Event(pod, event.Type(), event.Reason, event.Message)
 	}
-	postLog.Info("received event")
+	postLog.Info("event created")
 }
 
 func (s *PostServer) nodeAndID(r *http.Request) (string, string) {

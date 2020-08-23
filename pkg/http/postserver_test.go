@@ -3,7 +3,6 @@ package http
 import (
 	"fmt"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,14 +19,16 @@ import (
 	"github.com/gorilla/mux"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/testing"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	reportJSON              = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
-	eventMessageJSON        = `{ "eventType": "Warning", "reason": "TestReason", "message": "test message" }`
-	eventMessageInvalidJSON = `{ "eventType": "Info", "reason": "TestReason", "message": "test message" }`
-	eventMessageFmtJSON     = `{ "eventType": "Warning", "reason": "TestReason", "messageFmt": "test message: %s" ,"args" : ["a1"]}`
+	eventMessageJSON        = `{ "warning": true, "reason": "TestReason", "message": "test message" }`
+	eventMessageInvalidJSON = `{ "warning": true, "reason": "testReason", "message": "test message" }`
+	eventMessageArgsJSON    = `{ "warning": true, "reason": "TestReason", "message": "test message: %s" ,"args" : ["a1"]}`
 )
 
 var _ = Describe("HTTP", func() {
@@ -44,6 +45,7 @@ var _ = Describe("HTTP", func() {
 
 		rr     *httptest.ResponseRecorder
 		router *mux.Router
+		path   string
 	)
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
@@ -70,17 +72,13 @@ var _ = Describe("HTTP", func() {
 
 		// Need to create a router that we can pass the request through so that the vars will be added to the context
 		router = mux.NewRouter()
-
+		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 	})
 	AfterEach(func() {
 		os.RemoveAll(s.ReportPath)
 	})
 	Context("postReport", func() {
-		var (
-			path string
-		)
 		BeforeEach(func() {
-			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, s.postReport)
 
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
@@ -122,6 +120,50 @@ var _ = Describe("HTTP", func() {
 			files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(0))
+		})
+	})
+
+	Context("middleware", func() {
+		var (
+			handler *testing.FakeHandler
+		)
+		BeforeEach(func() {
+			handler = &testing.FakeHandler{}
+			h := s.middleware(handler)
+			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, h.ServeHTTP)
+		})
+
+		It("should allow the request", func() {
+			mockCache.EXPECT().Has(node, executionID).Return(true)
+
+			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			handler.ValidateRequestCount(GinkgoT(), 1)
+		})
+		It("should allow the request if cache is nil", func() {
+			mockCache.EXPECT().Has(node, executionID).Return(true)
+			s.InjectCache(nil)
+			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			handler.ValidateRequestCount(GinkgoT(), 1)
+		})
+		It("should deny if execution is not known", func() {
+			mockCache.EXPECT().Has(node, executionID).Return(false)
+
+			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			Ω(rr.Code).Should(Equal(http.StatusNotAcceptable))
+			Ω(rr.Body.String()).Should(HavePrefix(errorMiddlewareNotAcceptable))
+			handler.ValidateRequestCount(GinkgoT(), 0)
 		})
 	})
 
@@ -210,7 +252,7 @@ var _ = Describe("HTTP", func() {
 			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
-			mockLog.EXPECT().Info("received event")
+			mockLog.EXPECT().Info("event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
@@ -221,16 +263,16 @@ var _ = Describe("HTTP", func() {
 
 			Ω(rr.Code).Should(Equal(http.StatusOK))
 		})
-		It("succeed if event with messageFmt is sent", func() {
+		It("succeed if event with message with args is sent", func() {
 
 			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
-			mockLog.EXPECT().Info("received event")
+			mockLog.EXPECT().Info("event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageFmtJSON))
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageArgsJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -267,7 +309,7 @@ var _ = Describe("HTTP", func() {
 			router.ServeHTTP(rr, req)
 
 			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
-			Ω(rr.Body.String()).Should(ContainSubstring("'Eventtype' failed on the 'oneof' tag"))
+			Ω(rr.Body.String()).Should(ContainSubstring("'Reason' failed on the 'first_char_must_be_uppercase' tag"))
 		})
 
 		It("fails if pod not found", func() {
@@ -280,7 +322,7 @@ var _ = Describe("HTTP", func() {
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{})).
 				Return(fmt.Errorf("error"))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageFmtJSON))
+			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageArgsJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)

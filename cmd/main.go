@@ -64,7 +64,7 @@ func Setup() *Main {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      ":9153",
-		LeaderElection:          true,
+		LeaderElection:          strings.ToLower(os.Getenv(EnvDevMode)) != "true",
 		LeaderElectionID:        "9a62a63a.bakito.ch",
 		LeaderElectionNamespace: namespace,
 		Namespace:               namespace,
