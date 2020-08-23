@@ -59,7 +59,7 @@ var _ = Describe("lifecycle", func() {
 			Ω(id).ShouldNot(BeEmpty())
 			_, err := os.Stat(filepath.Join(repDir, id))
 			Ω(err).ShouldNot(HaveOccurred())
-			_, err = os.Stat(filepath.Join(repDir, "latest"))
+			_, err = os.Lstat(filepath.Join(repDir, "latest"))
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 		It("should create an id and directory and move the link", func() {
