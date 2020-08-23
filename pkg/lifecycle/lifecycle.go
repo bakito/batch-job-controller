@@ -41,6 +41,7 @@ type Cache interface {
 	PodTerminated(executionID, node string, phase corev1.PodPhase) error
 	ReportReceived(executionID, node string, processingError error, results Results)
 	Config() config.Config
+	Has(executionId string) bool
 }
 
 type cache struct {
@@ -217,6 +218,12 @@ func (c *cache) ReportReceived(executionID, node string, processingError error, 
 	t := time.Now()
 	p.reportReceived = &t
 	p.status = "ReportReceived"
+}
+
+// Has return true if the executionId is known
+func (c *cache) Has(executionId string) bool {
+	_, ok := c.executions[executionId]
+	return ok
 }
 
 func (c *cache) forID(id string) (*execution, error) {

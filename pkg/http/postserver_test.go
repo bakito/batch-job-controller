@@ -3,7 +3,6 @@ package http
 import (
 	"fmt"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,6 +19,8 @@ import (
 	"github.com/gorilla/mux"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/testing"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,6 +45,7 @@ var _ = Describe("HTTP", func() {
 
 		rr     *httptest.ResponseRecorder
 		router *mux.Router
+		path   string
 	)
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
@@ -70,17 +72,13 @@ var _ = Describe("HTTP", func() {
 
 		// Need to create a router that we can pass the request through so that the vars will be added to the context
 		router = mux.NewRouter()
-
+		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 	})
 	AfterEach(func() {
 		os.RemoveAll(s.ReportPath)
 	})
 	Context("postReport", func() {
-		var (
-			path string
-		)
 		BeforeEach(func() {
-			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, s.postReport)
 
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
@@ -122,6 +120,49 @@ var _ = Describe("HTTP", func() {
 			files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(0))
+		})
+	})
+
+	Context("middleware", func() {
+		var (
+			handler *testing.FakeHandler
+		)
+		BeforeEach(func() {
+			handler = &testing.FakeHandler{}
+			h := s.middleware(handler)
+			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, h.ServeHTTP)
+		})
+
+		It("should allow the request", func() {
+			mockCache.EXPECT().Has(executionID).Return(true)
+
+			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			handler.ValidateRequestCount(GinkgoT(), 1)
+		})
+		It("should allow the request if cache is nil", func() {
+			mockCache.EXPECT().Has(executionID).Return(true)
+			s.InjectCache(nil)
+			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			handler.ValidateRequestCount(GinkgoT(), 1)
+		})
+		It("should deny if execution is not known", func() {
+			mockCache.EXPECT().Has(executionID).Return(false)
+
+			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			router.ServeHTTP(rr, req)
+
+			Ω(rr.Code).Should(Equal(http.StatusUnauthorized))
+			handler.ValidateRequestCount(GinkgoT(), 0)
 		})
 	})
 
