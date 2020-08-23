@@ -54,6 +54,10 @@ goveralls:
 ifeq (, $(shell which goveralls))
  $(shell go get github.com/mattn/goveralls)
 endif
+goveralls:
+ifeq (, $(shell which goreleaser))
+ $(shell go get github.com/goreleaser/goreleaser)
+endif
 helm:
 ifeq (, $(shell which helm))
  $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)

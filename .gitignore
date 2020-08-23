@@ -7,3 +7,4 @@ pkg/lifecycle/main/
 *.exe
 tmp
 *.out
+dist
