@@ -52,7 +52,6 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 		ReportPath: reportPath,
 	}
 
-
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
 	rep.Use(s.middleware)
 

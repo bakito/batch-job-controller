@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -101,6 +102,9 @@ func (c *cache) NewExecution() string {
 			c.log.WithValues("dir", symlink).Error(err, "error creating latest link")
 		}
 	}
+	f, _ := strconv.ParseFloat(id, 64)
+
+	c.prom.newExecution(f)
 	return id
 }
 

@@ -14,22 +14,25 @@ const (
 )
 
 var (
-	procErrorMetric = "processing"
-	durationMetric  = "duration"
-	podsMetric      = "pods"
+	currentExecutionMetric = "current_execution_id"
+	procErrorMetric        = "processing"
+	durationMetric         = "duration"
+	podsMetric             = "pods"
 )
 
 // Collector strunct
 type Collector struct {
-	gauges         map[string]customMetric
-	procErrorGauge *prom.GaugeVec
-	durationGauge  *prom.GaugeVec
-	podsGauge      *prom.GaugeVec
-	namespace      string
+	gauges           map[string]customMetric
+	executionIDGauge *prom.GaugeVec
+	procErrorGauge   *prom.GaugeVec
+	durationGauge    *prom.GaugeVec
+	podsGauge        *prom.GaugeVec
+	namespace        string
 }
 
 // Describe returns all the descriptions of the collector
 func (c *Collector) Describe(ch chan<- *prom.Desc) {
+	c.executionIDGauge.Describe(ch)
 	c.procErrorGauge.Describe(ch)
 	c.durationGauge.Describe(ch)
 	c.podsGauge.Describe(ch)
@@ -40,12 +43,17 @@ func (c *Collector) Describe(ch chan<- *prom.Desc) {
 
 // Collect returns the current state of the metrics
 func (c *Collector) Collect(ch chan<- prom.Metric) {
+	c.executionIDGauge.Collect(ch)
 	c.procErrorGauge.Collect(ch)
 	c.durationGauge.Collect(ch)
 	c.podsGauge.Collect(ch)
 	for k := range c.gauges {
 		c.gauges[k].gauge.Collect(ch)
 	}
+}
+
+func (c *Collector) newExecution(executionId float64) {
+	c.executionIDGauge.WithLabelValues().Set(executionId)
 }
 
 func (c *Collector) metricFor(executionID string, node string, name string, result Result) {
@@ -89,6 +97,11 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 		gauges:    make(map[string]customMetric),
 		namespace: cfg.Namespace,
 	}
+	c.executionIDGauge = prom.NewGaugeVec(prom.GaugeOpts{
+		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, currentExecutionMetric),
+		Help: "The current execution ID",
+	}, []string{})
+
 	c.procErrorGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
 		Help: "Node with processing error, 1: has error / 0: no error",
