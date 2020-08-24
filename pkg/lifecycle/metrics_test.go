@@ -124,8 +124,22 @@ var _ = Describe("metrics", func() {
 				strconv.Itoa(metricValue),
 			)
 		})
+
+		It("prune", func() {
+			pc.metricFor(executionId, node, gaugeName, res)
+			pc.prune(executionId)
+			checkMissingMetric(
+				pc,
+				cfg.Metrics.NameFor(gaugeName),
+			)
+		})
 	})
 })
+
+func checkMissingMetric(collector *Collector, name string) {
+	err := testutil.CollectAndCompare(collector, strings.NewReader(""), name)
+	Ω(err).ShouldNot(HaveOccurred())
+}
 
 func checkMetric(collector *Collector, help string, name string, labels map[string]string, value string) {
 
