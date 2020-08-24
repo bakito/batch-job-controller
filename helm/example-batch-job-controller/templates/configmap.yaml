@@ -20,7 +20,7 @@ data:
     podPoolSize: {{ .Values.deployment.podPoolSize }}
     runOnStartup: {{ .Values.deployment.runOnStartup }}
     callbackServiceName: {{ template "batch-job-controller.name" . }}
-    reportDirectory: "/var/www"
+    reportDirectory: "{{ .Values.deployment.reportDirectory }}"
     callbackServicePort: 8090
     latestMetricsLabel: false
     metrics:
