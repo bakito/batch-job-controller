@@ -150,7 +150,7 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 	}, []string{})
 
 	c.versionGauge = prom.NewGaugeVec(prom.GaugeOpts{
-		Name: "com_github_bakito_batch_job_controller",
+		Name: fmt.Sprintf("com_github_bakito_batch_job_controller_%s", cfg.Metrics.Prefix),
 		Help: "information about github.com/bakito/batch-job-controller",
 	}, []string{config.LabelVersion, config.LabelName, config.LabelPoolSize, config.LabelReportHistory})
 
@@ -169,7 +169,6 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 				Help: metric.Help,
 			}, labels...),
 		}
-
 	}
 
 	metrics.Registry.Unregister(c)
