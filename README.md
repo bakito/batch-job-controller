@@ -41,8 +41,9 @@ reportDirectory: "/var/www"      # directory to store and serve the reports
 callbackServiceName: ""          # name of the controller service
 callbackServicePort: 8090        # port of the controller callback api service
 custom: {}                       # additional properties that can be used in a custom implementation
+latestMetricsLabel: false        # if 'true' each result metric is also created with executionID='latest'
 metrics:
-  prefix: "foo_...."         # prefix for the metrics exposed by the controller
+  prefix: "foo_...."             # prefix for the metrics exposed by the controller
   gauges:                        # metric gauges that will be exposed by the jobs. The key is uses as suffix for the metrics. 
     test:                        # suffix of the metric
       help: "help ..."           # help text for the metric

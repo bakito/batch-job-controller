@@ -9,19 +9,21 @@ import (
 
 // Config struct
 type Config struct {
-	Name                  string                 `json:"name"`
-	JobServiceAccount     string                 `json:"jobServiceAccount"`
-	JobNodeSelector       map[string]string      `json:"jobNodeSelector"`
-	RunOnUnscheduledNodes bool                   `json:"runOnUnscheduledNodes"`
-	CronExpression        string                 `json:"cronExpression"`
-	ReportDirectory       string                 `json:"reportDirectory"`
-	ReportHistory         int                    `json:"reportHistory"`
-	PodPoolSize           int                    `json:"podPoolSize"`
-	RunOnStartup          bool                   `json:"runOnStartup"`
-	Metrics               Metrics                `json:"metrics"`
-	Custom                map[string]interface{} `json:"custom"`
-	CallbackServiceName   string                 `json:"callbackServiceName"`
-	CallbackServicePort   int                    `json:"callbackServicePort"`
+	Name                  string            `json:"name"`
+	JobServiceAccount     string            `json:"jobServiceAccount"`
+	JobNodeSelector       map[string]string `json:"jobNodeSelector"`
+	RunOnUnscheduledNodes bool              `json:"runOnUnscheduledNodes"`
+	CronExpression        string            `json:"cronExpression"`
+	ReportDirectory       string            `json:"reportDirectory"`
+	ReportHistory         int               `json:"reportHistory"`
+	PodPoolSize           int               `json:"podPoolSize"`
+	RunOnStartup          bool              `json:"runOnStartup"`
+	Metrics               Metrics           `json:"metrics"`
+	// LatestMetricsLabel if true, each result metric is also created with executionID=latest
+	LatestMetricsLabel  bool                   `json:"latestMetricsLabel"`
+	Custom              map[string]interface{} `json:"custom"`
+	CallbackServiceName string                 `json:"callbackServiceName"`
+	CallbackServicePort int                    `json:"callbackServicePort"`
 
 	Namespace      string         `json:"-"`
 	JobPodTemplate string         `json:"-"`

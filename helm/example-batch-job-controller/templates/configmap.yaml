@@ -22,6 +22,7 @@ data:
     callbackServiceName: {{ template "batch-job-controller.name" . }}
     reportDirectory: "/var/www"
     callbackServicePort: 8090
+    latestMetricsLabel: false
     metrics:
       prefix: {{ include "batch-job-controller.name" . | replace "-" "_" }}
       gauges:

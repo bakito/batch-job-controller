@@ -10,6 +10,7 @@ import (
 
 const (
 	labelNode        = "node"
+	labelValueLatest = "latest"
 	labelExecutionId = "executionID"
 )
 
@@ -20,7 +21,7 @@ var (
 	podsMetric             = "pods"
 )
 
-// Collector strunct
+// Collector struct
 type Collector struct {
 	gauges           map[string]customMetric
 	executionIDGauge *prom.GaugeVec
@@ -61,12 +62,15 @@ func (c *Collector) metricFor(executionID string, node string, name string, resu
 		if result.Labels == nil {
 			result.Labels = make(map[string]string)
 		}
-		result.Labels[labelNode] = node
-		result.Labels[labelExecutionId] = executionID
 		var labels []string
 		for _, l := range c.gauges[name].labels {
 			labels = append(labels, result.Labels[l])
 		}
+		result.Labels[labelNode] = node
+		result.Labels[labelExecutionId] = executionID
+
+		c.gauges[name].gauge.WithLabelValues(labels...).Set(result.Value)
+		result.Labels[labelExecutionId] = labelValueLatest
 		c.gauges[name].gauge.WithLabelValues(labels...).Set(result.Value)
 	}
 }
@@ -77,10 +81,12 @@ func (c *Collector) processingError(name string, executionId string, err bool) {
 		value = 1
 	}
 	c.procErrorGauge.WithLabelValues(name, executionId).Set(value)
+	c.procErrorGauge.WithLabelValues(name, labelValueLatest).Set(value)
 }
 
 func (c *Collector) duration(name string, executionId string, d float64) {
 	c.durationGauge.WithLabelValues(name, executionId).Set(d)
+	c.durationGauge.WithLabelValues(name, labelValueLatest).Set(d)
 }
 
 func (c *Collector) pods(cnt float64) {
