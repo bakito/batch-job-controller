@@ -9,3 +9,4 @@ tmp
 *.out
 dist
 dependency-licenses.csv
+/helm/example-batch-job-controller/*-values.yaml

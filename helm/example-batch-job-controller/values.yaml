@@ -6,7 +6,7 @@ name: example-job-controller
 
 deployment:
   replicas: 1
-  image: quay.io/bakito/batch-job-controller:master
+  image: quay.io/bakito/batch-job-controller:v1.0.0
   cronexpression: "* * * * *"
   reportHistory: 10 # number of reports to be used
   podPoolSize: 10 # number of pods allowed to run parallel
