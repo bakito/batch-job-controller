@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/google/uuid"
@@ -59,16 +60,20 @@ var _ = Describe("lifecycle", func() {
 			Ω(id).ShouldNot(BeEmpty())
 			_, err := os.Stat(filepath.Join(repDir, id))
 			Ω(err).ShouldNot(HaveOccurred())
-			_, err = os.Lstat(filepath.Join(repDir, "latest"))
-			Ω(err).ShouldNot(HaveOccurred())
+			if runtime.GOOS != "windows" {
+				_, err = os.Lstat(filepath.Join(repDir, "latest"))
+				Ω(err).ShouldNot(HaveOccurred())
+			}
 		})
 		It("should create an id and directory and move the link", func() {
 			id1 := c.NewExecution()
 			Ω(id1).ShouldNot(BeEmpty())
 			_, err := os.Stat(filepath.Join(repDir, id1))
 			Ω(err).ShouldNot(HaveOccurred())
-			_, err = os.Lstat(filepath.Join(repDir, "latest"))
-			Ω(err).ShouldNot(HaveOccurred())
+			if runtime.GOOS != "windows" {
+				_, err = os.Lstat(filepath.Join(repDir, "latest"))
+				Ω(err).ShouldNot(HaveOccurred())
+			}
 			id2 := c.NewExecution()
 			Ω(id2).ShouldNot(BeEmpty())
 			_, err = os.Lstat(filepath.Join(repDir, id2))
