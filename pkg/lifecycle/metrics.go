@@ -2,12 +2,9 @@ package lifecycle
 
 import (
 	"fmt"
-	"github.com/bakito/batch-job-controller/version"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
-	"strconv"
-
 	"github.com/bakito/batch-job-controller/pkg/config"
 	prom "github.com/prometheus/client_golang/prometheus"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
@@ -30,7 +27,6 @@ type Collector struct {
 	procErrorGauge   *executionIDMetric
 	durationGauge    *executionIDMetric
 	podsGauge        *prom.GaugeVec
-	versionGauge     *prom.GaugeVec
 	namespace        string
 	latestMetric     bool
 }
@@ -39,7 +35,6 @@ type Collector struct {
 func (c *Collector) Describe(ch chan<- *prom.Desc) {
 	c.executionIDGauge.Describe(ch)
 	c.podsGauge.Describe(ch)
-	c.versionGauge.Describe(ch)
 
 	c.procErrorGauge.describe(ch)
 	c.durationGauge.describe(ch)
@@ -52,7 +47,6 @@ func (c *Collector) Describe(ch chan<- *prom.Desc) {
 func (c *Collector) Collect(ch chan<- prom.Metric) {
 	c.executionIDGauge.Collect(ch)
 	c.podsGauge.Collect(ch)
-	c.versionGauge.Collect(ch)
 
 	c.procErrorGauge.collect(ch)
 	c.durationGauge.collect(ch)
@@ -76,41 +70,42 @@ func (c *Collector) prune(executionId string) {
 
 func (c *Collector) metricFor(executionID string, node string, name string, result Result) {
 	if _, ok := c.gauges[name]; ok {
+		g := c.gauges[name]
 		if result.Labels == nil {
 			result.Labels = make(map[string]string)
 		}
 		result.Labels[labelNode] = node
 		result.Labels[labelExecutionId] = executionID
 
-		var labels []string
-		for _, l := range c.gauges[name].labels {
-			labels = append(labels, result.Labels[l])
+		var values []string
+		for _, l := range g.labels {
+			values = append(values, result.Labels[l])
 		}
 
-		c.gauges[name].gauge.withLabelValues(labels...).Set(result.Value)
+		g.gauge.withLabelValues(values...).Set(result.Value)
 		if c.latestMetric {
 			// replace the executionId with 'latest'
-			labels[len(labels)-1] = labelValueLatest
-			c.gauges[name].gauge.withLabelValues(labels...).Set(result.Value)
+			values[len(values)-1] = labelValueLatest
+			g.gauge.withLabelValues(values...).Set(result.Value)
 		}
 	}
 }
 
-func (c *Collector) processingError(name string, executionId string, err bool) {
+func (c *Collector) processingError(node string, executionId string, err bool) {
 	value := 0.
 	if err {
 		value = 1
 	}
-	c.procErrorGauge.withLabelValues(name, executionId).Set(value)
+	c.procErrorGauge.withLabelValues(node, executionId).Set(value)
 	if c.latestMetric {
-		c.procErrorGauge.withLabelValues(name, labelValueLatest).Set(value)
+		c.procErrorGauge.withLabelValues(node, labelValueLatest).Set(value)
 	}
 }
 
-func (c *Collector) duration(name string, executionId string, d float64) {
-	c.durationGauge.withLabelValues(name, executionId).Set(d)
+func (c *Collector) duration(node string, executionId string, d float64) {
+	c.durationGauge.withLabelValues(node, executionId).Set(d)
 	if c.latestMetric {
-		c.durationGauge.withLabelValues(name, labelValueLatest).Set(d)
+		c.durationGauge.withLabelValues(node, labelValueLatest).Set(d)
 	}
 }
 
@@ -149,11 +144,6 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 		Help: "the number of pods started for the last execution",
 	}, []string{})
 
-	c.versionGauge = prom.NewGaugeVec(prom.GaugeOpts{
-		Name: fmt.Sprintf("com_github_bakito_batch_job_controller_%s", cfg.Metrics.Prefix),
-		Help: "information about github.com/bakito/batch-job-controller",
-	}, []string{config.LabelVersion, config.LabelName, config.LabelPoolSize, config.LabelReportHistory})
-
 	for name, metric := range cfg.Metrics.Gauges {
 		if name == procErrorMetric || name == durationMetric || name == podsMetric {
 			return nil, fmt.Errorf("the metric name %q is not allowed, it's one of the reserved names: %v",
@@ -173,7 +163,6 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 
 	metrics.Registry.Unregister(c)
 	metrics.Registry.MustRegister(c)
-	c.versionGauge.WithLabelValues(version.Version, cfg.Name, strconv.Itoa(cfg.PodPoolSize), strconv.Itoa(cfg.ReportHistory)).Set(1)
 	return c, nil
 }
 

@@ -2,9 +2,10 @@ package lifecycle
 
 import (
 	"fmt"
-	"github.com/bakito/batch-job-controller/version"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"math/rand"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -34,58 +35,124 @@ var _ = Describe("metrics", func() {
 	})
 	Context("NewPromCollector", func() {
 		var (
-			pc        *Collector
-			res       Result
-			node      string
-			id        string
-			value     string
-			gaugeName string
-			l1        string
-			l2        string
+			pc               *Collector
+			res              Result
+			node             string
+			executionId      string
+			executionIdValue float64
+			gaugeName        string
+			gaugeHelp        string
+			l1               string
+			l2               string
+			v1               string
+			v2               string
+			metricValue      int
 		)
 		BeforeEach(func() {
 			gaugeName = puuid()
+			gaugeHelp = uuid.New().String()
 
 			l1 = puuid()
 			l2 = puuid()
+			v1 = uuid.New().String()
+			v2 = uuid.New().String()
+			metricValue = rand.Int()
 
 			node = uuid.New().String()
-			value = uuid.New().String()
-			id = uuid.New().String()
+			i := rand.Int()
+			executionIdValue = float64(i)
+			executionId = strconv.Itoa(i)
 
 			cfg.Metrics.Gauges = map[string]config.Metric{
 				gaugeName: {
-					Help:   gaugeName,
+					Help:   gaugeHelp,
 					Labels: []string{l1, l2},
 				},
 			}
 			pc, _ = NewPromCollector(cfg)
 
 			res = Result{
+				Value: float64(metricValue),
 				Labels: map[string]string{
-					metricPrefix: value,
+					l1: v1,
+					l2: v2,
 				},
 			}
 		})
 
-		AfterEach(func() {
+		It("check 'The current execution ID'", func() {
+
+			pc.newExecution(executionIdValue)
+			checkMetric(
+				pc,
+				"The current execution ID",
+				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, currentExecutionMetric),
+				map[string]string{},
+				executionId,
+			)
 		})
-		It("should be valid", func() {
 
-			metadata := fmt.Sprintf(`
-		# HELP com_github_bakito_batch_job_controller_%s information about github.com/bakito/batch-job-controller
-		# TYPE com_github_bakito_batch_job_controller_%s gauge
-	`, metricPrefix, metricPrefix)
-			expected := fmt.Sprintf(`
-		com_github_bakito_batch_job_controller_%s{name="%s",poolSize="%d",reportHistory="%d",version="%s"} 1
-	`, metricPrefix, cfg.Name, cfg.PodPoolSize, cfg.ReportHistory, version.Version)
+		It("check success 'Node with processing error, 1: has error / 0: no error'", func() {
+			pc.processingError(node, executionId, false)
+			checkMetric(
+				pc,
+				"Node with processing error, 1: has error / 0: no error",
+				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
+				map[string]string{"executionID": executionId, "node": node},
+				"0",
+			)
+		})
 
-			pc.metricFor(id, node, metricPrefix, res)
-			err := testutil.CollectAndCompare(pc, strings.NewReader(metadata+expected), fmt.Sprintf("com_github_bakito_batch_job_controller_%s", cfg.Metrics.Prefix))
-			Ω(err).ShouldNot(HaveOccurred())
+		It("check error 'Node with processing error, 1: has error / 0: no error'", func() {
+			pc.processingError(node, executionId, true)
+			checkMetric(
+				pc,
+				"Node with processing error, 1: has error / 0: no error",
+				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
+				map[string]string{"executionID": executionId, "node": node},
+				"1",
+			)
+		})
+
+		It("check dynamic metric", func() {
+			pc.metricFor(executionId, node, gaugeName, res)
+			checkMetric(
+				pc,
+				gaugeHelp,
+				cfg.Metrics.NameFor(gaugeName),
+				map[string]string{"executionID": executionId, "node": node, l1: v1, l2: v2},
+				strconv.Itoa(metricValue),
+			)
 		})
 	})
 })
+
+func checkMetric(collector *Collector, help string, name string, labels map[string]string, value string) {
+
+	l := ""
+	if len(labels) > 0 {
+		var keys []string
+		for k := range labels {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+
+		var labelValues []string
+		for _, k := range keys {
+			labelValues = append(labelValues, fmt.Sprintf(`%s="%s"`, k, labels[k]))
+		}
+		l = fmt.Sprintf("{%s}", strings.Join(labelValues, ","))
+	}
+
+	expected := fmt.Sprintf(`
+		# HELP %s %s
+		# TYPE %s gauge
+		%s%s %s
+	`, name, help, name, name, l, value)
+	err := testutil.CollectAndCompare(collector, strings.NewReader(expected), name)
+	Ω(err).ShouldNot(HaveOccurred())
+}
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz_")
 
