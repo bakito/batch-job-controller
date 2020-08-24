@@ -136,12 +136,12 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 
 	c.durationGauge = newMetric(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
-		Help: "execution duration in milliseconds",
+		Help: "Execution duration in milliseconds",
 	}, labelNode, labelExecutionId)
 
 	c.podsGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, podsMetric),
-		Help: "the number of pods started for the last execution",
+		Help: "The number of pods started for the last execution",
 	}, []string{})
 
 	for name, metric := range cfg.Metrics.Gauges {

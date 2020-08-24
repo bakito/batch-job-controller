@@ -114,6 +114,32 @@ var _ = Describe("metrics", func() {
 			)
 		})
 
+		It("check error 'Execution duration in milliseconds'", func() {
+			d := rand.Int()
+			duaration := float64(d)
+			pc.duration(node, executionId, duaration)
+			checkMetric(
+				pc,
+				"Execution duration in milliseconds",
+				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
+				map[string]string{"executionID": executionId, "node": node},
+				strconv.Itoa(d),
+			)
+		})
+
+		It("check error 'The number of pods started for the last execution'", func() {
+			c := rand.Int()
+			cnt := float64(c)
+			pc.pods(cnt)
+			checkMetric(
+				pc,
+				"The number of pods started for the last execution",
+				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, podsMetric),
+				map[string]string{},
+				strconv.Itoa(c),
+			)
+		})
+
 		It("check dynamic metric", func() {
 			pc.metricFor(executionId, node, gaugeName, res)
 			checkMetric(
