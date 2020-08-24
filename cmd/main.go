@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	bjcc "github.com/bakito/batch-job-controller/pkg/config"
@@ -51,8 +52,6 @@ func Setup() *Main {
 
 	ctrl.SetLogger(zapr.NewLogger(zap.NewRaw(o)))
 
-	setupLog.Info("starting", "version", version.Version)
-
 	// read env variables
 	if value, exists := os.LookupEnv(EnvNamespace); exists {
 		namespace = value
@@ -76,6 +75,13 @@ func Setup() *Main {
 	}
 
 	cfg, err := bjcc.Get(namespace, mgr.GetAPIReader())
+
+	setupLog.Info("starting",
+		bjcc.LabelVersion, version.Version,
+		bjcc.LabelName, cfg.Name,
+		bjcc.LabelPoolSize, strconv.Itoa(cfg.PodPoolSize),
+		bjcc.LabelReportHistory, strconv.Itoa(cfg.ReportHistory))
+
 	if err != nil {
 		setupLog.Error(err, "unable to get config")
 		os.Exit(1)

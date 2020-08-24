@@ -24,6 +24,15 @@ const (
 	PodTemplateName = "pod-template.yaml"
 	// ConfigFileName key of the config yaml file in the configmap
 	ConfigFileName = "config.yaml"
+
+	// LabelVersion version label
+	LabelVersion = "version"
+	// LabelName name label
+	LabelName = "name"
+	// LabelPoolSize poolSize label
+	LabelPoolSize = "poolSize"
+	// LabelReportHistory reportHistory label
+	LabelReportHistory = "reportHistory"
 )
 
 var (
