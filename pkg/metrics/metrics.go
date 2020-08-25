@@ -2,7 +2,10 @@ package metrics
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/version"
 	prom "github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
@@ -11,13 +14,21 @@ const (
 	labelNode        = "node"
 	labelValueLatest = "latest"
 	labelExecutionId = "executionID"
-)
+	labelPrefix      = "prefix"
 
-var (
+	versionMetric = "com_github_bakito_batch_job_controller"
+
+	procErrorHelp = "Node with processing error, 1: has error / 0: no error"
+	versionHelp   = "information about github.com/bakito/batch-job-controller"
+	podsHelp      = "The number of pods started for the last execution"
+
+	currentExecutionHelp = "The current execution ID"
+	durationHelp         = "Execution Duration in milliseconds"
+
 	currentExecutionMetric = "current_execution_id"
 	procErrorMetric        = "processing"
-	durationMetric         = "Duration"
-	podsMetric             = "Pods"
+	durationMetric         = "duration"
+	podsMetric             = "pods"
 )
 
 // Collector struct
@@ -27,6 +38,7 @@ type Collector struct {
 	procErrorGauge   *executionIDMetric
 	durationGauge    *executionIDMetric
 	podsGauge        *prom.GaugeVec
+	versionGauge     *prom.GaugeVec
 	namespace        string
 	latestMetric     bool
 }
@@ -35,6 +47,7 @@ type Collector struct {
 func (c *Collector) Describe(ch chan<- *prom.Desc) {
 	c.executionIDGauge.Describe(ch)
 	c.podsGauge.Describe(ch)
+	c.versionGauge.Describe(ch)
 
 	c.procErrorGauge.describe(ch)
 	c.durationGauge.describe(ch)
@@ -47,6 +60,7 @@ func (c *Collector) Describe(ch chan<- *prom.Desc) {
 func (c *Collector) Collect(ch chan<- prom.Metric) {
 	c.executionIDGauge.Collect(ch)
 	c.podsGauge.Collect(ch)
+	c.versionGauge.Collect(ch)
 
 	c.procErrorGauge.collect(ch)
 	c.durationGauge.collect(ch)
@@ -128,23 +142,28 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 	}
 	c.executionIDGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, currentExecutionMetric),
-		Help: "The current execution ID",
+		Help: currentExecutionHelp,
 	}, []string{})
 
 	c.procErrorGauge = newMetric(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
-		Help: "Node with processing error, 1: has error / 0: no error",
+		Help: procErrorHelp,
 	}, labelNode, labelExecutionId)
 
 	c.durationGauge = newMetric(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
-		Help: "Execution Duration in milliseconds",
+		Help: durationHelp,
 	}, labelNode, labelExecutionId)
 
 	c.podsGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, podsMetric),
-		Help: "The number of Pods started for the last execution",
+		Help: podsHelp,
 	}, []string{})
+
+	c.versionGauge = prom.NewGaugeVec(prom.GaugeOpts{
+		Name: versionMetric,
+		Help: versionHelp,
+	}, []string{config.LabelVersion, config.LabelName, labelPrefix, config.LabelPoolSize, config.LabelReportHistory})
 
 	for name, metric := range cfg.Metrics.Gauges {
 		if name == procErrorMetric || name == durationMetric || name == podsMetric {
@@ -165,6 +184,15 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 
 	metrics.Registry.Unregister(c)
 	metrics.Registry.MustRegister(c)
+
+	c.versionGauge.WithLabelValues(
+		version.Version,
+		cfg.Name,
+		cfg.Metrics.Prefix,
+		strconv.Itoa(cfg.PodPoolSize),
+		strconv.Itoa(cfg.ReportHistory),
+	).Set(1)
+
 	return c, nil
 }
 

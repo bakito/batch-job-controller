@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/version"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,15 +17,11 @@ import (
 
 var _ = Describe("metrics", func() {
 	var (
-		cfg          *config.Config
-		metricPrefix string
+		cfg *config.Config
 	)
 	BeforeEach(func() {
-		metricPrefix = puuid()
 		cfg = &config.Config{
-			Metrics: config.Metrics{
-				Prefix: metricPrefix,
-			},
+			Metrics: cfgMetrics,
 		}
 	})
 	Context("NewPromCollector", func() {
@@ -33,27 +30,18 @@ var _ = Describe("metrics", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
-	Context("NewPromCollector", func() {
+	Context("Metrics", func() {
 		var (
 			pc               *Collector
 			res              Result
 			node             string
 			executionId      string
 			executionIdValue float64
-			gaugeName        string
-			gaugeHelp        string
-			l1               string
-			l2               string
 			v1               string
 			v2               string
 			metricValue      int
 		)
 		BeforeEach(func() {
-			gaugeName = puuid()
-			gaugeHelp = uuid.New().String()
-
-			l1 = puuid()
-			l2 = puuid()
 			v1 = uuid.New().String()
 			v2 = uuid.New().String()
 			metricValue = rand.Int()
@@ -63,19 +51,13 @@ var _ = Describe("metrics", func() {
 			executionIdValue = float64(i)
 			executionId = strconv.Itoa(i)
 
-			cfg.Metrics.Gauges = map[string]config.Metric{
-				gaugeName: {
-					Help:   gaugeHelp,
-					Labels: []string{l1, l2},
-				},
-			}
 			pc, _ = NewPromCollector(cfg)
 
 			res = Result{
 				Value: float64(metricValue),
 				Labels: map[string]string{
-					l1: v1,
-					l2: v2,
+					customGaugeLabel1: v1,
+					customGaugeLabel2: v2,
 				},
 			}
 		})
@@ -85,7 +67,7 @@ var _ = Describe("metrics", func() {
 			pc.ExecutionStarted(executionIdValue)
 			checkMetric(
 				pc,
-				"The current execution ID",
+				currentExecutionHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, currentExecutionMetric),
 				map[string]string{},
 				executionId,
@@ -96,7 +78,7 @@ var _ = Describe("metrics", func() {
 			pc.ProcessingFinished(node, executionId, false)
 			checkMetric(
 				pc,
-				"Node with processing error, 1: has error / 0: no error",
+				procErrorHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
 				map[string]string{"executionID": executionId, "node": node},
 				"0",
@@ -107,7 +89,7 @@ var _ = Describe("metrics", func() {
 			pc.ProcessingFinished(node, executionId, true)
 			checkMetric(
 				pc,
-				"Node with processing error, 1: has error / 0: no error",
+				procErrorHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
 				map[string]string{"executionID": executionId, "node": node},
 				"1",
@@ -120,7 +102,7 @@ var _ = Describe("metrics", func() {
 			pc.Duration(node, executionId, duaration)
 			checkMetric(
 				pc,
-				"Execution Duration in milliseconds",
+				durationHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
 				map[string]string{"executionID": executionId, "node": node},
 				strconv.Itoa(d),
@@ -133,30 +115,48 @@ var _ = Describe("metrics", func() {
 			pc.Pods(cnt)
 			checkMetric(
 				pc,
-				"The number of Pods started for the last execution",
+				podsHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, podsMetric),
 				map[string]string{},
 				strconv.Itoa(c),
 			)
 		})
 
-		It("check dynamic metric", func() {
-			pc.MetricFor(executionId, node, gaugeName, res)
+		It("check version", func() {
+			c := rand.Int()
+			cnt := float64(c)
+			pc.Pods(cnt)
 			checkMetric(
 				pc,
-				gaugeHelp,
-				cfg.Metrics.NameFor(gaugeName),
-				map[string]string{"executionID": executionId, "node": node, l1: v1, l2: v2},
+				versionHelp,
+				versionMetric,
+				map[string]string{
+					"name":          cfg.Name,
+					"poolSize":      strconv.Itoa(cfg.PodPoolSize),
+					"prefix":        cfg.Metrics.Prefix,
+					"reportHistory": strconv.Itoa(cfg.ReportHistory),
+					"version":       version.Version},
+				"1",
+			)
+		})
+
+		It("check dynamic metric", func() {
+			pc.MetricFor(executionId, node, customGaugeName, res)
+			checkMetric(
+				pc,
+				customGaugeHelp,
+				cfg.Metrics.NameFor(customGaugeName),
+				map[string]string{"executionID": executionId, "node": node, customGaugeLabel1: v1, customGaugeLabel2: v2},
 				strconv.Itoa(metricValue),
 			)
 		})
 
 		It("Prune", func() {
-			pc.MetricFor(executionId, node, gaugeName, res)
+			pc.MetricFor(executionId, node, customGaugeName, res)
 			pc.Prune(executionId)
 			checkMissingMetric(
 				pc,
-				cfg.Metrics.NameFor(gaugeName),
+				cfg.Metrics.NameFor(customGaugeName),
 			)
 		})
 	})
