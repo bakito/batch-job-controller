@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	bjcc "github.com/bakito/batch-job-controller/pkg/config"
@@ -12,6 +13,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/inject"
 	"github.com/bakito/batch-job-controller/pkg/job"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/bakito/batch-job-controller/version"
 	"github.com/go-logr/zapr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,8 +53,6 @@ func Setup() *Main {
 
 	ctrl.SetLogger(zapr.NewLogger(zap.NewRaw(o)))
 
-	setupLog.Info("starting", "version", version.Version)
-
 	// read env variables
 	if value, exists := os.LookupEnv(EnvNamespace); exists {
 		namespace = value
@@ -76,12 +76,19 @@ func Setup() *Main {
 	}
 
 	cfg, err := bjcc.Get(namespace, mgr.GetAPIReader())
+
+	setupLog.Info("starting",
+		bjcc.LabelVersion, version.Version,
+		bjcc.LabelName, cfg.Name,
+		bjcc.LabelPoolSize, strconv.Itoa(cfg.PodPoolSize),
+		bjcc.LabelReportHistory, strconv.Itoa(cfg.ReportHistory))
+
 	if err != nil {
 		setupLog.Error(err, "unable to get config")
 		os.Exit(1)
 	}
 
-	pc, err := lifecycle.NewPromCollector(cfg)
+	pc, err := metrics.NewPromCollector(cfg)
 	if err != nil {
 		setupLog.Error(err, "error creating prometheus collector")
 		os.Exit(1)

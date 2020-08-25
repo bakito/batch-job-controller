@@ -12,6 +12,7 @@ import (
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	corev1 "k8s.io/api/core/v1"
@@ -131,7 +132,7 @@ func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 		"length", len(buf.Bytes()),
 	)
 
-	results := new(lifecycle.Results)
+	results := new(metrics.Results)
 
 	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&results)
 	if err != nil {

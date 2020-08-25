@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,7 +23,7 @@ var (
 )
 
 //NewCache get a new cache
-func NewCache(cfg *config.Config, prom *Collector) Cache {
+func NewCache(cfg *config.Config, prom *metrics.Collector) Cache {
 	return &cache{
 		executions:    make(map[string]*execution),
 		nodes:         make(map[string]bool),
@@ -41,14 +42,14 @@ type Cache interface {
 	AllAdded(executionID string) error
 	AddPod(job Job) error
 	PodTerminated(executionID, node string, phase corev1.PodPhase) error
-	ReportReceived(executionID, node string, processingError error, results Results)
+	ReportReceived(executionID, node string, processingError error, results metrics.Results)
 	Config() config.Config
 	// Has return true if the executionId is known
 	Has(node string, executionId string) bool
 }
 
 type cache struct {
-	prom          *Collector
+	prom          *metrics.Collector
 	executions    map[string]*execution
 	nodes         map[string]bool
 	log           logr.Logger
@@ -68,8 +69,8 @@ func (c *cache) Config() config.Config {
 
 // NewExecution setup a new execution
 func (c *cache) NewExecution() string {
-	//                             yyyyMMddHHmmss
-	id := time.Now().Format("20060102150400")
+	//                       yyyyMMddHHmm
+	id := time.Now().Format("200601021504")
 	e := &execution{
 		id:      id,
 		jobChan: make(chan Job, c.podPoolSize),
@@ -104,7 +105,7 @@ func (c *cache) NewExecution() string {
 	}
 	f, _ := strconv.ParseFloat(id, 64)
 
-	c.prom.newExecution(f)
+	c.prom.ExecutionStarted(f)
 	return id
 }
 
@@ -116,7 +117,7 @@ func (c *cache) AllAdded(executionID string) error {
 	}
 
 	cnt := e.length()
-	c.prom.pods(cnt)
+	c.prom.Pods(cnt)
 
 	files, err := ioutil.ReadDir(c.reportDir)
 	if err != nil {
@@ -130,10 +131,12 @@ func (c *cache) AllAdded(executionID string) error {
 	if len(files) > c.reportHistory {
 		pruneCnt := len(files) - c.reportHistory
 		for i := 0; i < pruneCnt; i++ {
+			name := files[i].Name()
 			// delete the execution
-			delete(c.executions, files[i].Name())
+			delete(c.executions, name)
+			c.prom.Prune(name)
 
-			dir := c.reportDir + "/" + files[i].Name()
+			dir := filepath.Join(c.reportDir, name)
 			c.log.WithValues("dir", dir).Info("deleting report directory")
 			err = os.RemoveAll(dir)
 			if err != nil {
@@ -189,7 +192,7 @@ func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) e
 	t := time.Now()
 	p.terminated = &t
 	p.status = string(phase)
-	c.prom.duration(node, executionID, float64(t.Sub(p.started).Milliseconds()))
+	c.prom.Duration(node, executionID, float64(t.Sub(p.started).Milliseconds()))
 
 	// if not successful or not report received report an error
 	if phase != corev1.PodSucceeded || p.reportReceived == nil {
@@ -198,7 +201,7 @@ func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) e
 		if p.reportReceived == nil {
 			msg = "did not receive report"
 		}
-		c.prom.processingError(node, executionID, true)
+		c.prom.ProcessingFinished(node, executionID, true)
 		c.log.WithValues("result ", phase, "node", node, "reports", p.reportReceived != nil).Info(msg)
 	} else {
 		c.log.WithValues("result ", phase, "node", node).Info("pod successful")
@@ -208,13 +211,13 @@ func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) e
 }
 
 // ReportReceived report was received
-func (c *cache) ReportReceived(executionID, node string, processingError error, results Results) {
+func (c *cache) ReportReceived(executionID, node string, processingError error, results metrics.Results) {
 	for k := range results {
 		for _, r := range results[k] {
-			c.prom.metricFor(executionID, node, k, r)
+			c.prom.MetricFor(executionID, node, k, r)
 		}
 	}
-	c.prom.processingError(node, executionID, processingError != nil)
+	c.prom.ProcessingFinished(node, executionID, processingError != nil)
 
 	e, err := c.forID(executionID)
 	if err != nil {
