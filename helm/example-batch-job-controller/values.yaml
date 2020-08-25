@@ -6,7 +6,8 @@ name: example-job-controller
 
 deployment:
   replicas: 1
-  image: quay.io/bakito/batch-job-controller:v1.0.0
+  image: quay.io/bakito/batch-job-controller
+  imageTag:
   cronexpression: "* * * * *"
   reportDirectory: "/var/www"
   reportHistory: 10 # number of reports to be used

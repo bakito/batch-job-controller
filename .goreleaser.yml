@@ -1,5 +1,6 @@
 before:
   hooks:
+    - helm package ./helm/example-batch-job-controller/ --version v{{ .Version }} --app-version v{{ .Version }} -d ./dist/
     - make licenses
 builds:
   - skip: true
@@ -12,7 +13,8 @@ snapshot:
   name_template: "{{ .Tag }}-next"
 release:
   extra_files:
-    - glob: ./dependency-licenses.csv
+    - glob: ./dist/dependency-licenses.csv
+    - glob: ./dist/batch-job-controller-{{.Version}}.tgz
 changelog:
   sort: asc
   filters:

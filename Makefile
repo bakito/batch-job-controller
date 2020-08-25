@@ -29,7 +29,7 @@ test-ci: test
 	goveralls -service=travis-ci -v -coverprofile=coverage.out
 
 # Run tests
-helm-template:
+helm-template: helm
 	helm template helm/example-batch-job-controller/ --debug --set routes.hostSuffix=test.com
 
 # Build docker image
@@ -47,7 +47,7 @@ test-release: goreleaser
 	goreleaser --skip-publish --snapshot --rm-dist
 
 licenses: go-licenses
-	go-licenses csv "github.com/bakito/batch-job-controller/cmd/generic"  2>/dev/null | sort > dependency-licenses.csv
+	go-licenses csv "github.com/bakito/batch-job-controller/cmd/generic"  2>/dev/null | sort > ./dist/dependency-licenses.csv
 
 tools: mockgen ginkgo helm goveralls goreleaser go-licenses
 
