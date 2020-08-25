@@ -13,6 +13,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/inject"
 	"github.com/bakito/batch-job-controller/pkg/job"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/bakito/batch-job-controller/version"
 	"github.com/go-logr/zapr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -87,7 +88,7 @@ func Setup() *Main {
 		os.Exit(1)
 	}
 
-	pc, err := lifecycle.NewPromCollector(cfg)
+	pc, err := metrics.NewPromCollector(cfg)
 	if err != nil {
 		setupLog.Error(err, "error creating prometheus collector")
 		os.Exit(1)

@@ -1,8 +1,8 @@
-package lifecycle_test
+package metrics_test
 
 import (
 	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -10,12 +10,12 @@ import (
 var _ = Describe("types", func() {
 	Context("Results.Validate", func() {
 		var (
-			results lifecycle.Results
+			results metrics.Results
 			cfg     *config.Config
 		)
 		BeforeEach(func() {
-			results = lifecycle.Results{
-				"aaa": []lifecycle.Result{},
+			results = metrics.Results{
+				"aaa": []metrics.Result{},
 			}
 			cfg = &config.Config{
 				Metrics: config.Metrics{
@@ -28,7 +28,7 @@ var _ = Describe("types", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 		It("should be invalid if prefix is not a valid prometheus metric name", func() {
-			results["b b b"] = []lifecycle.Result{}
+			results["b b b"] = []metrics.Result{}
 			err := results.Validate(cfg)
 			Ω(err).Should(HaveOccurred())
 			Ω(err.Error()).Should(HaveSuffix("is not a valid metric name"))

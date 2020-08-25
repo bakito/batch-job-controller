@@ -1,4 +1,4 @@
-package lifecycle
+package metrics
 
 import (
 	"fmt"
@@ -16,8 +16,8 @@ const (
 var (
 	currentExecutionMetric = "current_execution_id"
 	procErrorMetric        = "processing"
-	durationMetric         = "duration"
-	podsMetric             = "pods"
+	durationMetric         = "Duration"
+	podsMetric             = "Pods"
 )
 
 // Collector struct
@@ -55,12 +55,12 @@ func (c *Collector) Collect(ch chan<- prom.Metric) {
 	}
 }
 
-func (c *Collector) newExecution(executionId float64) {
+func (c *Collector) ExecutionStarted(executionId float64) {
 	c.executionIDGauge.WithLabelValues().Set(executionId)
 }
 
-// prune metrics assigned to the given execution ID
-func (c *Collector) prune(executionId string) {
+// Prune metrics assigned to the given execution ID
+func (c *Collector) Prune(executionId string) {
 	c.procErrorGauge.prune(executionId)
 	c.durationGauge.prune(executionId)
 	for k := range c.gauges {
@@ -68,7 +68,7 @@ func (c *Collector) prune(executionId string) {
 	}
 }
 
-func (c *Collector) metricFor(executionID string, node string, name string, result Result) {
+func (c *Collector) MetricFor(executionID string, node string, name string, result Result) {
 	if _, ok := c.gauges[name]; ok {
 		g := c.gauges[name]
 		if result.Labels == nil {
@@ -84,14 +84,16 @@ func (c *Collector) metricFor(executionID string, node string, name string, resu
 
 		g.gauge.withLabelValues(values...).Set(result.Value)
 		if c.latestMetric {
-			// replace the executionId with 'latest'
-			values[len(values)-1] = labelValueLatest
+			if len(values) > 0 {
+				// replace the executionId with 'latest'
+				values[len(values)-1] = labelValueLatest
+			}
 			g.gauge.withLabelValues(values...).Set(result.Value)
 		}
 	}
 }
 
-func (c *Collector) processingError(node string, executionId string, err bool) {
+func (c *Collector) ProcessingFinished(node string, executionId string, err bool) {
 	value := 0.
 	if err {
 		value = 1
@@ -102,14 +104,14 @@ func (c *Collector) processingError(node string, executionId string, err bool) {
 	}
 }
 
-func (c *Collector) duration(node string, executionId string, d float64) {
+func (c *Collector) Duration(node string, executionId string, d float64) {
 	c.durationGauge.withLabelValues(node, executionId).Set(d)
 	if c.latestMetric {
 		c.durationGauge.withLabelValues(node, labelValueLatest).Set(d)
 	}
 }
 
-func (c *Collector) pods(cnt float64) {
+func (c *Collector) Pods(cnt float64) {
 	g, err := c.podsGauge.GetMetricWithLabelValues()
 	if err == nil {
 		g.Set(cnt)
@@ -136,12 +138,12 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 
 	c.durationGauge = newMetric(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
-		Help: "Execution duration in milliseconds",
+		Help: "Execution Duration in milliseconds",
 	}, labelNode, labelExecutionId)
 
 	c.podsGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, podsMetric),
-		Help: "The number of pods started for the last execution",
+		Help: "The number of Pods started for the last execution",
 	}, []string{})
 
 	for name, metric := range cfg.Metrics.Gauges {

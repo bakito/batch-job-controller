@@ -7,6 +7,7 @@ package mock_lifecycle
 import (
 	config "github.com/bakito/batch-job-controller/pkg/config"
 	lifecycle "github.com/bakito/batch-job-controller/pkg/lifecycle"
+	metrics "github.com/bakito/batch-job-controller/pkg/metrics"
 	gomock "github.com/golang/mock/gomock"
 	v1 "k8s.io/api/core/v1"
 	reflect "reflect"
@@ -120,7 +121,7 @@ func (mr *MockCacheMockRecorder) PodTerminated(arg0, arg1, arg2 interface{}) *go
 }
 
 // ReportReceived mocks base method
-func (m *MockCache) ReportReceived(arg0, arg1 string, arg2 error, arg3 lifecycle.Results) {
+func (m *MockCache) ReportReceived(arg0, arg1 string, arg2 error, arg3 metrics.Results) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ReportReceived", arg0, arg1, arg2, arg3)
 }

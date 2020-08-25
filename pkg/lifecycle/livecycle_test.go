@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,7 @@ import (
 var _ = Describe("lifecycle", func() {
 	var (
 		cfg       *config.Config
-		pc        *Collector
+		pc        *metrics.Collector
 		repDir    string
 		namespace string
 		poolSize  int
@@ -32,7 +33,7 @@ var _ = Describe("lifecycle", func() {
 				Prefix: "foo",
 			},
 		}
-		pc, _ = NewPromCollector(cfg)
+		pc, _ = metrics.NewPromCollector(cfg)
 	})
 	Context("NewCache", func() {
 		It("should return a new cache", func() {

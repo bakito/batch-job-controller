@@ -1,8 +1,7 @@
-package lifecycle
+package metrics
 
 import (
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 var _ = Describe("metrics", func() {
@@ -82,7 +82,7 @@ var _ = Describe("metrics", func() {
 
 		It("check 'The current execution ID'", func() {
 
-			pc.newExecution(executionIdValue)
+			pc.ExecutionStarted(executionIdValue)
 			checkMetric(
 				pc,
 				"The current execution ID",
@@ -93,7 +93,7 @@ var _ = Describe("metrics", func() {
 		})
 
 		It("check success 'Node with processing error, 1: has error / 0: no error'", func() {
-			pc.processingError(node, executionId, false)
+			pc.ProcessingFinished(node, executionId, false)
 			checkMetric(
 				pc,
 				"Node with processing error, 1: has error / 0: no error",
@@ -104,7 +104,7 @@ var _ = Describe("metrics", func() {
 		})
 
 		It("check error 'Node with processing error, 1: has error / 0: no error'", func() {
-			pc.processingError(node, executionId, true)
+			pc.ProcessingFinished(node, executionId, true)
 			checkMetric(
 				pc,
 				"Node with processing error, 1: has error / 0: no error",
@@ -114,26 +114,26 @@ var _ = Describe("metrics", func() {
 			)
 		})
 
-		It("check error 'Execution duration in milliseconds'", func() {
+		It("check error 'Execution Duration in milliseconds'", func() {
 			d := rand.Int()
 			duaration := float64(d)
-			pc.duration(node, executionId, duaration)
+			pc.Duration(node, executionId, duaration)
 			checkMetric(
 				pc,
-				"Execution duration in milliseconds",
+				"Execution Duration in milliseconds",
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
 				map[string]string{"executionID": executionId, "node": node},
 				strconv.Itoa(d),
 			)
 		})
 
-		It("check error 'The number of pods started for the last execution'", func() {
+		It("check error 'The number of Pods started for the last execution'", func() {
 			c := rand.Int()
 			cnt := float64(c)
-			pc.pods(cnt)
+			pc.Pods(cnt)
 			checkMetric(
 				pc,
-				"The number of pods started for the last execution",
+				"The number of Pods started for the last execution",
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, podsMetric),
 				map[string]string{},
 				strconv.Itoa(c),
@@ -141,7 +141,7 @@ var _ = Describe("metrics", func() {
 		})
 
 		It("check dynamic metric", func() {
-			pc.metricFor(executionId, node, gaugeName, res)
+			pc.MetricFor(executionId, node, gaugeName, res)
 			checkMetric(
 				pc,
 				gaugeHelp,
@@ -151,9 +151,9 @@ var _ = Describe("metrics", func() {
 			)
 		})
 
-		It("prune", func() {
-			pc.metricFor(executionId, node, gaugeName, res)
-			pc.prune(executionId)
+		It("Prune", func() {
+			pc.MetricFor(executionId, node, gaugeName, res)
+			pc.Prune(executionId)
 			checkMissingMetric(
 				pc,
 				cfg.Metrics.NameFor(gaugeName),
