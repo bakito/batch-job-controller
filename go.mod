@@ -11,14 +11,14 @@ require (
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.8.0
+	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
 	github.com/prometheus/client_golang v1.7.1
 	github.com/prometheus/common v0.13.0
 	github.com/robfig/cron/v3 v3.0.1
-	google.golang.org/appengine v1.6.1 // indirect
-	k8s.io/api v0.18.8
-	k8s.io/apimachinery v0.18.8
-	k8s.io/client-go v0.18.8
+	k8s.io/api v0.19.0
+	k8s.io/apimachinery v0.19.0
+	k8s.io/client-go v0.19.0
 	sigs.k8s.io/controller-runtime v0.6.2
 )
