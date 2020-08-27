@@ -18,7 +18,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	google.golang.org/appengine v1.6.1 // indirect
 	k8s.io/api v0.18.8
-	k8s.io/apimachinery v0.18.8
+	k8s.io/apimachinery v0.19.0
 	k8s.io/client-go v0.18.8
 	sigs.k8s.io/controller-runtime v0.6.2
 )
