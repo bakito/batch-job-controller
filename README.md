@@ -34,10 +34,11 @@ jobServiceAccount: ""            # service account to be used for the job pods. 
 jobNodeSelector: {}              # node selector labels to define in which nodes to run the jobs
 runOnUnscheduledNodes: true    # if true, jobs are also started on nodes that are unschedulable
 cronExpression: "42 3 * * *"     # the cron expression to trigger the job execution
+reportDirectory: "/var/www"      # directory to store and serve the reports
 reportHistory: 30                # number of execution reports to keep
 podPoolSize: 10                  # number of concurrent job pods to run
 runOnStartup: true               # if 'true' the jobs are triggered on startup of the controller
-reportDirectory: "/var/www"      # directory to store and serve the reports
+startupDelay: 10s                # the delay as duration that is used to start the jobs if runOnStartup is enabled. default is '10s'
 callbackServiceName: ""          # name of the controller service
 callbackServicePort: 8090        # port of the controller callback api service
 custom: {}                       # additional properties that can be used in a custom implementation
@@ -70,6 +71,9 @@ The job pod has the following env variables provided by the controller:
 | EXECUTION_ID | The id of the current job execution |
 | CALLBACK_SERVICE_NAME | The name/host/ip of the callback service to send the report to |
 | CALLBACK_SERVICE_PORT | The port of the callback service to send the report to |
+| CALLBACK_SERVICE_RESULT_URL | The full qualified URL of the result callback service  |
+| CALLBACK_SERVICE_FILE_URL | The full qualified URL of the file callback service, to send files to the controller |
+| CALLBACK_SERVICE_EVENT_URL | The full qualified URL of the event callback service, to create k8s event |
 
 ### Callback
 
@@ -120,6 +124,8 @@ The report URL is by default: **${CALLBACK_SERVICE_FILE_URL}**
 
 ### Create k8s Events from job pod
 k8s Event can be created from each job pod by calling the event endpoint.
+
+The 'reason' should be short and unique; it must be in UpperCamelCase format (starting with a capital letter).
 
 Simple Message:
 ```json
