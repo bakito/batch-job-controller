@@ -15,8 +15,10 @@ type Result struct {
 	Labels map[string]string `json:"labels"`
 }
 
+// Results map of results
 type Results map[string][]Result
 
+// Validate the results
 func (r Results) Validate(cfg *config.Config) error {
 	if len(r) == 0 {
 		return fmt.Errorf("results must not be empty")

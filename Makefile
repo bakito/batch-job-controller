@@ -5,7 +5,7 @@ mocks:
 	mockgen -destination pkg/mocks/logr/mock.go   github.com/go-logr/logr                              Logger
 	mockgen -destination pkg/mocks/client/mock.go sigs.k8s.io/controller-runtime/pkg/client            Client,Reader
 	mockgen -destination pkg/mocks/cache/mock.go  github.com/bakito/batch-job-controller/pkg/lifecycle Cache
-	mockgen -destination pkg/mocks/record/mock.go  k8s.io/client-go/tools/record                        EventRecorder
+	mockgen -destination pkg/mocks/record/mock.go  k8s.io/client-go/tools/record                       EventRecorder
 
 # Run go fmt against code
 fmt:
@@ -47,7 +47,7 @@ test-release: goreleaser
 	goreleaser --skip-publish --snapshot --rm-dist
 
 licenses: go-licenses
-	go-licenses csv "github.com/bakito/batch-job-controller/cmd/generic"  2>/dev/null | sort > ./dist/dependency-licenses.csv
+	go-licenses csv "github.com/bakito/batch-job-controller/cmd/generic"  2>/dev/null | sort > ./dependency-licenses.csv
 
 tools: mockgen ginkgo helm goveralls goreleaser go-licenses
 

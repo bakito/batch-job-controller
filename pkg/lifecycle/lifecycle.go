@@ -153,7 +153,7 @@ func (e *execution) worker(id int) {
 	l.V(4).Info("initialized")
 	for job := range e.jobChan {
 		l.V(4).Info("process job", "jobID", job.ID(), "nodeName", job.Node())
-		job.Process()
+		job.CreatePod()
 
 		p, err := e.pod(job.Node())
 		if err != nil {
@@ -294,7 +294,7 @@ type pod struct {
 
 // Job interface
 type Job interface {
-	Process()
+	CreatePod()
 	ID() string
 	Node() string
 }

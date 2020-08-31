@@ -30,6 +30,7 @@ func (e *Event) Validate() error {
 	return validate.Struct(e)
 }
 
+// Type get the warning type
 func (e *Event) Type() string {
 	if e.Waring {
 		return corev1.EventTypeWarning

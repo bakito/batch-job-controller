@@ -24,7 +24,7 @@ type Reader interface {
 	InjectReader(client.Reader)
 }
 
-// Cache inject an event recorder
+// Config inject the config
 type Config interface {
 	InjectConfig(*config.Config)
 }

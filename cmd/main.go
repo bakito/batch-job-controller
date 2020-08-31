@@ -136,18 +136,12 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 	}
 
 	// setup cron job
-	cj, err := cron.Job(namespace, m.Config, m.Manager.GetClient(), m.Cache, m.Config.Owner, envExtender...)
-	if err != nil {
-		setupLog.Error(err, "unable to set up cron job")
-		os.Exit(1)
-	}
-
-	cj.Start()
+	m.Manager.Add(cron.Job(envExtender...))
 
 	// Setup a new controller to reconcile ReplicaSets
 	setupLog.Info("Setting up controller")
 
-	if err = (&controller.PodReconciler{
+	if err := (&controller.PodReconciler{
 		Client: m.Manager.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
 		Cache:  m.Cache,

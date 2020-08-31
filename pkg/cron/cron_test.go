@@ -30,14 +30,21 @@ var _ = Describe("Cron", func() {
 		mockCache = mock_cache.NewMockCache(mockCtrl)
 		namespace = uuid.New().String()
 		configName = uuid.New().String()
-		cj = &cronJob{
-			namespace: namespace,
-			client:    mockClient,
-			cache:     mockCache,
-			cfg: &config.Config{
-				Name: configName,
-			},
+		cfg := &config.Config{
+			Name:      configName,
+			Namespace: namespace,
 		}
+		cj = Job().(*cronJob)
+		cj.InjectCache(mockCache)
+		cj.InjectConfig(cfg)
+		cj.InjectClient(mockClient)
+
+	})
+	Context("NeedLeaderElection", func() {
+		It("should be true", func() {
+			needLE := cj.NeedLeaderElection()
+			Ω(needLE).Should(BeTrue())
+		})
 	})
 	Context("deleteAll", func() {
 		It("should delete all", func() {
@@ -81,8 +88,45 @@ var _ = Describe("Cron", func() {
 					return nil
 				})
 		})
-		It("should start  all pods", func() {
+		It("should start all pods", func() {
 			cj.startPods()
+		})
+	})
+
+	Context("startPods - already running", func() {
+		It("should not start all pods", func() {
+			cj.running = true
+			cj.startPods()
+		})
+	})
+
+	Context("CreatePod", func() {
+
+		var (
+			pj       *podJob
+			id       string
+			nodeName string
+		)
+		BeforeEach(func() {
+
+			id = uuid.New().String()
+			nodeName = uuid.New().String()
+			pj = &podJob{
+				pod:      &corev1.Pod{},
+				client:   mockClient,
+				id:       id,
+				nodeName: nodeName,
+			}
+		})
+		It("should create a pod", func() {
+			mockClient.EXPECT().Create(gm.Any(), pj.pod)
+			pj.CreatePod()
+		})
+		It("should return the id", func() {
+			Ω(pj.ID()).Should(Equal(id))
+		})
+		It("should return the nodeName", func() {
+			Ω(pj.Node()).Should(Equal(nodeName))
 		})
 	})
 })

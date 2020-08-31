@@ -103,18 +103,22 @@ type PostServer struct {
 	Client        client.Reader
 }
 
+// InjectEventRecorder inject the event recorder
 func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
 	s.EventRecorder = er
 }
 
+// InjectCache inject the cache
 func (s *PostServer) InjectCache(cache lifecycle.Cache) {
 	s.Cache = cache
 }
 
+// InjectReader inject the client reader
 func (s *PostServer) InjectReader(reader client.Reader) {
 	s.Client = reader
 }
 
+// InjectConfig inject the config
 func (s *PostServer) InjectConfig(cfg *config.Config) {
 	s.Config = cfg
 }

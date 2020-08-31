@@ -10,3 +10,4 @@ tmp
 dist
 dependency-licenses.csv
 /helm/example-batch-job-controller/*-values.yaml
+batch-job-controller-*.tgz

@@ -56,7 +56,7 @@ func (c *Collector) Describe(ch chan<- *prom.Desc) {
 	}
 }
 
-// collect returns the current state of the metrics
+// Collect returns the current state of the metrics
 func (c *Collector) Collect(ch chan<- prom.Metric) {
 	c.executionIDGauge.Collect(ch)
 	c.podsGauge.Collect(ch)
@@ -69,6 +69,7 @@ func (c *Collector) Collect(ch chan<- prom.Metric) {
 	}
 }
 
+// ExecutionStarted metric for new executions
 func (c *Collector) ExecutionStarted(executionId float64) {
 	c.executionIDGauge.WithLabelValues().Set(executionId)
 }
@@ -82,6 +83,7 @@ func (c *Collector) Prune(executionId string) {
 	}
 }
 
+// MetricFor record metrics for the given result
 func (c *Collector) MetricFor(executionID string, node string, name string, result Result) {
 	if _, ok := c.gauges[name]; ok {
 		g := c.gauges[name]
@@ -107,6 +109,7 @@ func (c *Collector) MetricFor(executionID string, node string, name string, resu
 	}
 }
 
+// ProcessingFinished record proceiing finished
 func (c *Collector) ProcessingFinished(node string, executionId string, err bool) {
 	value := 0.
 	if err {
@@ -118,6 +121,7 @@ func (c *Collector) ProcessingFinished(node string, executionId string, err bool
 	}
 }
 
+// Duration record duration
 func (c *Collector) Duration(node string, executionId string, d float64) {
 	c.durationGauge.withLabelValues(node, executionId).Set(d)
 	if c.latestMetric {
@@ -125,6 +129,7 @@ func (c *Collector) Duration(node string, executionId string, d float64) {
 	}
 }
 
+// Pods record the number of pods started for the current run
 func (c *Collector) Pods(cnt float64) {
 	g, err := c.podsGauge.GetMetricWithLabelValues()
 	if err == nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,6 +65,10 @@ func Get(namespace string, cl client.Reader) (*Config, error) {
 		cfg.Namespace = namespace
 
 		cfg.Owner = findPodOwner(namespace, cl)
+
+		if cfg.StartupDelay == 0 {
+			cfg.StartupDelay = 10 * time.Second
+		}
 
 		return cfg, nil
 	}

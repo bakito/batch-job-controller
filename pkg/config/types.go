@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -18,6 +19,7 @@ type Config struct {
 	ReportHistory         int               `json:"reportHistory"`
 	PodPoolSize           int               `json:"podPoolSize"`
 	RunOnStartup          bool              `json:"runOnStartup"`
+	StartupDelay          time.Duration     `json:"startupDelay"`
 	Metrics               Metrics           `json:"metrics"`
 	// LatestMetricsLabel if true, each result metric is also created with executionID=latest
 	LatestMetricsLabel  bool                   `json:"latestMetricsLabel"`

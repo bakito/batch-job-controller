@@ -2,7 +2,6 @@ package cron
 
 import (
 	"context"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -13,7 +12,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -21,48 +22,69 @@ var (
 )
 
 //Job prepare the static file server
-func Job(namespace string, cfg *config.Config, client client.Client, cache lifecycle.Cache, owner runtime.Object, extender ...job.CustomPodEnv) (*cron.Cron, error) {
-
-	var cj = &cronJob{
-		namespace: namespace,
-		cache:     cache,
-		cfg:       cfg,
-		client:    client,
-		extender:  extender,
-		owner:     owner,
+func Job(extender ...job.CustomPodEnv) manager.Runnable {
+	return &cronJob{
+		extender: extender,
 	}
-	log.WithValues("expression", cfg.CronExpression).Info("starting cron")
-
-	c := cron.New()
-	_, _ = c.AddFunc(cfg.CronExpression, cj.startPods)
-
-	if cfg.RunOnStartup {
-		go func() {
-			time.Sleep(time.Second * 10)
-			log.Info("starting cron on startup")
-			cj.startPods()
-		}()
-	}
-
-	return c, nil
 }
 
 type cronJob struct {
-	namespace string
-	client    client.Client
-	job       *cron.Cron
-	cache     lifecycle.Cache
-	running   bool
-	cfg       *config.Config
-	extender  []job.CustomPodEnv
-	owner     runtime.Object
+	client   client.Client
+	job      *cron.Cron
+	cache    lifecycle.Cache
+	running  bool
+	cfg      *config.Config
+	extender []job.CustomPodEnv
+}
+
+// InjectConfig inject the config
+func (j *cronJob) InjectConfig(cfg *config.Config) {
+	j.cfg = cfg
+}
+
+// InjectCache inject the cache
+func (j *cronJob) InjectCache(c lifecycle.Cache) {
+	j.cache = c
+}
+
+// InjectClient inject the client
+func (j *cronJob) InjectClient(c client.Client) error {
+	j.client = c
+	return nil
+}
+
+// NeedLeaderElection may only start if leader is elected
+func (j *cronJob) NeedLeaderElection() bool {
+	return true
+}
+
+// Start implement manager.Runnable
+func (j *cronJob) Start(i <-chan struct{}) error {
+	log.WithValues("expression", j.cfg.CronExpression).Info("starting cron")
+	c := cron.New()
+	_, err := c.AddFunc(j.cfg.CronExpression, j.startPods)
+
+	if err != nil {
+		return err
+	}
+
+	if j.cfg.RunOnStartup {
+		go func() {
+			time.Sleep(j.cfg.StartupDelay)
+			log.Info("starting cron on startup")
+			j.startPods()
+		}()
+	}
+
+	c.Start()
+	return nil
 }
 
 func (j *cronJob) deleteAll(obj runtime.Object) error {
 	return j.client.DeleteAllOf(
 		context.TODO(),
 		obj,
-		client.InNamespace(j.namespace),
+		client.InNamespace(j.cfg.Namespace),
 		job.MatchingLabels(j.cfg.Name),
 		client.PropagationPolicy(metav1.DeletePropagationBackground),
 	) // set propagation policy to also delete assigned pods
@@ -106,7 +128,7 @@ func (j *cronJob) startPods() {
 	jobLog.Info("executing job")
 	for _, n := range nodeList.Items {
 		if isUsable(n, j.cfg.RunOnUnscheduledNodes) {
-			pod, err := job.New(j.cfg, n.ObjectMeta.Name, executionID, svc.Spec.ClusterIP, j.owner, j.extender...)
+			pod, err := job.New(j.cfg, n.ObjectMeta.Name, executionID, svc.Spec.ClusterIP, j.cfg.Owner, j.extender...)
 			if err != nil {
 				jobLog.Error(err, "error creating pod from template")
 				return
@@ -153,7 +175,8 @@ func (j *podJob) Node() string {
 	return j.nodeName
 }
 
-func (j *podJob) Process() {
+// CreatePod create a worker pod
+func (j *podJob) CreatePod() {
 	log.Info("create pod", "node", j.nodeName)
 	err := j.client.Create(context.TODO(), j.pod)
 	if err != nil {
