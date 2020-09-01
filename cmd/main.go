@@ -73,7 +73,7 @@ func Setup() *Main {
 		Scheme:                  scheme,
 		MetricsBindAddress:      ":9153",
 		LeaderElection:          strings.ToLower(os.Getenv(EnvDevMode)) != "true",
-		LeaderElectionID:        cfg.Name + "-leader-election-id",
+		LeaderElectionID:        cfg.Name + "-leader-election",
 		LeaderElectionNamespace: namespace,
 		Namespace:               namespace,
 	})
