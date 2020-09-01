@@ -61,11 +61,19 @@ func Setup() *Main {
 		os.Exit(1)
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	config := ctrl.GetConfigOrDie()
+
+	cfg, err := bjcc.Get(namespace, config, scheme)
+	if err != nil {
+		setupLog.Error(err, "unable to get config")
+		os.Exit(1)
+	}
+
+	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      ":9153",
 		LeaderElection:          strings.ToLower(os.Getenv(EnvDevMode)) != "true",
-		LeaderElectionID:        "9a62a63a.bakito.ch",
+		LeaderElectionID:        cfg.Name + "-leader-election-id",
 		LeaderElectionNamespace: namespace,
 		Namespace:               namespace,
 	})
@@ -75,18 +83,11 @@ func Setup() *Main {
 		os.Exit(1)
 	}
 
-	cfg, err := bjcc.Get(namespace, mgr.GetAPIReader())
-
 	setupLog.Info("starting",
 		bjcc.LabelVersion, version.Version,
 		bjcc.LabelName, cfg.Name,
 		bjcc.LabelPoolSize, strconv.Itoa(cfg.PodPoolSize),
 		bjcc.LabelReportHistory, strconv.Itoa(cfg.ReportHistory))
-
-	if err != nil {
-		setupLog.Error(err, "unable to get config")
-		os.Exit(1)
-	}
 
 	pc, err := metrics.NewPromCollector(cfg)
 	if err != nil {
@@ -117,17 +118,8 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 			er.InjectEventRecorder(eventRecorder)
 		}
 
-		if c, ok := r.(inject.Config); ok {
-			c.InjectConfig(m.Config)
-		}
-		if c, ok := r.(inject.Cache); ok {
-			c.InjectCache(m.Cache)
-		}
-		if r, ok := r.(inject.Reader); ok {
-			r.InjectReader(m.Manager.GetAPIReader())
-		}
+		m.addToManager(r)
 
-		_ = m.Manager.Add(r)
 		if e, ok := r.(job.CustomPodEnv); ok {
 			c := reflect.TypeOf(r)
 			setupLog.WithValues("extender", c).Info("registering custom pod env extender")
@@ -136,7 +128,7 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 	}
 
 	// setup cron job
-	m.Manager.Add(cron.Job(envExtender...))
+	m.addToManager(cron.Job(envExtender...))
 
 	// Setup a new controller to reconcile ReplicaSets
 	setupLog.Info("Setting up controller")
@@ -155,6 +147,20 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func (m *Main) addToManager(r manager.Runnable) {
+	if c, ok := r.(inject.Config); ok {
+		c.InjectConfig(m.Config)
+	}
+	if c, ok := r.(inject.Cache); ok {
+		c.InjectCache(m.Cache)
+	}
+	if r, ok := r.(inject.Reader); ok {
+		r.InjectReader(m.Manager.GetAPIReader())
+	}
+
+	_ = m.Manager.Add(r)
 }
 
 // CustomConfigValue get a custom config value

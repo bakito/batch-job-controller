@@ -279,7 +279,7 @@ func (e *execution) length() float64 {
 func (e *execution) pod(node string) (*pod, error) {
 	p, ok := e.Load(node)
 	if !ok {
-		return nil, fmt.Errorf("pod for node: '%s' is not registered", node)
+		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("pod for node: '%s' is not registered", node)}
 	}
 	return p.(*pod), nil
 }

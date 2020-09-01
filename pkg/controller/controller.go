@@ -66,7 +66,6 @@ func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		err = r.Cache.PodTerminated(executionID, node, pod.Status.Phase)
 	}
 	if err != nil {
-
 		if _, ok := err.(*lifecycle.ExecutionIDNotFound); !ok {
 			podLog.Error(err, "unexpected error")
 			return reconcile.Result{}, err

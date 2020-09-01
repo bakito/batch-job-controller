@@ -59,7 +59,7 @@ func (j *cronJob) NeedLeaderElection() bool {
 }
 
 // Start implement manager.Runnable
-func (j *cronJob) Start(i <-chan struct{}) error {
+func (j *cronJob) Start(_ <-chan struct{}) error {
 	log.WithValues("expression", j.cfg.CronExpression).Info("starting cron")
 	c := cron.New()
 	_, err := c.AddFunc(j.cfg.CronExpression, j.startPods)
@@ -70,8 +70,9 @@ func (j *cronJob) Start(i <-chan struct{}) error {
 
 	if j.cfg.RunOnStartup {
 		go func() {
+			log.WithValues("delay", j.cfg.StartupDelay).Info("starting on startup")
 			time.Sleep(j.cfg.StartupDelay)
-			log.Info("starting cron on startup")
+			log.Info("starting")
 			j.startPods()
 		}()
 	}

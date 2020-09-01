@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -41,9 +42,18 @@ var (
 )
 
 // Get read the config from the configmap
-func Get(namespace string, cl client.Reader) (*Config, error) {
+func Get(namespace string, config *rest.Config, scheme *runtime.Scheme) (*Config, error) {
+	apiReader, err := client.New(config, client.Options{Scheme: scheme})
+	if err != nil {
+		return nil, err
+	}
+	return getInternal(namespace, apiReader)
+}
 
-	cm, err := configMap(namespace, cl)
+func getInternal(namespace string, apiReader client.Reader) (*Config, error) {
+
+	// Get read the config from the configmap
+	cm, err := configMap(namespace, apiReader)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +74,7 @@ func Get(namespace string, cl client.Reader) (*Config, error) {
 
 		cfg.Namespace = namespace
 
-		cfg.Owner = findPodOwner(namespace, cl)
+		cfg.Owner = findPodOwner(namespace, apiReader)
 
 		if cfg.StartupDelay == 0 {
 			cfg.StartupDelay = 10 * time.Second

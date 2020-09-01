@@ -1,11 +1,10 @@
-package config_test
+package config
 
 import (
 	"context"
 	"fmt"
 	"os"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -21,10 +20,10 @@ import (
 var _ = Describe("Config", func() {
 	Context("Metrics", func() {
 		var (
-			m *config.Metrics
+			m *Metrics
 		)
 		BeforeEach(func() {
-			m = &config.Metrics{
+			m = &Metrics{
 				Prefix: "my_metric",
 			}
 		})
@@ -34,7 +33,7 @@ var _ = Describe("Config", func() {
 	})
 	Context("PodName", func() {
 		var (
-			c        *config.Config
+			c        *Config
 			name     string
 			nodeName string
 			node     string
@@ -45,7 +44,7 @@ var _ = Describe("Config", func() {
 			nodeName = uuid.New().String()
 			node = nodeName + "." + uuid.New().String()
 			id = uuid.New().String()
-			c = &config.Config{
+			c = &Config{
 				Name: name,
 			}
 		})
@@ -71,8 +70,8 @@ var _ = Describe("Config", func() {
 			podName = uuid.New().String()
 			mockCtrl = gm.NewController(GinkgoT())
 			mockReader = mock_client.NewMockReader(mockCtrl)
-			_ = os.Setenv(config.EnvConfigMapName, cmName)
-			_ = os.Setenv(config.EnvHostname, podName)
+			_ = os.Setenv(EnvConfigMapName, cmName)
+			_ = os.Setenv(EnvHostname, podName)
 			cmKey = client.ObjectKey{Namespace: namespace, Name: cmName}
 		})
 
@@ -81,7 +80,7 @@ var _ = Describe("Config", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
 					Return(fmt.Errorf("error"))
 
-				c, err := config.Get(namespace, mockReader)
+				c, err := getInternal(namespace, mockReader)
 				Ω(c).Should(BeNil())
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("error getting configmap"))
@@ -94,7 +93,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 
-				c, err := config.Get(namespace, mockReader)
+				c, err := getInternal(namespace, mockReader)
 				Ω(c).Should(BeNil())
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("could not find config file"))
@@ -104,12 +103,12 @@ var _ = Describe("Config", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
 					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
 						cm.Data = map[string]string{
-							config.ConfigFileName: "foo",
+							ConfigFileName: "foo",
 						}
 						return nil
 					})
 
-				c, err := config.Get(namespace, mockReader)
+				c, err := getInternal(namespace, mockReader)
 				Ω(c).Should(BeNil())
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("could not read config file"))
@@ -119,12 +118,12 @@ var _ = Describe("Config", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
 					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
 						cm.Data = map[string]string{
-							config.ConfigFileName: "name: foo",
+							ConfigFileName: "name: foo",
 						}
 						return nil
 					})
 
-				c, err := config.Get(namespace, mockReader)
+				c, err := getInternal(namespace, mockReader)
 				Ω(c).Should(BeNil())
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("could not find pod template"))
@@ -137,15 +136,15 @@ var _ = Describe("Config", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
 					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
 						cm.Data = map[string]string{
-							config.ConfigFileName:  "name: foo",
-							config.PodTemplateName: "kind: Pod",
+							ConfigFileName:  "name: foo",
+							PodTemplateName: "kind: Pod",
 						}
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
 					Return(fmt.Errorf("pod not found"))
 
-				c, err := config.Get(namespace, mockReader)
+				c, err := getInternal(namespace, mockReader)
 				Ω(c).ShouldNot(BeNil())
 				Ω(err).Should(BeNil())
 
@@ -158,8 +157,8 @@ var _ = Describe("Config", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
 					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
 						cm.Data = map[string]string{
-							config.ConfigFileName:  "name: foo",
-							config.PodTemplateName: "kind: Pod",
+							ConfigFileName:  "name: foo",
+							PodTemplateName: "kind: Pod",
 						}
 						return nil
 					})
@@ -193,7 +192,7 @@ var _ = Describe("Config", func() {
 						us.Object["kind"] = "Deployment"
 						return nil
 					})
-				c, err := config.Get(namespace, mockReader)
+				c, err := getInternal(namespace, mockReader)
 				Ω(c).ShouldNot(BeNil())
 				Ω(err).Should(BeNil())
 
