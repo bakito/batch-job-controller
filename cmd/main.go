@@ -108,15 +108,8 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 
 	var envExtender []job.CustomPodEnv
 
-	var eventRecorder record.EventRecorder
 	// setup runnables
 	for _, r := range runnables {
-		if er, ok := r.(inject.EventRecorder); ok {
-			if eventRecorder == nil {
-				eventRecorder = m.Manager.GetEventRecorderFor(m.Config.Name)
-			}
-			er.InjectEventRecorder(eventRecorder)
-		}
 
 		m.addToManager(r)
 
@@ -150,6 +143,13 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 }
 
 func (m *Main) addToManager(r manager.Runnable) {
+	if er, ok := r.(inject.EventRecorder); ok {
+		if m.eventRecorder == nil {
+			m.eventRecorder = m.Manager.GetEventRecorderFor(m.Config.Name)
+		}
+		er.InjectEventRecorder(m.eventRecorder)
+	}
+
 	if c, ok := r.(inject.Config); ok {
 		c.InjectConfig(m.Config)
 	}
@@ -186,7 +186,8 @@ func (m *Main) CustomConfigString(name string) string {
 
 // Main struct
 type Main struct {
-	Config  *bjcc.Config
-	Cache   lifecycle.Cache
-	Manager manager.Manager
+	Config        *bjcc.Config
+	Cache         lifecycle.Cache
+	Manager       manager.Manager
+	eventRecorder record.EventRecorder
 }

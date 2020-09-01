@@ -2,14 +2,16 @@
 
 # generate mocks
 mocks:
-	mockgen -destination pkg/mocks/logr/mock.go   github.com/go-logr/logr                              Logger
-	mockgen -destination pkg/mocks/client/mock.go sigs.k8s.io/controller-runtime/pkg/client            Client,Reader
-	mockgen -destination pkg/mocks/cache/mock.go  github.com/bakito/batch-job-controller/pkg/lifecycle Cache
-	mockgen -destination pkg/mocks/record/mock.go  k8s.io/client-go/tools/record                       EventRecorder
+	mockgen -destination pkg/mocks/cache/mock.go   github.com/bakito/batch-job-controller/pkg/lifecycle Cache
+	mockgen -destination pkg/mocks/logr/mock.go    github.com/go-logr/logr                              Logger
+	mockgen -destination pkg/mocks/record/mock.go  k8s.io/client-go/tools/record                        EventRecorder
+	mockgen -destination pkg/mocks/client/mock.go  sigs.k8s.io/controller-runtime/pkg/client            Client,Reader
+	mockgen -destination pkg/mocks/manager/mock.go sigs.k8s.io/controller-runtime/pkg/manager           Manager
 
 # Run go fmt against code
 fmt:
 	go fmt ./...
+	gofmt -s -w .
 
 # Run go vet against code
 vet:

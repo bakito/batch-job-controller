@@ -2,10 +2,13 @@ package cron
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/job"
 	mock_cache "github.com/bakito/batch-job-controller/pkg/mocks/cache"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
@@ -21,19 +24,24 @@ var _ = Describe("Cron", func() {
 		mockCtrl   *gm.Controller //gomock struct
 		mockClient *mock_client.MockClient
 		mockCache  *mock_cache.MockCache
+		mockLog    *mock_logr.MockLogger
 		namespace  string
 		configName string
+		id         string
 	)
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
 		mockClient = mock_client.NewMockClient(mockCtrl)
 		mockCache = mock_cache.NewMockCache(mockCtrl)
+		mockLog = mock_logr.NewMockLogger(mockCtrl)
 		namespace = uuid.New().String()
 		configName = uuid.New().String()
+		id = uuid.New().String()
 		cfg := &config.Config{
 			Name:      configName,
 			Namespace: namespace,
 		}
+		log = mockLog
 		cj = Job().(*cronJob)
 		cj.InjectCache(mockCache)
 		cj.InjectConfig(cfg)
@@ -63,7 +71,7 @@ var _ = Describe("Cron", func() {
 			nodeSelector = map[string]string{"foo": "bar"}
 			cj.cfg.JobNodeSelector = nodeSelector
 			cj.cfg.JobPodTemplate = "kind: Pod"
-			mockCache.EXPECT().NewExecution()
+			mockCache.EXPECT().NewExecution().Return(id)
 			mockCache.EXPECT().AllAdded(gm.Any())
 			mockCache.EXPECT().AddPod(gm.Any())
 			mockClient.EXPECT().DeleteAllOf(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
@@ -89,27 +97,26 @@ var _ = Describe("Cron", func() {
 				})
 		})
 		It("should start all pods", func() {
+			mockLog.EXPECT().WithValues("id", id).Return(mockLog)
+			mockLog.EXPECT().Info("executing job")
 			cj.startPods()
 		})
 	})
 
 	Context("startPods - already running", func() {
 		It("should not start all pods", func() {
+			mockLog.EXPECT().Info("last cronjob still running")
 			cj.running = true
 			cj.startPods()
 		})
 	})
 
-	Context("CreatePod", func() {
-
+	Context("podJob", func() {
 		var (
 			pj       *podJob
-			id       string
 			nodeName string
 		)
 		BeforeEach(func() {
-
-			id = uuid.New().String()
 			nodeName = uuid.New().String()
 			pj = &podJob{
 				pod:      &corev1.Pod{},
@@ -118,15 +125,63 @@ var _ = Describe("Cron", func() {
 				nodeName: nodeName,
 			}
 		})
-		It("should create a pod", func() {
-			mockClient.EXPECT().Create(gm.Any(), pj.pod)
-			pj.CreatePod()
+		Context("CreatePod", func() {
+			BeforeEach(func() {
+				mockLog.EXPECT().Info("create pod", "node", nodeName)
+			})
+			It("should create a pod", func() {
+				mockClient.EXPECT().Create(gm.Any(), pj.pod)
+				pj.CreatePod()
+			})
+			It("should log an error a pod", func() {
+				err := fmt.Errorf("some error")
+				mockClient.EXPECT().Create(gm.Any(), pj.pod).Return(err)
+				mockLog.EXPECT().Error(err, "unable to create pod", "node", nodeName)
+
+				pj.CreatePod()
+			})
+
 		})
 		It("should return the id", func() {
 			Ω(pj.ID()).Should(Equal(id))
 		})
 		It("should return the nodeName", func() {
 			Ω(pj.Node()).Should(Equal(nodeName))
+		})
+	})
+
+	Context("isUsable", func() {
+		var (
+			node                  corev1.Node
+			runOnUnscheduledNodes bool
+		)
+		BeforeEach(func() {
+			node = corev1.Node{
+				Spec:   corev1.NodeSpec{},
+				Status: corev1.NodeStatus{},
+			}
+		})
+		It("should return false if unschedulable", func() {
+			node.Spec.Unschedulable = true
+			runOnUnscheduledNodes = false
+			Ω(isUsable(node, runOnUnscheduledNodes)).Should(BeFalse())
+		})
+		It("should return true if node ready", func() {
+			node.Spec.Unschedulable = false
+			node.Status.Conditions = []corev1.NodeCondition{{Type: corev1.NodeReady, Status: corev1.ConditionTrue}}
+			runOnUnscheduledNodes = false
+			Ω(isUsable(node, runOnUnscheduledNodes)).Should(BeTrue())
+		})
+		It("should return false if node not ready", func() {
+			node.Spec.Unschedulable = false
+			node.Status.Conditions = []corev1.NodeCondition{{Type: corev1.NodeReady, Status: corev1.ConditionFalse}}
+			runOnUnscheduledNodes = false
+			Ω(isUsable(node, runOnUnscheduledNodes)).Should(BeFalse())
+		})
+		It("should return false if no conditions are set", func() {
+			node.Spec.Unschedulable = false
+			runOnUnscheduledNodes = false
+			Ω(isUsable(node, runOnUnscheduledNodes)).Should(BeFalse())
 		})
 	})
 })
