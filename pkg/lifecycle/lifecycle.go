@@ -83,9 +83,9 @@ func (c *controller) NewExecution(jobs int) string {
 	//                       yyyyMMddHHmm
 	id := time.Now().Format("200601021504")
 	e := &execution{
-		id:      id,
-		jobChan: make(chan Job, c.podPoolSize),
-		cache:   c,
+		id:         id,
+		jobChan:    make(chan Job, c.podPoolSize),
+		controller: c,
 	}
 	c.executions[id] = e
 
@@ -175,13 +175,13 @@ func (e *execution) worker(id int) {
 		}
 		p.started = time.Now()
 		p.status = "Started"
-		e.cache.addProgress(1)
+		e.controller.addProgress(1)
 
 		for p.terminated == nil {
 			time.Sleep(time.Second)
 		}
-		e.cache.addProgress(1)
-		l.WithValues("jobID", job.ID(), "nodeName", job.Node(), "progress", e.cache.getProgress()).Info("job terminated")
+		e.controller.addProgress(1)
+		l.WithValues("jobID", job.ID(), "nodeName", job.Node(), "progress", e.controller.getProgress()).Info("job terminated")
 	}
 }
 
@@ -288,9 +288,9 @@ func (c *controller) podForID(id, node string) (*pod, error) {
 
 type execution struct {
 	sync.Map
-	id      string
-	jobChan chan Job
-	cache   *controller
+	id         string
+	jobChan    chan Job
+	controller *controller
 }
 
 func (e *execution) pod(node string) (*pod, error) {

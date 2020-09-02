@@ -143,7 +143,7 @@ var _ = Describe("HTTP", func() {
 
 			handler.ValidateRequestCount(GinkgoT(), 1)
 		})
-		It("should allow the request if cache is nil", func() {
+		It("should allow the request if controller is nil", func() {
 			mockController.EXPECT().Has(node, executionID).Return(true)
 			s.InjectController(nil)
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
