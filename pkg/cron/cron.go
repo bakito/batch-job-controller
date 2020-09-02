@@ -31,7 +31,7 @@ func Job(extender ...job.CustomPodEnv) manager.Runnable {
 type cronJob struct {
 	client   client.Client
 	job      *cron.Cron
-	cache    lifecycle.Cache
+	cache    lifecycle.Controller
 	running  bool
 	cfg      *config.Config
 	extender []job.CustomPodEnv
@@ -42,8 +42,8 @@ func (j *cronJob) InjectConfig(cfg *config.Config) {
 	j.cfg = cfg
 }
 
-// InjectCache inject the cache
-func (j *cronJob) InjectCache(c lifecycle.Cache) {
+// InjectController inject the cache
+func (j *cronJob) InjectController(c lifecycle.Controller) {
 	j.cache = c
 }
 
@@ -101,11 +101,25 @@ func (j *cronJob) startPods() {
 		j.running = false
 	}()
 
-	executionID := j.cache.NewExecution()
+	// Fetch the ReplicaSet from the cache
+	nodeList := &corev1.NodeList{}
+	err := j.client.List(context.TODO(), nodeList, client.MatchingLabels(j.cfg.JobNodeSelector))
+	if err != nil {
+		log.Error(err, "error listing nodes")
+		return
+	}
+	var nodes []corev1.Node
+	for _, n := range nodeList.Items {
+		if isUsable(n, j.cfg.RunOnUnscheduledNodes) {
+			nodes = append(nodes, n)
+		}
+	}
+
+	executionID := j.cache.NewExecution(len(nodes))
 
 	jobLog := log.WithValues("id", executionID)
 
-	err := j.deleteAll(&corev1.Pod{})
+	err = j.deleteAll(&corev1.Pod{})
 	if err != nil {
 		jobLog.Error(err, "unable to delete old pods")
 		return
@@ -118,31 +132,21 @@ func (j *cronJob) startPods() {
 		jobLog.Error(err, "error getting service %q", j.cfg.CallbackServiceName)
 	}
 
-	// Fetch the ReplicaSet from the cache
-	nodeList := &corev1.NodeList{}
-	err = j.client.List(context.TODO(), nodeList, client.MatchingLabels(j.cfg.JobNodeSelector))
-	if err != nil {
-		jobLog.Error(err, "error listing nodes")
-		return
-	}
-
 	jobLog.Info("executing job")
-	for _, n := range nodeList.Items {
-		if isUsable(n, j.cfg.RunOnUnscheduledNodes) {
-			pod, err := job.New(j.cfg, n.ObjectMeta.Name, executionID, svc.Spec.ClusterIP, j.cfg.Owner, j.extender...)
-			if err != nil {
-				jobLog.Error(err, "error creating pod from template")
-				return
-			}
-
-			_ = j.cache.AddPod(&podJob{
-				id:       executionID,
-				nodeName: n.ObjectMeta.Name,
-				log:      jobLog,
-				client:   j.client,
-				pod:      pod,
-			})
+	for _, n := range nodes {
+		pod, err := job.New(j.cfg, n.ObjectMeta.Name, executionID, svc.Spec.ClusterIP, j.cfg.Owner, j.extender...)
+		if err != nil {
+			jobLog.Error(err, "error creating pod from template")
+			return
 		}
+
+		_ = j.cache.AddPod(&podJob{
+			id:       executionID,
+			nodeName: n.ObjectMeta.Name,
+			log:      jobLog,
+			client:   j.client,
+			pod:      pod,
+		})
 	}
 
 	_ = j.cache.AllAdded(executionID)

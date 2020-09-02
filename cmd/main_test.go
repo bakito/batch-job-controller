@@ -38,7 +38,7 @@ var _ = Describe("Main", func() {
 			runnable := &r{}
 			m.addToManager(runnable)
 			Ω(runnable.withConfig).Should(BeTrue())
-			Ω(runnable.withCache).Should(BeTrue())
+			Ω(runnable.withController).Should(BeTrue())
 			Ω(runnable.withEventRecorder).Should(BeTrue())
 			Ω(runnable.withReader).Should(BeTrue())
 		})
@@ -47,7 +47,7 @@ var _ = Describe("Main", func() {
 
 type r struct {
 	withConfig        bool
-	withCache         bool
+	withController    bool
 	withEventRecorder bool
 	withReader        bool
 }
@@ -61,9 +61,9 @@ func (r *r) InjectConfig(_ *config.Config) {
 	r.withConfig = true
 }
 
-// InjectCache inject the cache
-func (r *r) InjectCache(_ lifecycle.Cache) {
-	r.withCache = true
+// InjectController inject the cache
+func (r *r) InjectController(_ lifecycle.Controller) {
+	r.withController = true
 }
 
 // InjectEventRecorder inject the event recorder

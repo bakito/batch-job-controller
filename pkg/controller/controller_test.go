@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	mock_cache "github.com/bakito/batch-job-controller/pkg/mocks/cache"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	gm "github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -54,19 +54,19 @@ var _ = Describe("Controller", func() {
 
 	Context("Reconcile", func() {
 		var (
-			r          *PodReconciler
-			mockCtrl   *gm.Controller //gomock struct
-			mockCache  *mock_cache.MockCache
-			mockClient *mock_client.MockClient
-			mockLog    *mock_logr.MockLogger
+			r              *PodReconciler
+			mockCtrl       *gm.Controller //gomock struct
+			mockController *mock_lifecycle.MockController
+			mockClient     *mock_client.MockClient
+			mockLog        *mock_logr.MockLogger
 		)
 		BeforeEach(func() {
 			mockCtrl = gm.NewController(GinkgoT())
-			mockCache = mock_cache.NewMockCache(mockCtrl)
+			mockController = mock_lifecycle.NewMockController(mockCtrl)
 			mockClient = mock_client.NewMockClient(mockCtrl)
 			mockLog = mock_logr.NewMockLogger(mockCtrl)
 			r = &PodReconciler{}
-			r.Cache = mockCache
+			r.Controller = mockController
 			r.Client = mockClient
 			r.Log = mockLog
 		})
@@ -99,7 +99,7 @@ var _ = Describe("Controller", func() {
 					}
 					return nil
 				})
-			mockCache.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded)
+			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded)
 
 			result, err := r.Reconcile(ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -116,7 +116,7 @@ var _ = Describe("Controller", func() {
 					}
 					return nil
 				})
-			mockCache.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodFailed)
+			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodFailed)
 
 			result, err := r.Reconcile(ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -133,7 +133,7 @@ var _ = Describe("Controller", func() {
 					}
 					return nil
 				})
-			mockCache.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
+			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
 
 			result, err := r.Reconcile(ctrl.Request{})
 			Ω(err).Should(HaveOccurred())

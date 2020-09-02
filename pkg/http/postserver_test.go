@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
-	mock_cache "github.com/bakito/batch-job-controller/pkg/mocks/cache"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
 	gm "github.com/golang/mock/gomock"
@@ -33,12 +33,12 @@ const (
 
 var _ = Describe("HTTP", func() {
 	var (
-		mockCtrl    *gm.Controller //gomock struct
-		mockLog     *mock_logr.MockLogger
-		mockCache   *mock_cache.MockCache
-		mockReader  *mock_client.MockReader
-		executionID string
-		node        string
+		mockCtrl       *gm.Controller //gomock struct
+		mockLog        *mock_logr.MockLogger
+		mockController *mock_lifecycle.MockController
+		mockReader     *mock_client.MockReader
+		executionID    string
+		node           string
 
 		s   *PostServer
 		cfg *config.Config
@@ -52,7 +52,7 @@ var _ = Describe("HTTP", func() {
 		mockLog = mock_logr.NewMockLogger(mockCtrl)
 		mockReader = mock_client.NewMockReader(mockCtrl)
 		log = mockLog
-		mockCache = mock_cache.NewMockCache(mockCtrl)
+		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
 		cfg = &config.Config{
@@ -65,7 +65,7 @@ var _ = Describe("HTTP", func() {
 			ReportPath: tempDir(executionID),
 		}
 		s.InjectReader(mockReader)
-		s.InjectCache(mockCache)
+		s.InjectController(mockController)
 		s.InjectConfig(cfg)
 
 		rr = httptest.NewRecorder()
@@ -85,7 +85,7 @@ var _ = Describe("HTTP", func() {
 		})
 		It("succeed if file is saved", func() {
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Info("received report")
 
@@ -106,7 +106,7 @@ var _ = Describe("HTTP", func() {
 		})
 		It("fails if json is invalid", func() {
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 
@@ -134,7 +134,7 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("should allow the request", func() {
-			mockCache.EXPECT().Has(node, executionID).Return(true)
+			mockController.EXPECT().Has(node, executionID).Return(true)
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -144,8 +144,8 @@ var _ = Describe("HTTP", func() {
 			handler.ValidateRequestCount(GinkgoT(), 1)
 		})
 		It("should allow the request if cache is nil", func() {
-			mockCache.EXPECT().Has(node, executionID).Return(true)
-			s.InjectCache(nil)
+			mockController.EXPECT().Has(node, executionID).Return(true)
+			s.InjectController(nil)
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -154,7 +154,7 @@ var _ = Describe("HTTP", func() {
 			handler.ValidateRequestCount(GinkgoT(), 1)
 		})
 		It("should deny if execution is not known", func() {
-			mockCache.EXPECT().Has(node, executionID).Return(false)
+			mockController.EXPECT().Has(node, executionID).Return(false)
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -180,7 +180,7 @@ var _ = Describe("HTTP", func() {
 
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog)
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Info("received file")
 		})
@@ -245,11 +245,11 @@ var _ = Describe("HTTP", func() {
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
 			router.HandleFunc(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 		})
 		It("succeed if event with message is sent", func() {
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
 			mockLog.EXPECT().Info("event created")
@@ -265,7 +265,7 @@ var _ = Describe("HTTP", func() {
 		})
 		It("succeed if event with message with args is sent", func() {
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
 			mockLog.EXPECT().Info("event created")
@@ -282,7 +282,7 @@ var _ = Describe("HTTP", func() {
 
 		It("fails if json is invalid", func() {
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
@@ -298,7 +298,7 @@ var _ = Describe("HTTP", func() {
 
 		It("fails if event is invalid", func() {
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
@@ -314,7 +314,7 @@ var _ = Describe("HTTP", func() {
 
 		It("fails if pod not found", func() {
 
-			mockCache.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())

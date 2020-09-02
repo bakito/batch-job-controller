@@ -6,8 +6,8 @@ import (
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/job"
-	mock_cache "github.com/bakito/batch-job-controller/pkg/mocks/cache"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -20,19 +20,19 @@ import (
 
 var _ = Describe("Cron", func() {
 	var (
-		cj         *cronJob
-		mockCtrl   *gm.Controller //gomock struct
-		mockClient *mock_client.MockClient
-		mockCache  *mock_cache.MockCache
-		mockLog    *mock_logr.MockLogger
-		namespace  string
-		configName string
-		id         string
+		cj             *cronJob
+		mockCtrl       *gm.Controller //gomock struct
+		mockClient     *mock_client.MockClient
+		mockController *mock_lifecycle.MockController
+		mockLog        *mock_logr.MockLogger
+		namespace      string
+		configName     string
+		id             string
 	)
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
 		mockClient = mock_client.NewMockClient(mockCtrl)
-		mockCache = mock_cache.NewMockCache(mockCtrl)
+		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		mockLog = mock_logr.NewMockLogger(mockCtrl)
 		namespace = uuid.New().String()
 		configName = uuid.New().String()
@@ -43,7 +43,7 @@ var _ = Describe("Cron", func() {
 		}
 		log = mockLog
 		cj = Job().(*cronJob)
-		cj.InjectCache(mockCache)
+		cj.InjectController(mockController)
 		cj.InjectConfig(cfg)
 		cj.InjectClient(mockClient)
 
@@ -71,9 +71,9 @@ var _ = Describe("Cron", func() {
 			nodeSelector = map[string]string{"foo": "bar"}
 			cj.cfg.JobNodeSelector = nodeSelector
 			cj.cfg.JobPodTemplate = "kind: Pod"
-			mockCache.EXPECT().NewExecution().Return(id)
-			mockCache.EXPECT().AllAdded(gm.Any())
-			mockCache.EXPECT().AddPod(gm.Any())
+			mockController.EXPECT().NewExecution(1).Return(id)
+			mockController.EXPECT().AllAdded(gm.Any())
+			mockController.EXPECT().AddPod(gm.Any())
 			mockClient.EXPECT().DeleteAllOf(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Service{}))
 			mockClient.EXPECT().List(gm.Any(), gm.AssignableToTypeOf(&corev1.NodeList{}), client.MatchingLabels(nodeSelector)).

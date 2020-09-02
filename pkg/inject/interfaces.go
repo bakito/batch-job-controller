@@ -14,9 +14,9 @@ type EventRecorder interface {
 	InjectEventRecorder(record.EventRecorder)
 }
 
-// Cache inject the cache
-type Cache interface {
-	InjectCache(lifecycle.Cache)
+// Controller inject the cache
+type Controller interface {
+	InjectController(lifecycle.Controller)
 }
 
 // Reader inject the api reader

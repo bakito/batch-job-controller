@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -22,13 +23,13 @@ var (
 	log = ctrl.Log.WithName("lifecycle")
 )
 
-//NewCache get a new cache
-func NewCache(cfg *config.Config, prom *metrics.Collector) Cache {
-	return &cache{
+//NewController get a new controller
+func NewController(cfg *config.Config, prom *metrics.Collector) Controller {
+	return &controller{
 		executions:    make(map[string]*execution),
 		nodes:         make(map[string]bool),
 		prom:          prom,
-		log:           log.WithName("cache"),
+		log:           log.WithName("controller"),
 		reportHistory: cfg.ReportHistory + 1, // 1+ for latest
 		reportDir:     cfg.ReportDirectory,
 		podPoolSize:   cfg.PodPoolSize,
@@ -36,9 +37,9 @@ func NewCache(cfg *config.Config, prom *metrics.Collector) Cache {
 	}
 }
 
-//Cache interface
-type Cache interface {
-	NewExecution() string
+//Controller interface
+type Controller interface {
+	NewExecution(nbrOrJobs int) string
 	AllAdded(executionID string) error
 	AddPod(job Job) error
 	PodTerminated(executionID, node string, phase corev1.PodPhase) error
@@ -48,7 +49,7 @@ type Cache interface {
 	Has(node string, executionId string) bool
 }
 
-type cache struct {
+type controller struct {
 	prom          *metrics.Collector
 	executions    map[string]*execution
 	nodes         map[string]bool
@@ -57,25 +58,41 @@ type cache struct {
 	reportHistory int
 	podPoolSize   int
 	config        config.Config
+	progress      uint64
+	progressStep  float64
 }
 
 // verify interface is implemented
-var _ Cache = &cache{}
+var _ Controller = &controller{}
 
 // Config get the config
-func (c *cache) Config() config.Config {
+func (c *controller) Config() config.Config {
 	return c.config
 }
 
+func (c *controller) getProgress() string {
+	return fmt.Sprintf("%.f%%", c.progressStep*float64(c.progress))
+}
+
+func (c *controller) addProgress(p uint64) {
+	atomic.AddUint64(&c.progress, p)
+}
+
 // NewExecution setup a new execution
-func (c *cache) NewExecution() string {
+func (c *controller) NewExecution(jobs int) string {
 	//                       yyyyMMddHHmm
 	id := time.Now().Format("200601021504")
 	e := &execution{
 		id:      id,
 		jobChan: make(chan Job, c.podPoolSize),
+		cache:   c,
 	}
 	c.executions[id] = e
+
+	fj := float64(jobs)
+	c.progressStep = 100 / (fj * 3)
+	atomic.StoreUint64(&c.progress, 0)
+	c.prom.Pods(fj)
 
 	for w := 1; w <= c.podPoolSize; w++ {
 		go e.worker(w)
@@ -110,14 +127,11 @@ func (c *cache) NewExecution() string {
 }
 
 //  AllAdded start the processing
-func (c *cache) AllAdded(executionID string) error {
+func (c *controller) AllAdded(executionID string) error {
 	e, err := c.forID(executionID)
 	if err != nil {
 		return err
 	}
-
-	cnt := e.length()
-	c.prom.Pods(cnt)
 
 	files, err := ioutil.ReadDir(c.reportDir)
 	if err != nil {
@@ -161,16 +175,18 @@ func (e *execution) worker(id int) {
 		}
 		p.started = time.Now()
 		p.status = "Started"
+		e.cache.addProgress(1)
 
 		for p.terminated == nil {
 			time.Sleep(time.Second)
 		}
-		l.V(4).Info("job terminated", "jobID", job.ID(), "nodeName", job.Node())
+		e.cache.addProgress(1)
+		l.WithValues("jobID", job.ID(), "nodeName", job.Node(), "progress", e.cache.getProgress()).Info("job terminated")
 	}
 }
 
 // AddPod add a new pod
-func (c *cache) AddPod(job Job) error {
+func (c *controller) AddPod(job Job) error {
 	e, err := c.forID(job.ID())
 	if err != nil {
 		return err
@@ -184,15 +200,26 @@ func (c *cache) AddPod(job Job) error {
 }
 
 // PodTerminated pod was terminated
-func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) error {
+func (c *controller) PodTerminated(executionID, node string, phase corev1.PodPhase) error {
 	p, err := c.podForID(executionID, node)
 	if err != nil {
 		return err
 	}
+	if p.terminated != nil {
+		return nil
+	}
+	c.addProgress(1)
 	t := time.Now()
 	p.terminated = &t
 	p.status = string(phase)
 	c.prom.Duration(node, executionID, float64(t.Sub(p.started).Milliseconds()))
+
+	l := c.log.WithValues(
+		"result ", phase,
+		"node", node,
+		"reports", p.reportReceived != nil,
+		"progress", c.getProgress(),
+	)
 
 	// if not successful or not report received report an error
 	if phase != corev1.PodSucceeded || p.reportReceived == nil {
@@ -202,16 +229,16 @@ func (c *cache) PodTerminated(executionID, node string, phase corev1.PodPhase) e
 			msg = "did not receive report"
 		}
 		c.prom.ProcessingFinished(node, executionID, true)
-		c.log.WithValues("result ", phase, "node", node, "reports", p.reportReceived != nil).Info(msg)
+		l.Info(msg)
 	} else {
-		c.log.WithValues("result ", phase, "node", node).Info("pod successful")
+		l.Info("pod successful")
 	}
 
 	return nil
 }
 
 // ReportReceived report was received
-func (c *cache) ReportReceived(executionID, node string, processingError error, results metrics.Results) {
+func (c *controller) ReportReceived(executionID, node string, processingError error, results metrics.Results) {
 	for k := range results {
 		for _, r := range results[k] {
 			c.prom.MetricFor(executionID, node, k, r)
@@ -234,7 +261,7 @@ func (c *cache) ReportReceived(executionID, node string, processingError error, 
 	p.status = "ReportReceived"
 }
 
-func (c *cache) Has(node string, executionId string) bool {
+func (c *controller) Has(node string, executionId string) bool {
 	if _, ok := c.nodes[node]; !ok {
 		return false
 	}
@@ -242,7 +269,7 @@ func (c *cache) Has(node string, executionId string) bool {
 	return ok
 }
 
-func (c *cache) forID(id string) (*execution, error) {
+func (c *controller) forID(id string) (*execution, error) {
 	e, ok := c.executions[id]
 	if !ok {
 		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("execution with id: '%s' not found", id)}
@@ -250,7 +277,7 @@ func (c *cache) forID(id string) (*execution, error) {
 	return e, nil
 }
 
-func (c *cache) podForID(id, node string) (*pod, error) {
+func (c *controller) podForID(id, node string) (*pod, error) {
 	e, err := c.forID(id)
 	if err != nil {
 		return nil, err
@@ -263,17 +290,7 @@ type execution struct {
 	sync.Map
 	id      string
 	jobChan chan Job
-}
-
-func (e *execution) length() float64 {
-	var length float64 = 0
-
-	e.Map.Range(func(_, _ interface{}) bool {
-		length++
-
-		return true
-	})
-	return length
+	cache   *controller
 }
 
 func (e *execution) pod(node string) (*pod, error) {

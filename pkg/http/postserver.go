@@ -96,7 +96,7 @@ func SetupProfiling(r *mux.Router) {
 // PostServer post server
 type PostServer struct {
 	Server
-	Cache         lifecycle.Cache
+	Cache         lifecycle.Controller
 	ReportPath    string
 	EventRecorder record.EventRecorder
 	Config        *config.Config
@@ -108,8 +108,8 @@ func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
 	s.EventRecorder = er
 }
 
-// InjectCache inject the cache
-func (s *PostServer) InjectCache(cache lifecycle.Cache) {
+// InjectController inject the cache
+func (s *PostServer) InjectController(cache lifecycle.Controller) {
 	s.Cache = cache
 }
 

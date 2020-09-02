@@ -35,29 +35,29 @@ var _ = Describe("lifecycle", func() {
 		}
 		pc, _ = metrics.NewPromCollector(cfg)
 	})
-	Context("NewCache", func() {
-		It("should return a new cache", func() {
-			c := NewCache(cfg, pc)
+	Context("NewController", func() {
+		It("should return a new controller", func() {
+			c := NewController(cfg, pc)
 			Ω(c).ShouldNot(BeNil())
-			Ω(c.(*cache).config).ShouldNot(BeNil())
-			Ω(c.(*cache).log).ShouldNot(BeNil())
-			Ω(c.(*cache).reportDir).Should(Equal(repDir))
-			Ω(c.(*cache).podPoolSize).Should(Equal(poolSize))
+			Ω(c.(*controller).config).ShouldNot(BeNil())
+			Ω(c.(*controller).log).ShouldNot(BeNil())
+			Ω(c.(*controller).reportDir).Should(Equal(repDir))
+			Ω(c.(*controller).podPoolSize).Should(Equal(poolSize))
 		})
 	})
 	Context("NewExecution", func() {
 		var (
-			c *cache
+			c *controller
 		)
 		BeforeEach(func() {
 			cfg.PodPoolSize = 0
-			c = NewCache(cfg, pc).(*cache)
+			c = NewController(cfg, pc).(*controller)
 		})
 		AfterEach(func() {
 			os.RemoveAll(c.reportDir)
 		})
 		It("should create an id and directory", func() {
-			id := c.NewExecution()
+			id := c.NewExecution(0)
 			Ω(id).ShouldNot(BeEmpty())
 			_, err := os.Stat(filepath.Join(repDir, id))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -67,7 +67,7 @@ var _ = Describe("lifecycle", func() {
 			}
 		})
 		It("should create an id and directory and move the link", func() {
-			id1 := c.NewExecution()
+			id1 := c.NewExecution(0)
 			Ω(id1).ShouldNot(BeEmpty())
 			_, err := os.Stat(filepath.Join(repDir, id1))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -75,7 +75,7 @@ var _ = Describe("lifecycle", func() {
 				_, err = os.Lstat(filepath.Join(repDir, "latest"))
 				Ω(err).ShouldNot(HaveOccurred())
 			}
-			id2 := c.NewExecution()
+			id2 := c.NewExecution(0)
 			Ω(id2).ShouldNot(BeEmpty())
 			_, err = os.Lstat(filepath.Join(repDir, id2))
 			Ω(err).ShouldNot(HaveOccurred())

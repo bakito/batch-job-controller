@@ -25,8 +25,8 @@ const (
 // PodReconciler reconciler
 type PodReconciler struct {
 	client.Client
-	Log   logr.Logger
-	Cache lifecycle.Cache
+	Log        logr.Logger
+	Controller lifecycle.Controller
 }
 
 // SetupWithManager setup
@@ -61,9 +61,9 @@ func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	switch pod.Status.Phase {
 	case corev1.PodSucceeded:
-		err = r.Cache.PodTerminated(executionID, node, pod.Status.Phase)
+		err = r.Controller.PodTerminated(executionID, node, pod.Status.Phase)
 	case corev1.PodFailed:
-		err = r.Cache.PodTerminated(executionID, node, pod.Status.Phase)
+		err = r.Controller.PodTerminated(executionID, node, pod.Status.Phase)
 	}
 	if err != nil {
 		if _, ok := err.(*lifecycle.ExecutionIDNotFound); !ok {

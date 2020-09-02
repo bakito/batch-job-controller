@@ -94,12 +94,11 @@ func Setup() *Main {
 		setupLog.Error(err, "error creating prometheus collector")
 		os.Exit(1)
 	}
-	cache := lifecycle.NewCache(cfg, pc)
 
 	return &Main{
-		Cache:   cache,
-		Config:  cfg,
-		Manager: mgr,
+		Controller: lifecycle.NewController(cfg, pc),
+		Config:     cfg,
+		Manager:    mgr,
 	}
 }
 
@@ -127,9 +126,9 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 	setupLog.Info("Setting up controller")
 
 	if err := (&controller.PodReconciler{
-		Client: m.Manager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
-		Cache:  m.Cache,
+		Client:     m.Manager.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Pod"),
+		Controller: m.Controller,
 	}).SetupWithManager(m.Manager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		os.Exit(1)
@@ -153,8 +152,8 @@ func (m *Main) addToManager(r manager.Runnable) {
 	if c, ok := r.(inject.Config); ok {
 		c.InjectConfig(m.Config)
 	}
-	if c, ok := r.(inject.Cache); ok {
-		c.InjectCache(m.Cache)
+	if c, ok := r.(inject.Controller); ok {
+		c.InjectController(m.Controller)
 	}
 	if r, ok := r.(inject.Reader); ok {
 		r.InjectReader(m.Manager.GetAPIReader())
@@ -187,7 +186,7 @@ func (m *Main) CustomConfigString(name string) string {
 // Main struct
 type Main struct {
 	Config        *bjcc.Config
-	Cache         lifecycle.Cache
+	Controller    lifecycle.Controller
 	Manager       manager.Manager
 	eventRecorder record.EventRecorder
 }
