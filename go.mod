@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.2.1
+	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.2.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/golang/mock v1.4.4
