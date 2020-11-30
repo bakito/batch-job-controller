@@ -29,12 +29,12 @@ func Job(extender ...job.CustomPodEnv) manager.Runnable {
 }
 
 type cronJob struct {
-	client   client.Client
-	job      *cron.Cron
-	cache    lifecycle.Controller
-	running  bool
-	cfg      *config.Config
-	extender []job.CustomPodEnv
+	client     client.Client
+	job        *cron.Cron
+	controller lifecycle.Controller
+	running    bool
+	cfg        *config.Config
+	extender   []job.CustomPodEnv
 }
 
 // InjectConfig inject the config
@@ -42,9 +42,9 @@ func (j *cronJob) InjectConfig(cfg *config.Config) {
 	j.cfg = cfg
 }
 
-// InjectController inject the cache
+// InjectController inject the controller
 func (j *cronJob) InjectController(c lifecycle.Controller) {
-	j.cache = c
+	j.controller = c
 }
 
 // InjectClient inject the client
@@ -101,7 +101,7 @@ func (j *cronJob) startPods() {
 		j.running = false
 	}()
 
-	// Fetch the ReplicaSet from the cache
+	// Fetch the ReplicaSet from the controller
 	nodeList := &corev1.NodeList{}
 	err := j.client.List(context.TODO(), nodeList, client.MatchingLabels(j.cfg.JobNodeSelector))
 	if err != nil {
@@ -115,7 +115,7 @@ func (j *cronJob) startPods() {
 		}
 	}
 
-	executionID := j.cache.NewExecution(len(nodes))
+	executionID := j.controller.NewExecution(len(nodes))
 
 	jobLog := log.WithValues("id", executionID)
 
@@ -140,7 +140,7 @@ func (j *cronJob) startPods() {
 			return
 		}
 
-		_ = j.cache.AddPod(&podJob{
+		_ = j.controller.AddPod(&podJob{
 			id:       executionID,
 			nodeName: n.ObjectMeta.Name,
 			log:      jobLog,
@@ -149,7 +149,7 @@ func (j *cronJob) startPods() {
 		})
 	}
 
-	_ = j.cache.AllAdded(executionID)
+	_ = j.controller.AllAdded(executionID)
 }
 
 func isUsable(node corev1.Node, runOnUnscheduledNodes bool) bool {

@@ -96,7 +96,7 @@ func SetupProfiling(r *mux.Router) {
 // PostServer post server
 type PostServer struct {
 	Server
-	Cache         lifecycle.Controller
+	Controller    lifecycle.Controller
 	ReportPath    string
 	EventRecorder record.EventRecorder
 	Config        *config.Config
@@ -109,8 +109,8 @@ func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
 }
 
 // InjectController inject the cache
-func (s *PostServer) InjectController(cache lifecycle.Controller) {
-	s.Cache = cache
+func (s *PostServer) InjectController(c lifecycle.Controller) {
+	s.Controller = c
 }
 
 // InjectReader inject the client reader
@@ -162,7 +162,7 @@ func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 		postLog.Error(err, "error receiving file")
 		return
 	}
-	s.Cache.ReportReceived(executionID, node, err, *results)
+	s.Controller.ReportReceived(executionID, node, err, *results)
 	postLog.Info("received report")
 }
 
