@@ -1,6 +1,6 @@
 module github.com/bakito/batch-job-controller
 
-go 1.14
+go 1.15
 
 require (
 	github.com/ghodss/yaml v1.0.0
@@ -11,12 +11,12 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/onsi/ginkgo v1.14.2
-	github.com/onsi/gomega v1.10.3
+	github.com/onsi/gomega v1.10.4
 	github.com/prometheus/client_golang v1.8.0
 	github.com/prometheus/common v0.15.0
 	github.com/robfig/cron/v3 v3.0.1
-	k8s.io/api v0.20.0
-	k8s.io/apimachinery v0.20.0
-	k8s.io/client-go v0.20.0
+	k8s.io/api v0.19.4
+	k8s.io/apimachinery v0.19.4
+	k8s.io/client-go v0.19.4
 	sigs.k8s.io/controller-runtime v0.6.4
 )
