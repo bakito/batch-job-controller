@@ -5,35 +5,36 @@
 package mock_record
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	reflect "reflect"
 )
 
-// MockEventRecorder is a mock of EventRecorder interface
+// MockEventRecorder is a mock of EventRecorder interface.
 type MockEventRecorder struct {
 	ctrl     *gomock.Controller
 	recorder *MockEventRecorderMockRecorder
 }
 
-// MockEventRecorderMockRecorder is the mock recorder for MockEventRecorder
+// MockEventRecorderMockRecorder is the mock recorder for MockEventRecorder.
 type MockEventRecorderMockRecorder struct {
 	mock *MockEventRecorder
 }
 
-// NewMockEventRecorder creates a new mock instance
+// NewMockEventRecorder creates a new mock instance.
 func NewMockEventRecorder(ctrl *gomock.Controller) *MockEventRecorder {
 	mock := &MockEventRecorder{ctrl: ctrl}
 	mock.recorder = &MockEventRecorderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEventRecorder) EXPECT() *MockEventRecorderMockRecorder {
 	return m.recorder
 }
 
-// AnnotatedEventf mocks base method
+// AnnotatedEventf mocks base method.
 func (m *MockEventRecorder) AnnotatedEventf(arg0 runtime.Object, arg1 map[string]string, arg2, arg3, arg4 string, arg5 ...interface{}) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3, arg4}
@@ -43,26 +44,26 @@ func (m *MockEventRecorder) AnnotatedEventf(arg0 runtime.Object, arg1 map[string
 	m.ctrl.Call(m, "AnnotatedEventf", varargs...)
 }
 
-// AnnotatedEventf indicates an expected call of AnnotatedEventf
+// AnnotatedEventf indicates an expected call of AnnotatedEventf.
 func (mr *MockEventRecorderMockRecorder) AnnotatedEventf(arg0, arg1, arg2, arg3, arg4 interface{}, arg5 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2, arg3, arg4}, arg5...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnnotatedEventf", reflect.TypeOf((*MockEventRecorder)(nil).AnnotatedEventf), varargs...)
 }
 
-// Event mocks base method
+// Event mocks base method.
 func (m *MockEventRecorder) Event(arg0 runtime.Object, arg1, arg2, arg3 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Event", arg0, arg1, arg2, arg3)
 }
 
-// Event indicates an expected call of Event
+// Event indicates an expected call of Event.
 func (mr *MockEventRecorderMockRecorder) Event(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Event", reflect.TypeOf((*MockEventRecorder)(nil).Event), arg0, arg1, arg2, arg3)
 }
 
-// Eventf mocks base method
+// Eventf mocks base method.
 func (m *MockEventRecorder) Eventf(arg0 runtime.Object, arg1, arg2, arg3 string, arg4 ...interface{}) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3}
@@ -72,7 +73,7 @@ func (m *MockEventRecorder) Eventf(arg0 runtime.Object, arg1, arg2, arg3 string,
 	m.ctrl.Call(m, "Eventf", varargs...)
 }
 
-// Eventf indicates an expected call of Eventf
+// Eventf indicates an expected call of Eventf.
 func (mr *MockEventRecorderMockRecorder) Eventf(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)

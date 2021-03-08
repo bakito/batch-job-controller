@@ -1,7 +1,6 @@
 before:
   hooks:
     - helm package ./helm/example-batch-job-controller/ --version v{{ .Version }} --app-version v{{ .Version }} -d ./
-    - make licenses
 builds:
   - skip: true
     main: ./cmd/generic/main.go

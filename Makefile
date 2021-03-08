@@ -22,13 +22,9 @@ tidy:
 	go mod tidy
 
 # Run tests
-test: mocks tidy fmt vet
+test: tidy mocks fmt vet
 	go test ./...  -coverprofile=coverage.out
 	go tool cover -func=coverage.out
-
-# Run ci tests
-test-ci: test
-	goveralls -service=travis-ci -v -coverprofile=coverage.out
 
 # Run tests
 helm-template: helm
@@ -48,30 +44,15 @@ release: goreleaser
 test-release: goreleaser
 	goreleaser --skip-publish --snapshot --rm-dist
 
-licenses: go-licenses
-	go-licenses csv "github.com/bakito/batch-job-controller/cmd/generic"  2>/dev/null | sort > ./dependency-licenses.csv
-
-tools: mockgen ginkgo helm goveralls goreleaser go-licenses
+tools: mockgen ginkgo helm
 
 mockgen:
 ifeq (, $(shell which mockgen))
- $(shell go get github.com/golang/mock/mockgen@v1.4.3)
+ $(shell go get github.com/golang/mock/mockgen)
 endif
 ginkgo:
 ifeq (, $(shell which ginkgo))
  $(shell go get github.com/onsi/ginkgo/ginkgo)
-endif
-goveralls:
-ifeq (, $(shell which goveralls))
- $(shell go get github.com/mattn/goveralls)
-endif
-go-licenses:
-ifeq (, $(shell which go-licenses))
- $(shell go get github.com/google/go-licenses)
-endif
-goreleaser:
-ifeq (, $(shell which goreleaser))
- $(shell go get github.com/goreleaser/goreleaser)
 endif
 helm:
 ifeq (, $(shell which helm))
