@@ -24,7 +24,6 @@ tidy:
 # Run tests
 test: tidy mocks fmt vet
 	go test ./...  -coverprofile=coverage.out
-	go tool cover -func=coverage.out
 
 # Run tests
 helm-template: helm
