@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	mock_manager "github.com/bakito/batch-job-controller/pkg/mocks/manager"
@@ -52,7 +53,7 @@ type r struct {
 	withReader        bool
 }
 
-func (r r) Start(i <-chan struct{}) error {
+func (r r) Start(_ context.Context) error {
 	return nil
 }
 

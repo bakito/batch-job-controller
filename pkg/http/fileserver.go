@@ -25,7 +25,7 @@ type Server struct {
 }
 
 // Start the server
-func (s *Server) Start(stop <-chan struct{}) error {
+func (s *Server) Start(ctx context.Context) error {
 	log.Info("starting http server", "port", s.Port, "type", s.Kind)
 
 	srv := &http.Server{
@@ -35,7 +35,7 @@ func (s *Server) Start(stop <-chan struct{}) error {
 
 	idleConnsClosed := make(chan struct{})
 	go func() {
-		<-stop
+		<-ctx.Done()
 		log.Info("shutting down server")
 
 		if err := srv.Shutdown(context.Background()); err != nil {

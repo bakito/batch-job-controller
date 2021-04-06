@@ -22,8 +22,8 @@ import (
 var _ = Describe("Controller", func() {
 	Context("podPredicate", func() {
 		var (
-			m1 metav1.Object
-			m2 metav1.Object
+			m1 client.Object
+			m2 client.Object
 			p  *podPredicate
 		)
 		BeforeEach(func() {
@@ -39,16 +39,16 @@ var _ = Describe("Controller", func() {
 			p = &podPredicate{}
 		})
 		It("should match", func() {
-			Ω(p.Create(event.CreateEvent{Meta: m1})).Should(BeTrue())
-			Ω(p.Update(event.UpdateEvent{MetaNew: m1})).Should(BeTrue())
-			Ω(p.Delete(event.DeleteEvent{Meta: m1})).Should(BeTrue())
-			Ω(p.Generic(event.GenericEvent{Meta: m1})).Should(BeTrue())
+			Ω(p.Create(event.CreateEvent{Object: m1})).Should(BeTrue())
+			Ω(p.Update(event.UpdateEvent{ObjectNew: m1})).Should(BeTrue())
+			Ω(p.Delete(event.DeleteEvent{Object: m1})).Should(BeTrue())
+			Ω(p.Generic(event.GenericEvent{Object: m1})).Should(BeTrue())
 		})
 		It("should not match", func() {
-			Ω(p.Create(event.CreateEvent{Meta: m2})).Should(BeFalse())
-			Ω(p.Update(event.UpdateEvent{MetaNew: m2})).Should(BeFalse())
-			Ω(p.Delete(event.DeleteEvent{Meta: m2})).Should(BeFalse())
-			Ω(p.Generic(event.GenericEvent{Meta: m2})).Should(BeFalse())
+			Ω(p.Create(event.CreateEvent{Object: m2})).Should(BeFalse())
+			Ω(p.Update(event.UpdateEvent{ObjectNew: m2})).Should(BeFalse())
+			Ω(p.Delete(event.DeleteEvent{Object: m2})).Should(BeFalse())
+			Ω(p.Generic(event.GenericEvent{Object: m2})).Should(BeFalse())
 		})
 	})
 
@@ -74,7 +74,7 @@ var _ = Describe("Controller", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: ""}, ""))
 
-			result, err := r.Reconcile(ctrl.Request{})
+			result, err := r.Reconcile(context.Background(), ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -84,7 +84,7 @@ var _ = Describe("Controller", func() {
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(fmt.Errorf(""))
 
-			result, err := r.Reconcile(ctrl.Request{})
+			result, err := r.Reconcile(context.Background(), ctrl.Request{})
 			Ω(err).Should(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -101,7 +101,7 @@ var _ = Describe("Controller", func() {
 				})
 			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded)
 
-			result, err := r.Reconcile(ctrl.Request{})
+			result, err := r.Reconcile(context.Background(), ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -118,7 +118,7 @@ var _ = Describe("Controller", func() {
 				})
 			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodFailed)
 
-			result, err := r.Reconcile(ctrl.Request{})
+			result, err := r.Reconcile(context.Background(), ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -135,7 +135,7 @@ var _ = Describe("Controller", func() {
 				})
 			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
 
-			result, err := r.Reconcile(ctrl.Request{})
+			result, err := r.Reconcile(context.Background(), ctrl.Request{})
 			Ω(err).Should(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())

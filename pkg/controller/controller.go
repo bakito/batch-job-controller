@@ -39,8 +39,7 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // Reconcile reconcile pods
-func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	podLog := r.Log.WithValues("pod", req.NamespacedName)
 	pod := &corev1.Pod{}
 	err := r.Get(ctx, req.NamespacedName, pod)
@@ -79,19 +78,19 @@ type podPredicate struct {
 }
 
 func (podPredicate) Create(e event.CreateEvent) bool {
-	return matches(e.Meta)
+	return matches(e.Object)
 }
 
 func (podPredicate) Update(e event.UpdateEvent) bool {
-	return matches(e.MetaNew)
+	return matches(e.ObjectNew)
 }
 
 func (podPredicate) Delete(e event.DeleteEvent) bool {
-	return matches(e.Meta)
+	return matches(e.Object)
 }
 
 func (podPredicate) Generic(e event.GenericEvent) bool {
-	return matches(e.Meta)
+	return matches(e.Object)
 }
 
 func matches(m metav1.Object) bool {

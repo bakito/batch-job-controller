@@ -11,7 +11,6 @@ import (
 	"github.com/robfig/cron/v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -59,7 +58,7 @@ func (j *cronJob) NeedLeaderElection() bool {
 }
 
 // Start implement manager.Runnable
-func (j *cronJob) Start(_ <-chan struct{}) error {
+func (j *cronJob) Start(_ context.Context) error {
 	log.WithValues("expression", j.cfg.CronExpression).Info("starting cron")
 	c := cron.New()
 	_, err := c.AddFunc(j.cfg.CronExpression, j.startPods)
@@ -81,7 +80,7 @@ func (j *cronJob) Start(_ <-chan struct{}) error {
 	return nil
 }
 
-func (j *cronJob) deleteAll(obj runtime.Object) error {
+func (j *cronJob) deleteAll(obj client.Object) error {
 	return j.client.DeleteAllOf(
 		context.TODO(),
 		obj,

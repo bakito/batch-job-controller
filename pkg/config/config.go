@@ -107,7 +107,7 @@ func findPodOwner(namespace string, cl client.Reader) runtime.Object {
 	return owner
 }
 
-func findOwner(obj runtime.Object, namespace string, name string, cl client.Reader) (string, runtime.Object) {
+func findOwner(obj client.Object, namespace string, name string, cl client.Reader) (string, runtime.Object) {
 	err := cl.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: name}, obj)
 	if err == nil {
 		if ob, ok := obj.(metav1.Object); ok {
@@ -118,7 +118,7 @@ func findOwner(obj runtime.Object, namespace string, name string, cl client.Read
 						"apiVersion": or.APIVersion,
 					},
 				}
-				return findOwner(us, namespace, or.Name, cl)
+				return findOwner(us.(client.Object), namespace, or.Name, cl)
 			}
 			return name, obj
 		}
