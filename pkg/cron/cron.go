@@ -29,7 +29,6 @@ func Job(extender ...job.CustomPodEnv) manager.Runnable {
 
 type cronJob struct {
 	client     client.Client
-	job        *cron.Cron
 	controller lifecycle.Controller
 	running    bool
 	cfg        *config.Config

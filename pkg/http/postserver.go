@@ -141,7 +141,7 @@ func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&results)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		postLog.WithValues("result", string(buf.Bytes())).Error(err, "error decoding results json")
+		postLog.WithValues("result", buf.String()).Error(err, "error decoding results json")
 		return
 	}
 
@@ -216,7 +216,7 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&event)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error decoding event: %s", err.Error()), http.StatusBadRequest)
-		postLog.WithValues("result", string(buf.Bytes())).Error(err, "error decoding event")
+		postLog.WithValues("result", buf.String()).Error(err, "error decoding event")
 		return
 	}
 

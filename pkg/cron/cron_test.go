@@ -45,8 +45,7 @@ var _ = Describe("Cron", func() {
 		cj = Job().(*cronJob)
 		cj.InjectController(mockController)
 		cj.InjectConfig(cfg)
-		cj.InjectClient(mockClient)
-
+		Ω(cj.InjectClient(mockClient)).ShouldNot(HaveOccurred())
 	})
 	Context("NeedLeaderElection", func() {
 		It("should be true", func() {

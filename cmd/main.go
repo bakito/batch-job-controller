@@ -47,7 +47,7 @@ func init() {
 // Setup setup main
 func Setup() *Main {
 	o := func(o *zap.Options) {
-		o.DestWritter = os.Stderr
+		o.DestWriter = os.Stderr
 		o.Development = strings.ToLower(os.Getenv(EnvDevMode)) == "true"
 	}
 

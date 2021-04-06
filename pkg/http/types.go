@@ -11,8 +11,8 @@ import (
 type Event struct {
 	Waring  bool     `json:"warning"`
 	Reason  string   `json:"reason" validate:"required,first_char_must_be_uppercase"`
-	Message string   `json:"message,omitEmpty" validate:"required"`
-	Args    []string `json:"args,omitEmpty"`
+	Message string   `json:"message,omitempty" validate:"required"`
+	Args    []string `json:"args,omitempty"`
 }
 
 func (e *Event) args() []interface{} {
