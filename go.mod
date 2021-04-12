@@ -15,8 +15,8 @@ require (
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.20.0
 	github.com/robfig/cron/v3 v3.0.1
-	k8s.io/api v0.20.5
-	k8s.io/apimachinery v0.20.5
-	k8s.io/client-go v0.20.5
+	k8s.io/api v0.21.0
+	k8s.io/apimachinery v0.21.0
+	k8s.io/client-go v0.21.0
 	sigs.k8s.io/controller-runtime v0.8.3
 )
