@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/common v0.24.0
 	github.com/robfig/cron/v3 v3.0.1
 	k8s.io/api v0.20.5
-	k8s.io/apimachinery v0.20.5
+	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v0.20.5
 	sigs.k8s.io/controller-runtime v0.8.3
 )
