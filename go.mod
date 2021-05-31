@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/onsi/ginkgo v1.16.2
-	github.com/onsi/gomega v1.12.0
+	github.com/onsi/gomega v1.13.0
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.25.0
 	github.com/robfig/cron/v3 v3.0.1
