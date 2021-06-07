@@ -10,7 +10,7 @@ require (
 	github.com/golang/mock v1.5.0
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
-	github.com/onsi/ginkgo v1.16.3
+	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.27.0
