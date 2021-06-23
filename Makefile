@@ -26,7 +26,10 @@ test: tidy mocks fmt vet
 	go test ./...  -coverprofile=coverage.out
 
 # Run tests
-helm-template: helm
+helm-lint: helm
+	helm lint helm/example-batch-job-controller/ --set routes.hostSuffix=test.com
+
+helm-template: helm-lint
 	helm template helm/example-batch-job-controller/ --debug --set routes.hostSuffix=test.com
 
 # Build docker image
