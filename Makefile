@@ -37,10 +37,10 @@ build-docker:
 build-podman:
 	podman build --build-arg upx_brute=" " -t batch-job-controller .
 
-release: goreleaser
+release:
 	goreleaser --rm-dist
 
-test-release: goreleaser
+test-release:
 	goreleaser --skip-publish --snapshot --rm-dist
 
 tools: mockgen ginkgo helm
