@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -59,6 +60,7 @@ func Setup() *Main {
 	}
 
 	ctrl.SetLogger(zapr.NewLogger(zap.NewRaw(o)))
+	klog.SetLogger(ctrl.Log)
 
 	// read env variables
 	if value, exists := os.LookupEnv(EnvNamespace); exists {
