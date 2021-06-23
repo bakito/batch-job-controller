@@ -108,7 +108,7 @@ func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
 	s.EventRecorder = er
 }
 
-// InjectController inject the cache
+// InjectController inject the controller
 func (s *PostServer) InjectController(c lifecycle.Controller) {
 	s.Controller = c
 }
