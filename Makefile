@@ -40,7 +40,9 @@ build-docker:
 build-podman:
 	podman build --build-arg upx_brute=" " -t batch-job-controller .
 
-release:
+release: semver
+	@version=$$(semver); \
+	git tag -s $$version -m"Release $$version"
 	goreleaser --rm-dist
 
 test-release:
@@ -59,4 +61,9 @@ endif
 helm:
 ifeq (, $(shell which helm))
  $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
+endif
+
+semver:
+ifeq (, $(shell which semver))
+ $(shell go get -u github.com/bakito/semver)
 endif

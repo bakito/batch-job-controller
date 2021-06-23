@@ -31,7 +31,7 @@ Controller configuration
 name: ""                         # name of the controller; will also be used as prefix for the job pods
 jobServiceAccount: ""            # service account to be used for the job pods. If empty the default will be used
 jobNodeSelector: {}              # node selector labels to define in which nodes to run the jobs
-runOnUnscheduledNodes: true    # if true, jobs are also started on nodes that are unschedulable
+runOnUnscheduledNodes: true      # if true, jobs are also started on nodes that are unschedulable
 cronExpression: "42 3 * * *"     # the cron expression to trigger the job execution
 reportDirectory: "/var/www"      # directory to store and serve the reports
 reportHistory: 30                # number of execution reports to keep
@@ -42,6 +42,7 @@ callbackServiceName: ""          # name of the controller service
 callbackServicePort: 8090        # port of the controller callback api service
 custom: {}                       # additional properties that can be used in a custom implementation
 latestMetricsLabel: false        # if 'true' each result metric is also created with executionID='latest'
+leaderElectionResourceLock: ""   # type of leader election resource lock to be used. ('configmapsleases' (default), 'configmaps', 'endpoints', 'leases', 'endpointsleases')
 metrics:
   prefix: "foo_...."             # prefix for the metrics exposed by the controller
   gauges:                        # metric gauges that will be exposed by the jobs. The key is uses as suffix for the metrics. 

@@ -34,8 +34,6 @@ const (
 	EnvNamespace = "NAMESPACE"
 	// EnvDevMode enable dev mode
 	EnvDevMode = "DEV_MODE"
-	// EnvLeaderElectionResourceLock leader election release lock mode
-	EnvLeaderElectionResourceLock = "LEADER_ELECTION_RESOURCE_LOCK"
 )
 
 var (
@@ -84,7 +82,7 @@ func Setup() *Main {
 		LeaderElection:             strings.ToLower(os.Getenv(EnvDevMode)) != "true",
 		LeaderElectionID:           cfg.Name + "-leader-election",
 		LeaderElectionNamespace:    namespace,
-		LeaderElectionResourceLock: os.Getenv(EnvLeaderElectionResourceLock),
+		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,
 		Namespace:                  namespace,
 	})
 
