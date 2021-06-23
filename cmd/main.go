@@ -16,6 +16,8 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/bakito/batch-job-controller/version"
 	"github.com/go-logr/zapr"
+	zap2 "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,6 +51,9 @@ func Setup() *Main {
 	o := func(o *zap.Options) {
 		o.DestWriter = os.Stderr
 		o.Development = strings.ToLower(os.Getenv(EnvDevMode)) == "true"
+		encCfg := zap2.NewProductionEncoderConfig()
+		encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+		o.Encoder = zapcore.NewJSONEncoder(encCfg)
 	}
 
 	ctrl.SetLogger(zapr.NewLogger(zap.NewRaw(o)))
