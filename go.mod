@@ -13,7 +13,7 @@ require (
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
 	github.com/prometheus/client_golang v1.11.0
-	github.com/prometheus/common v0.29.0
+	github.com/prometheus/common v0.30.0
 	github.com/robfig/cron/v3 v3.0.1
 	go.uber.org/zap v1.18.1
 	k8s.io/api v0.21.3
