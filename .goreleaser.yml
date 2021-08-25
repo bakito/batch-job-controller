@@ -13,7 +13,6 @@ snapshot:
 release:
   extra_files:
     - glob: ./dependency-licenses.csv
-    - glob: ./batch-job-controller-*.tgz
 changelog:
   sort: asc
   filters:
