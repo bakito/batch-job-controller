@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.0.0
 	github.com/go-logr/zapr v0.4.0
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/golang/mock v1.6.0
@@ -19,6 +19,6 @@ require (
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v0.22.1
-	k8s.io/klog/v2 v2.10.0
+	k8s.io/klog/v2 v2.20.0
 	sigs.k8s.io/controller-runtime v0.10.0
 )
