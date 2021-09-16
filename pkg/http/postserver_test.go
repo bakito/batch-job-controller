@@ -128,7 +128,9 @@ var _ = Describe("HTTP", func() {
 			handler *testing.FakeHandler
 		)
 		BeforeEach(func() {
-			handler = &testing.FakeHandler{}
+			handler = &testing.FakeHandler{
+				StatusCode: 200,
+			}
 			h := s.middleware(handler)
 			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, h.ServeHTTP)
 		})
