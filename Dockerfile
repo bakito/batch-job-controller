@@ -1,4 +1,4 @@
-FROM quay.io/bitnami/golang:1.16 as builder
+FROM golang:1.17 as builder
 ARG upx_brute="--ultra-brute"
 WORKDIR /build
 
