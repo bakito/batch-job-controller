@@ -6,7 +6,7 @@ name: example-job-controller
 
 deployment:
   replicas: 1
-  image: quay.io/bakito/batch-job-controller
+  image: ghcr.io/bakito/batch-job-controller
   imageTag:
   cronexpression: "* * * * *"
   reportDirectory: "/var/www"
