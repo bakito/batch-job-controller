@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	mock_manager "github.com/bakito/batch-job-controller/pkg/mocks/manager"
@@ -16,7 +17,7 @@ import (
 var _ = Describe("Main", func() {
 	var (
 		m                 *Main
-		mockCtrl          *gm.Controller //gomock struct
+		mockCtrl          *gm.Controller // gomock struct
 		mockManager       *mock_manager.MockManager
 		mockEventRecorder *mock_record.MockEventRecorder
 	)
@@ -34,7 +35,6 @@ var _ = Describe("Main", func() {
 		mockManager.EXPECT().Add(gm.Any())
 	})
 	Context("addToManager", func() {
-
 		It("should invoke all setter", func() {
 			runnable := &r{}
 			m.addToManager(runnable)

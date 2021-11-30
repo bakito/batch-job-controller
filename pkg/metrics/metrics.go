@@ -13,7 +13,7 @@ import (
 const (
 	labelNode        = "node"
 	labelValueLatest = "latest"
-	labelExecutionId = "executionID"
+	labelExecutionID = "executionID"
 	labelPrefix      = "prefix"
 
 	versionMetric = "com_github_bakito_batch_job_controller"
@@ -70,16 +70,16 @@ func (c *Collector) Collect(ch chan<- prom.Metric) {
 }
 
 // ExecutionStarted metric for new executions
-func (c *Collector) ExecutionStarted(executionId float64) {
-	c.executionIDGauge.WithLabelValues().Set(executionId)
+func (c *Collector) ExecutionStarted(executionID float64) {
+	c.executionIDGauge.WithLabelValues().Set(executionID)
 }
 
 // Prune metrics assigned to the given execution ID
-func (c *Collector) Prune(executionId string) {
-	c.procErrorGauge.prune(executionId)
-	c.durationGauge.prune(executionId)
+func (c *Collector) Prune(executionID string) {
+	c.procErrorGauge.prune(executionID)
+	c.durationGauge.prune(executionID)
 	for k := range c.gauges {
-		c.gauges[k].gauge.prune(executionId)
+		c.gauges[k].gauge.prune(executionID)
 	}
 }
 
@@ -91,7 +91,7 @@ func (c *Collector) MetricFor(executionID string, node string, name string, resu
 			result.Labels = make(map[string]string)
 		}
 		result.Labels[labelNode] = node
-		result.Labels[labelExecutionId] = executionID
+		result.Labels[labelExecutionID] = executionID
 
 		var values []string
 		for _, l := range g.labels {
@@ -109,21 +109,21 @@ func (c *Collector) MetricFor(executionID string, node string, name string, resu
 	}
 }
 
-// ProcessingFinished record proceiing finished
-func (c *Collector) ProcessingFinished(node string, executionId string, err bool) {
+// ProcessingFinished record processing finished
+func (c *Collector) ProcessingFinished(node string, executionID string, err bool) {
 	value := 0.
 	if err {
 		value = 1
 	}
-	c.procErrorGauge.withLabelValues(node, executionId).Set(value)
+	c.procErrorGauge.withLabelValues(node, executionID).Set(value)
 	if c.latestMetric {
 		c.procErrorGauge.withLabelValues(node, labelValueLatest).Set(value)
 	}
 }
 
 // Duration record duration
-func (c *Collector) Duration(node string, executionId string, d float64) {
-	c.durationGauge.withLabelValues(node, executionId).Set(d)
+func (c *Collector) Duration(node string, executionID string, d float64) {
+	c.durationGauge.withLabelValues(node, executionID).Set(d)
 	if c.latestMetric {
 		c.durationGauge.withLabelValues(node, labelValueLatest).Set(d)
 	}
@@ -139,7 +139,6 @@ func (c *Collector) Pods(cnt float64) {
 
 // NewPromCollector create a new prom collector
 func NewPromCollector(cfg *config.Config) (*Collector, error) {
-
 	c := &Collector{
 		gauges:       make(map[string]customMetric),
 		namespace:    cfg.Namespace,
@@ -153,12 +152,12 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 	c.procErrorGauge = newMetric(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
 		Help: procErrorHelp,
-	}, labelNode, labelExecutionId)
+	}, labelNode, labelExecutionID)
 
 	c.durationGauge = newMetric(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
 		Help: durationHelp,
-	}, labelNode, labelExecutionId)
+	}, labelNode, labelExecutionID)
 
 	c.podsGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, podsMetric),
@@ -211,8 +210,8 @@ func enrichLabels(labels []string) []string {
 	if _, ok := m[labelNode]; !ok {
 		out = append(out, labelNode)
 	}
-	if _, ok := m[labelExecutionId]; !ok {
-		out = append(out, labelExecutionId)
+	if _, ok := m[labelExecutionID]; !ok {
+		out = append(out, labelExecutionID)
 	}
 
 	return out

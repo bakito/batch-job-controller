@@ -1,6 +1,4 @@
 package version
 
-var (
-	// Version the controller version
-	Version = "v1.0.0"
-)
+// Version the controller version
+var Version = "v1.0.0"

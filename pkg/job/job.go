@@ -19,7 +19,7 @@ import (
 
 const (
 	envNodeName                 = "NODE_NAME"
-	envExecutionId              = "EXECUTION_ID"
+	envExecutionID              = "EXECUTION_ID"
 	envNamespace                = "NAMESPACE"
 	envCallbackServiceName      = "CALLBACK_SERVICE_NAME"
 	envCallbackServicePort      = "CALLBACK_SERVICE_PORT"
@@ -31,7 +31,7 @@ const (
 var (
 	reservedEnvVars = map[string]bool{
 		envNodeName:            true,
-		envExecutionId:         true,
+		envExecutionID:         true,
 		envNamespace:           true,
 		envCallbackServiceName: true,
 		envCallbackServicePort: true,
@@ -51,7 +51,6 @@ func MatchingLabels(name string) client.MatchingLabels {
 
 // New create a new job
 func New(cfg *config.Config, nodeName, id, serviceIP string, owner runtime.Object, extender ...CustomPodEnv) (*corev1.Pod, error) {
-
 	podName := cfg.PodName(nodeName, id)
 
 	data := map[string]string{
@@ -130,17 +129,23 @@ func mergeEnv(cfg *config.Config, nodeName string, id string, serviceIP string, 
 		newEnv = append(newEnv, e.ExtendEnv(cfg, nodeName, id, serviceIP, container)...)
 	}
 
-	newEnv = append(newEnv, corev1.EnvVar{Name: envExecutionId, Value: id})
+	newEnv = append(newEnv, corev1.EnvVar{Name: envExecutionID, Value: id})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envNamespace, Value: cfg.Namespace})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envNodeName, Value: nodeName})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceName, Value: serviceIP})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServicePort, Value: fmt.Sprintf("%d", cfg.CallbackServicePort)})
-	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceResultURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath)})
-	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceFileURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath)})
-	newEnv = append(newEnv, corev1.EnvVar{Name: envCallbackServiceEventURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseEventSubPath)})
+	newEnv = append(newEnv, corev1.EnvVar{
+		Name:  envCallbackServiceResultURL,
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath),
+	})
+	newEnv = append(newEnv, corev1.EnvVar{
+		Name:  envCallbackServiceFileURL,
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath),
+	})
+	newEnv = append(newEnv, corev1.EnvVar{
+		Name:  envCallbackServiceEventURL,
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseEventSubPath),
+	})
 
 	return newEnv
 }

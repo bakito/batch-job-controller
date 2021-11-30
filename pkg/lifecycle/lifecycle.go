@@ -19,11 +19,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var (
-	log = ctrl.Log.WithName("lifecycle")
-)
+var log = ctrl.Log.WithName("lifecycle")
 
-//NewController get a new controller
+// NewController get a new controller
 func NewController(cfg *config.Config, prom *metrics.Collector) Controller {
 	return &controller{
 		executions:    make(map[string]*execution),
@@ -37,7 +35,7 @@ func NewController(cfg *config.Config, prom *metrics.Collector) Controller {
 	}
 }
 
-//Controller interface
+// Controller interface
 type Controller interface {
 	NewExecution(nbrOrJobs int) string
 	AllAdded(executionID string) error
@@ -46,7 +44,7 @@ type Controller interface {
 	ReportReceived(executionID, node string, processingError error, results metrics.Results)
 	Config() config.Config
 	// Has return true if the executionId is known
-	Has(node string, executionId string) bool
+	Has(node string, executionID string) bool
 }
 
 type controller struct {
@@ -101,7 +99,7 @@ func (c *controller) NewExecution(jobs int) string {
 	reportDir := filepath.Join(c.reportDir, id)
 
 	if _, err := os.Stat(reportDir); os.IsNotExist(err) {
-		err := os.MkdirAll(reportDir, 0755)
+		err := os.MkdirAll(reportDir, 0o755)
 		if err != nil {
 			c.log.WithValues("dir", reportDir).Error(err, "error creating directory")
 		}
@@ -261,11 +259,11 @@ func (c *controller) ReportReceived(executionID, node string, processingError er
 	p.status = "ReportReceived"
 }
 
-func (c *controller) Has(node string, executionId string) bool {
+func (c *controller) Has(node string, executionID string) bool {
 	if _, ok := c.nodes[node]; !ok {
 		return false
 	}
-	_, ok := c.executions[executionId]
+	_, ok := c.executions[executionID]
 	return ok
 }
 

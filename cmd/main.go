@@ -85,7 +85,6 @@ func Setup() *Main {
 		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,
 		Namespace:                  namespace,
 	})
-
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -112,7 +111,6 @@ func Setup() *Main {
 
 // Start start main
 func (m *Main) Start(runnables ...manager.Runnable) {
-
 	var envExtender []job.CustomPodEnv
 
 	// setup runnables

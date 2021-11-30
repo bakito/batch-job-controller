@@ -8,9 +8,7 @@ import (
 )
 
 var _ = Describe("types", func() {
-	var (
-		event *http.Event
-	)
+	var event *http.Event
 	BeforeEach(func() {
 		event = &http.Event{
 			Waring:  false,

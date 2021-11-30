@@ -62,7 +62,7 @@ var _ = Describe("Job", func() {
 							{
 								Name: "c1",
 								Env: []corev1.EnvVar{
-									{Name: envExecutionId, Value: "myID"},
+									{Name: envExecutionID, Value: "myID"},
 									{Name: "FOO", Value: "bar"},
 								},
 							},
@@ -71,7 +71,7 @@ var _ = Describe("Job", func() {
 							{
 								Name: "ic1",
 								Env: []corev1.EnvVar{
-									{Name: envExecutionId, Value: "myID"},
+									{Name: envExecutionID, Value: "myID"},
 									{Name: "BAR", Value: "foo"},
 								},
 							},
@@ -84,7 +84,7 @@ var _ = Describe("Job", func() {
 			It("should set default env vars", func() {
 				pod, _ := New(cfg, nodeName, id, serviceIP, nil)
 
-				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envExecutionId, id))
+				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envExecutionID, id))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envNamespace, namespace))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envNodeName, nodeName))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceName, serviceIP))
@@ -94,7 +94,7 @@ var _ = Describe("Job", func() {
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar("FOO", "bar"))
 
-				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envExecutionId, id))
+				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envExecutionID, id))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envNamespace, namespace))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envNodeName, nodeName))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envCallbackServiceName, serviceIP))
@@ -106,17 +106,17 @@ var _ = Describe("Job", func() {
 			})
 
 			It("should have a correct owner reference", func() {
-				ownerId := uuid.New().String()
+				ownerID := uuid.New().String()
 				ownerName := uuid.New().String()
 				pod, _ := New(cfg, nodeName, id, serviceIP, &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						UID:  ktypes.UID(ownerId),
+						UID:  ktypes.UID(ownerID),
 						Name: ownerName,
 					},
 				})
 
 				Ω(pod.OwnerReferences).Should(HaveLen(1))
-				Ω(string(pod.OwnerReferences[0].UID)).Should(Equal(ownerId))
+				Ω(string(pod.OwnerReferences[0].UID)).Should(Equal(ownerID))
 				Ω(pod.OwnerReferences[0].Name).Should(Equal(ownerName))
 			})
 
@@ -143,6 +143,7 @@ func HaveEnvVar(name, value string) types.GomegaMatcher {
 func getName(envVar corev1.EnvVar) string {
 	return envVar.Name
 }
+
 func getValue(envVar corev1.EnvVar) string {
 	return envVar.Value
 }

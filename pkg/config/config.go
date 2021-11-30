@@ -37,9 +37,7 @@ const (
 	LabelReportHistory = "reportHistory"
 )
 
-var (
-	log = ctrl.Log.WithName("config")
-)
+var log = ctrl.Log.WithName("config")
 
 // Get read the config from the configmap
 func Get(namespace string, config *rest.Config, scheme *runtime.Scheme) (*Config, error) {
@@ -51,7 +49,6 @@ func Get(namespace string, config *rest.Config, scheme *runtime.Scheme) (*Config
 }
 
 func getInternal(namespace string, apiReader client.Reader) (*Config, error) {
-
 	// Get read the config from the configmap
 	cm, err := configMap(namespace, apiReader)
 	if err != nil {
@@ -63,7 +60,7 @@ func getInternal(namespace string, apiReader client.Reader) (*Config, error) {
 		err = decoder.Decode(cfg)
 
 		if err != nil {
-			return nil, fmt.Errorf("could not read config file %q in configmap %q: %v", ConfigFileName, os.Getenv(EnvConfigMapName), err)
+			return nil, fmt.Errorf("could not read config file %q in configmap %q: %w", ConfigFileName, os.Getenv(EnvConfigMapName), err)
 		}
 
 		if t, ok := cm.Data[PodTemplateName]; ok {
@@ -89,7 +86,7 @@ func configMap(namespace string, cl client.Reader) (*corev1.ConfigMap, error) {
 	cm := &corev1.ConfigMap{}
 	err := cl.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: os.Getenv(EnvConfigMapName)}, cm)
 	if err != nil {
-		err = fmt.Errorf("error getting configmap %q: %v", EnvConfigMapName, err)
+		err = fmt.Errorf("error getting configmap %q: %w", EnvConfigMapName, err)
 	}
 	return cm, err
 }

@@ -21,7 +21,7 @@ import (
 var _ = Describe("Cron", func() {
 	var (
 		cj             *cronJob
-		mockCtrl       *gm.Controller //gomock struct
+		mockCtrl       *gm.Controller // gomock struct
 		mockClient     *mock_client.MockClient
 		mockController *mock_lifecycle.MockController
 		mockLog        *mock_logr.MockLogger
@@ -63,9 +63,7 @@ var _ = Describe("Cron", func() {
 	})
 
 	Context("startPods", func() {
-		var (
-			nodeSelector map[string]string
-		)
+		var nodeSelector map[string]string
 		BeforeEach(func() {
 			nodeSelector = map[string]string{"foo": "bar"}
 			cj.cfg.JobNodeSelector = nodeSelector
@@ -139,7 +137,6 @@ var _ = Describe("Cron", func() {
 
 				pj.CreatePod()
 			})
-
 		})
 		It("should return the id", func() {
 			Ω(pj.ID()).Should(Equal(id))

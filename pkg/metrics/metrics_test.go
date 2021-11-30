@@ -16,9 +16,7 @@ import (
 )
 
 var _ = Describe("metrics", func() {
-	var (
-		cfg *config.Config
-	)
+	var cfg *config.Config
 	BeforeEach(func() {
 		cfg = &config.Config{
 			Metrics: cfgMetrics,
@@ -35,8 +33,8 @@ var _ = Describe("metrics", func() {
 			pc               *Collector
 			res              Result
 			node             string
-			executionId      string
-			executionIdValue float64
+			executionID      string
+			executionIDValue float64
 			v1               string
 			v2               string
 			metricValue      int
@@ -44,12 +42,12 @@ var _ = Describe("metrics", func() {
 		BeforeEach(func() {
 			v1 = uuid.New().String()
 			v2 = uuid.New().String()
-			metricValue = rand.Int()
+			metricValue = rand.Int() // #nosec G404 ok for tests
 
 			node = uuid.New().String()
-			i := rand.Int()
-			executionIdValue = float64(i)
-			executionId = strconv.Itoa(i)
+			i := rand.Int() // #nosec G404 ok for tests
+			executionIDValue = float64(i)
+			executionID = strconv.Itoa(i)
 
 			pc, _ = NewPromCollector(cfg)
 
@@ -63,54 +61,53 @@ var _ = Describe("metrics", func() {
 		})
 
 		It("check 'The current execution ID'", func() {
-
-			pc.ExecutionStarted(executionIdValue)
+			pc.ExecutionStarted(executionIDValue)
 			checkMetric(
 				pc,
 				currentExecutionHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, currentExecutionMetric),
 				map[string]string{},
-				executionId,
+				executionID,
 			)
 		})
 
 		It("check success 'Node with processing error, 1: has error / 0: no error'", func() {
-			pc.ProcessingFinished(node, executionId, false)
+			pc.ProcessingFinished(node, executionID, false)
 			checkMetric(
 				pc,
 				procErrorHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
-				map[string]string{"executionID": executionId, "node": node},
+				map[string]string{"executionID": executionID, "node": node},
 				"0",
 			)
 		})
 
 		It("check error 'Node with processing error, 1: has error / 0: no error'", func() {
-			pc.ProcessingFinished(node, executionId, true)
+			pc.ProcessingFinished(node, executionID, true)
 			checkMetric(
 				pc,
 				procErrorHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, procErrorMetric),
-				map[string]string{"executionID": executionId, "node": node},
+				map[string]string{"executionID": executionID, "node": node},
 				"1",
 			)
 		})
 
 		It("check error 'Execution Duration in milliseconds'", func() {
-			d := rand.Int()
+			d := rand.Int() // #nosec G404 ok for tests
 			duaration := float64(d)
-			pc.Duration(node, executionId, duaration)
+			pc.Duration(node, executionID, duaration)
 			checkMetric(
 				pc,
 				durationHelp,
 				fmt.Sprintf("%s_%s", cfg.Metrics.Prefix, durationMetric),
-				map[string]string{"executionID": executionId, "node": node},
+				map[string]string{"executionID": executionID, "node": node},
 				strconv.Itoa(d),
 			)
 		})
 
 		It("check error 'The number of Pods started for the last execution'", func() {
-			c := rand.Int()
+			c := rand.Int() // #nosec G404 ok for tests
 			cnt := float64(c)
 			pc.Pods(cnt)
 			checkMetric(
@@ -123,7 +120,7 @@ var _ = Describe("metrics", func() {
 		})
 
 		It("check version", func() {
-			c := rand.Int()
+			c := rand.Int() // #nosec G404 ok for tests
 			cnt := float64(c)
 			pc.Pods(cnt)
 			checkMetric(
@@ -135,25 +132,26 @@ var _ = Describe("metrics", func() {
 					"poolSize":      strconv.Itoa(cfg.PodPoolSize),
 					"prefix":        cfg.Metrics.Prefix,
 					"reportHistory": strconv.Itoa(cfg.ReportHistory),
-					"version":       version.Version},
+					"version":       version.Version,
+				},
 				"1",
 			)
 		})
 
 		It("check dynamic metric", func() {
-			pc.MetricFor(executionId, node, customGaugeName, res)
+			pc.MetricFor(executionID, node, customGaugeName, res)
 			checkMetric(
 				pc,
 				customGaugeHelp,
 				cfg.Metrics.NameFor(customGaugeName),
-				map[string]string{"executionID": executionId, "node": node, customGaugeLabel1: v1, customGaugeLabel2: v2},
+				map[string]string{"executionID": executionID, "node": node, customGaugeLabel1: v1, customGaugeLabel2: v2},
 				strconv.Itoa(metricValue),
 			)
 		})
 
 		It("Prune", func() {
-			pc.MetricFor(executionId, node, customGaugeName, res)
-			pc.Prune(executionId)
+			pc.MetricFor(executionID, node, customGaugeName, res)
+			pc.Prune(executionID)
 			checkMissingMetric(
 				pc,
 				cfg.Metrics.NameFor(customGaugeName),
@@ -168,7 +166,6 @@ func checkMissingMetric(collector *Collector, name string) {
 }
 
 func checkMetric(collector *Collector, help string, name string, labels map[string]string, value string) {
-
 	l := ""
 	if len(labels) > 0 {
 		var keys []string
@@ -200,7 +197,7 @@ var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz_")
 func puuid() string {
 	b := make([]rune, 10)
 	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+		b[i] = letterRunes[rand.Intn(len(letterRunes))] // #nosec G404 ok for tests
 	}
 	return string(b)
 }

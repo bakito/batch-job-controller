@@ -24,7 +24,7 @@ var _ = Describe("lifecycle", func() {
 	BeforeEach(func() {
 		repDir = "test-" + uuid.New().String()
 		namespace = uuid.New().String()
-		poolSize = rand.Int()
+		poolSize = rand.Int() // #nosec G404 ok for tests
 		cfg = &config.Config{
 			Namespace:       namespace,
 			ReportDirectory: repDir,
@@ -46,9 +46,7 @@ var _ = Describe("lifecycle", func() {
 		})
 	})
 	Context("NewExecution", func() {
-		var (
-			c *controller
-		)
+		var c *controller
 		BeforeEach(func() {
 			cfg.PodPoolSize = 0
 			c = NewController(cfg, pc).(*controller)

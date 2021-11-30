@@ -36,13 +36,10 @@ const (
 	FileName = "name"
 )
 
-var (
-	log = ctrl.Log.WithName("http-server")
-)
+var log = ctrl.Log.WithName("http-server")
 
-//GenericAPIServer prepare the generic api server
+// GenericAPIServer prepare the generic api server
 func GenericAPIServer(port int, reportPath string) manager.Runnable {
-
 	r := mux.NewRouter()
 	s := &PostServer{
 		Server: Server{
@@ -124,7 +121,6 @@ func (s *PostServer) InjectConfig(cfg *config.Config) {
 }
 
 func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
-
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
@@ -200,7 +196,6 @@ func (s *PostServer) postFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
-
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
@@ -232,7 +227,7 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 	err = s.Client.Get(r.Context(), client.ObjectKey{Namespace: s.Config.Namespace, Name: podName}, pod)
 
 	if err != nil {
-		err = fmt.Errorf("error finding pod: %v", err)
+		err = fmt.Errorf("error finding pod: %w", err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		postLog.Error(err, "")
 		return
@@ -269,5 +264,5 @@ func (s *PostServer) evaluateExtension(r *http.Request) string {
 // SaveFile save a received file
 func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, error) {
 	fileName := filepath.Join(s.ReportPath, executionID, name)
-	return fileName, ioutil.WriteFile(fileName, data, 0644)
+	return fileName, ioutil.WriteFile(fileName, data, 0o600)
 }

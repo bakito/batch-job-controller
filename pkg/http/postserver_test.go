@@ -33,7 +33,7 @@ const (
 
 var _ = Describe("HTTP", func() {
 	var (
-		mockCtrl       *gm.Controller //gomock struct
+		mockCtrl       *gm.Controller // gomock struct
 		mockLog        *mock_logr.MockLogger
 		mockController *mock_lifecycle.MockController
 		mockReader     *mock_client.MockReader
@@ -84,7 +84,6 @@ var _ = Describe("HTTP", func() {
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 		})
 		It("succeed if file is saved", func() {
-
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Info("received report")
@@ -105,7 +104,6 @@ var _ = Describe("HTTP", func() {
 			Ω(b).Should(Equal([]byte(reportJSON)))
 		})
 		It("fails if json is invalid", func() {
-
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
@@ -124,9 +122,7 @@ var _ = Describe("HTTP", func() {
 	})
 
 	Context("middleware", func() {
-		var (
-			handler *testing.FakeHandler
-		)
+		var handler *testing.FakeHandler
 		BeforeEach(func() {
 			handler = &testing.FakeHandler{
 				StatusCode: 200,
@@ -234,7 +230,6 @@ var _ = Describe("HTTP", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			router.ServeHTTP(rr, req)
 		})
-
 	})
 	Context("postEvent", func() {
 		var (
@@ -250,7 +245,6 @@ var _ = Describe("HTTP", func() {
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 		})
 		It("succeed if event with message is sent", func() {
-
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
@@ -266,7 +260,6 @@ var _ = Describe("HTTP", func() {
 			Ω(rr.Code).Should(Equal(http.StatusOK))
 		})
 		It("succeed if event with message with args is sent", func() {
-
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
@@ -283,7 +276,6 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("fails if json is invalid", func() {
-
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
@@ -299,7 +291,6 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("fails if event is invalid", func() {
-
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
@@ -315,7 +306,6 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("fails if pod not found", func() {
-
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)

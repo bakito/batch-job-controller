@@ -16,11 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var (
-	log = ctrl.Log.WithName("cron")
-)
+var log = ctrl.Log.WithName("cron")
 
-//Job prepare the static file server
+// Job prepare the static file server
 func Job(extender ...job.CustomPodEnv) manager.Runnable {
 	return &cronJob{
 		extender: extender,
@@ -61,7 +59,6 @@ func (j *cronJob) Start(_ context.Context) error {
 	log.WithValues("expression", j.cfg.CronExpression).Info("starting cron")
 	c := cron.New()
 	_, err := c.AddFunc(j.cfg.CronExpression, j.startPods)
-
 	if err != nil {
 		return err
 	}

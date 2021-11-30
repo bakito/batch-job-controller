@@ -2,13 +2,14 @@ package http
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-//StaticFileServer prepare the static file server
+// StaticFileServer prepare the static file server
 func StaticFileServer(port int, path string) manager.Runnable {
 	return &Server{
 		Port:    port,
@@ -46,7 +47,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}()
 
 	err := srv.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 

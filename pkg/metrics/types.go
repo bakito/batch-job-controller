@@ -57,8 +57,8 @@ func (m *executionIDMetric) collect(ch chan<- prom.Metric) {
 	m.gauge.Collect(ch)
 }
 
-func (m *executionIDMetric) prune(executionId string) {
-	if labelSets, ok := m.labels[executionId]; ok {
+func (m *executionIDMetric) prune(executionID string) {
+	if labelSets, ok := m.labels[executionID]; ok {
 		for _, labelSet := range labelSets {
 			m.gauge.DeleteLabelValues(labelSet...)
 		}
@@ -66,13 +66,13 @@ func (m *executionIDMetric) prune(executionId string) {
 }
 
 func (m *executionIDMetric) withLabelValues(labels ...string) prom.Gauge {
-	exId := labels[len(labels)-1]
-	m.cacheLabels(exId, labels)
+	exID := labels[len(labels)-1]
+	m.cacheLabels(exID, labels)
 	return m.gauge.WithLabelValues(labels...)
 }
 
-func (m *executionIDMetric) cacheLabels(exId string, labels []string) {
+func (m *executionIDMetric) cacheLabels(exID string, labels []string) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
-	m.labels[exId] = append(m.labels[exId], labels)
+	m.labels[exID] = append(m.labels[exID], labels)
 }

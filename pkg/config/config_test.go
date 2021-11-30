@@ -19,9 +19,7 @@ import (
 
 var _ = Describe("Config", func() {
 	Context("Metrics", func() {
-		var (
-			m *Metrics
-		)
+		var m *Metrics
 		BeforeEach(func() {
 			m = &Metrics{
 				Prefix: "my_metric",
@@ -56,7 +54,7 @@ var _ = Describe("Config", func() {
 	Context("Get", func() {
 		var (
 			ctx        context.Context
-			mockCtrl   *gm.Controller //gomock struct
+			mockCtrl   *gm.Controller // gomock struct
 			mockReader *mock_client.MockReader
 			namespace  string
 			cmName     string
@@ -132,7 +130,6 @@ var _ = Describe("Config", func() {
 
 		Context("success", func() {
 			It("should return a config without owner", func() {
-
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
 					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
 						cm.Data = map[string]string{
@@ -153,7 +150,6 @@ var _ = Describe("Config", func() {
 			})
 
 			It("should return a config with owner", func() {
-
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
 					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
 						cm.Data = map[string]string{

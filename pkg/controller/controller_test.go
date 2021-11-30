@@ -55,7 +55,7 @@ var _ = Describe("Controller", func() {
 	Context("Reconcile", func() {
 		var (
 			r              *PodReconciler
-			mockCtrl       *gm.Controller //gomock struct
+			mockCtrl       *gm.Controller // gomock struct
 			mockController *mock_lifecycle.MockController
 			mockClient     *mock_client.MockClient
 			mockLog        *mock_logr.MockLogger

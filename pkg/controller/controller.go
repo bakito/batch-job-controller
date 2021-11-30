@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"errors"
+
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -65,7 +67,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		err = r.Controller.PodTerminated(executionID, node, pod.Status.Phase)
 	}
 	if err != nil {
-		if _, ok := err.(*lifecycle.ExecutionIDNotFound); !ok {
+		if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
 			podLog.Error(err, "unexpected error")
 			return reconcile.Result{}, err
 		}
@@ -74,8 +76,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return reconcile.Result{}, nil
 }
 
-type podPredicate struct {
-}
+type podPredicate struct{}
 
 func (podPredicate) Create(e event.CreateEvent) bool {
 	return matches(e.Object)
