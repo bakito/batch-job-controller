@@ -2,9 +2,9 @@ name: Github Build
 
 on:
   push:
-    branches: [ master, replace-mux-with-gin ]
+    branches: [ main, replace-mux-with-gin ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   golangci:
