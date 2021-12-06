@@ -67,7 +67,7 @@ var _ = Describe("HTTP", func() {
 		_ = os.RemoveAll(s.ReportPath)
 	})
 	// disable by default
-	It("generate parallel load", func() {
+	XIt("generate parallel load", func() {
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseFileSubPath)
 		router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
 
@@ -76,7 +76,7 @@ var _ = Describe("HTTP", func() {
 		sleep := 2 * time.Millisecond
 		loops := 200
 
-		cmd := exec.Command("dd", "if=/dev/urandom", fmt.Sprintf("of=%s", file), "bs=1M", fmt.Sprintf("count=%d", fileSizeMB))
+		cmd := exec.Command("dd", "if=/dev/urandom", fmt.Sprintf("of=%s", file), "bs=1M", fmt.Sprintf("count=%d", fileSizeMB)) // #nosec G204:
 		_, err := cmd.Output()
 		Ω(err).ShouldNot(HaveOccurred())
 

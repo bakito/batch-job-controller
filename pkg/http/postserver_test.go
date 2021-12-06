@@ -2,6 +2,13 @@ package http
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/bakito/batch-job-controller/pkg/config"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
@@ -12,15 +19,9 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/testing"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 const (
