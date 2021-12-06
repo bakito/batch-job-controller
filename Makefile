@@ -18,7 +18,7 @@ test: ginkgo tidy mocks
 
 # Run tests
 helm-lint: helm
-	helm lint helm/example-batch-job-controller/ --set routes.hostSuffix=test.com
+	helm lint helm/example-batch-job-controller/ --set routes.hostSuffix=test.com --strict
 
 helm-template: helm-lint
 	helm template helm/example-batch-job-controller/ --debug --set routes.hostSuffix=test.com

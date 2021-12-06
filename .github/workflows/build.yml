@@ -42,12 +42,19 @@ jobs:
         with:
           path-to-profile: coverage.out
 
+  test-helm:
+    name: Test Helm Chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
       - name: Verify Helm Chart
         run: make helm-template
 
 
   test-release:
-    name: test release
+    name: Test Release
     runs-on: ubuntu-latest
     steps:
 
