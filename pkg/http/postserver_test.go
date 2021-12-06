@@ -77,9 +77,9 @@ var _ = Describe("HTTP", func() {
 	AfterEach(func() {
 		os.RemoveAll(s.ReportPath)
 	})
-	Context("postReport", func() {
+	Context("postResult", func() {
 		BeforeEach(func() {
-			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, s.postReport)
+			router.HandleFunc(CallbackBasePath+CallbackBaseResultSubPath, s.postResult)
 
 			mockLog.EXPECT().WithValues("node", node, "id", executionID, "length", gm.Any()).Return(mockLog)
 		})

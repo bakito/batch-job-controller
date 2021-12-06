@@ -53,7 +53,7 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 	rep := r.PathPrefix(CallbackBasePath).Subrouter()
 	rep.Use(s.middleware)
 
-	rep.HandleFunc(CallbackBaseResultSubPath, s.postReport).
+	rep.HandleFunc(CallbackBaseResultSubPath, s.postResult).
 		Methods("POST").
 		HeadersRegexp("Content-Type", "application/json")
 
@@ -67,7 +67,7 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 	log.Info("starting callback",
 		"port", port,
 		"method", "POST",
-		"path", fmt.Sprintf("%s/%s", CallbackBasePath, CallbackBaseResultSubPath),
+		"path", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseResultSubPath),
 	)
 
 	SetupProfiling(r)
@@ -120,7 +120,7 @@ func (s *PostServer) InjectConfig(cfg *config.Config) {
 	s.Config = cfg
 }
 
-func (s *PostServer) postReport(w http.ResponseWriter, r *http.Request) {
+func (s *PostServer) postResult(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(r.Body)
 
