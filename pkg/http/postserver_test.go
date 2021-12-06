@@ -2,26 +2,25 @@ package http
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/bakito/batch-job-controller/pkg/config"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
+	"github.com/gin-gonic/gin"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/testing"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 const (
@@ -48,6 +47,7 @@ var _ = Describe("HTTP", func() {
 		path   string
 	)
 	BeforeEach(func() {
+		gin.SetMode(gin.ReleaseMode)
 		mockCtrl = gm.NewController(GinkgoT())
 		mockLog = mock_logr.NewMockLogger(mockCtrl)
 		mockReader = mock_client.NewMockReader(mockCtrl)
@@ -71,12 +71,11 @@ var _ = Describe("HTTP", func() {
 		rr = httptest.NewRecorder()
 
 		// Need to create a router that we can pass the request through so that the vars will be added to the context
-		router = gin.Default()
-		gin.SetMode(gin.ReleaseMode)
+		router = gin.New()
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 	})
 	AfterEach(func() {
-		os.RemoveAll(s.ReportPath)
+		_ = os.RemoveAll(s.ReportPath)
 	})
 	Context("postResult", func() {
 		BeforeEach(func() {
@@ -179,8 +178,7 @@ var _ = Describe("HTTP", func() {
 			router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
 
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog)
 
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)

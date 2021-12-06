@@ -2,7 +2,7 @@ name: Github Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, replace-mux-with-gin ]
   pull_request:
     branches: [ master ]
 

@@ -22,8 +22,8 @@ tidy:
 	go mod tidy
 
 # Run tests
-test: tidy mocks fmt vet
-	go test ./...  -coverprofile=coverage.out
+test: ginkgo tidy mocks fmt vet
+	ginkgo ./...
 
 # Run tests
 helm-lint: helm
@@ -52,11 +52,11 @@ tools: mockgen ginkgo helm
 
 mockgen:
 ifeq (, $(shell which mockgen))
- $(shell go get github.com/golang/mock/mockgen)
+ $(shell go install github.com/golang/mock/mockgen@v1.6.0)
 endif
 ginkgo:
 ifeq (, $(shell which ginkgo))
- $(shell go get github.com/onsi/ginkgo/ginkgo)
+ $(shell go install github.com/onsi/ginkgo/ginkgo@v1.16.5)
 endif
 helm:
 ifeq (, $(shell which helm))
@@ -65,5 +65,5 @@ endif
 
 semver:
 ifeq (, $(shell which semver))
- $(shell go get -u github.com/bakito/semver)
+ $(shell go install github.com/bakito/semver@latest)
 endif

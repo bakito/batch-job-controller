@@ -41,7 +41,7 @@ var log = ctrl.Log.WithName("http-server")
 // GenericAPIServer prepare the generic api server
 func GenericAPIServer(port int, reportPath string) manager.Runnable {
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
 	s := &PostServer{
 		Server: Server{
 			Port:    port,
@@ -52,7 +52,7 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 	}
 
 	rep := r.Group(CallbackBasePath)
-	rep.Use(s.middleware)
+	rep.Use(gin.Recovery(), s.middleware)
 
 	rep.POST(CallbackBaseResultSubPath, s.postResult)
 
@@ -123,7 +123,6 @@ func (s *PostServer) postResult(ctx *gin.Context) {
 		"id", executionID,
 	)
 	body, err := ctx.GetRawData()
-
 	if err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 		postLog.Error(err, "error reading body")
@@ -170,15 +169,11 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 		"id", executionID,
 	)
 	body, err := ctx.GetRawData()
-
 	if err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 		postLog.Error(err, "error reading body")
 		return
 	}
-	postLog = log.WithValues(
-		"length", len(body),
-	)
 
 	fileName := ctx.Query(FileName)
 	if fileName == "" {
@@ -195,6 +190,7 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 	postLog = log.WithValues(
 		"name", filepath.Base(fileName),
 		"path", fileName,
+		"length", len(body),
 	)
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
@@ -211,7 +207,6 @@ func (s *PostServer) postEvent(ctx *gin.Context) {
 		"id", executionID,
 	)
 	body, err := ctx.GetRawData()
-
 	if err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 		postLog.Error(err, "error reading body")

@@ -12,3 +12,4 @@ dependency-licenses.csv
 /helm/example-batch-job-controller/*-values.yaml
 batch-job-controller-*.tgz
 gomock_reflect_*
+test.log
