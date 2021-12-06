@@ -37,10 +37,10 @@ jobs:
       - name: Test
         run: make test
 
-      #- name: Send coverage
-      #  uses: shogo82148/actions-goveralls@v1
-      #  with:
-      #   path-to-profile: coverage.out
+      - name: Send coverage
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.out
 
       - name: Verify Helm Chart
         run: make helm-template
