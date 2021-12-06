@@ -168,36 +168,56 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 		"node", node,
 		"id", executionID,
 	)
-	body, err := ctx.GetRawData()
-	if err != nil {
-		ctx.String(http.StatusBadRequest, err.Error())
-		postLog.Error(err, "error reading body")
-		return
-	}
 
-	fileName := ctx.Query(FileName)
-	if fileName == "" {
-		_, params, _ := mime.ParseMediaType(ctx.GetHeader("Content-Disposition"))
-		fileName = params["filename"]
-	}
-	if fileName == "" {
-		fileName = uuid.New().String()
+	form, _ := ctx.MultipartForm()
+	if form != nil {
+		cnt := 0
+		for _, files := range form.File {
+			for _, file := range files {
 
-		fileName += s.evaluateExtension(ctx.Request)
-	}
+				// Upload the file to specific dst.
+				err := ctx.SaveUploadedFile(file, filepath.Join(s.ReportPath, executionID, file.Filename))
+				if err != nil {
+					ctx.String(http.StatusInternalServerError, err.Error())
+					postLog.Error(err, "error receiving file")
+					return
+				}
+				cnt++
+			}
+		}
+		postLog.Info(fmt.Sprintf("received %d file(s)", cnt))
+	} else {
+		body, err := ctx.GetRawData()
+		if err != nil {
+			ctx.String(http.StatusBadRequest, err.Error())
+			postLog.Error(err, "error reading body")
+			return
+		}
 
-	fileName, err = s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), body)
-	postLog = log.WithValues(
-		"name", filepath.Base(fileName),
-		"path", fileName,
-		"length", len(body),
-	)
-	if err != nil {
-		ctx.String(http.StatusInternalServerError, err.Error())
-		postLog.Error(err, "error receiving file")
-		return
+		fileName := ctx.Query(FileName)
+		if fileName == "" {
+			_, params, _ := mime.ParseMediaType(ctx.GetHeader("Content-Disposition"))
+			fileName = params["filename"]
+		}
+		if fileName == "" {
+			fileName = uuid.New().String()
+
+			fileName += s.evaluateExtension(ctx.Request)
+		}
+
+		fileName, err = s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), body)
+		postLog = log.WithValues(
+			"name", filepath.Base(fileName),
+			"path", fileName,
+			"length", len(body),
+		)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			postLog.Error(err, "error receiving file")
+			return
+		}
+		postLog.Info("received file")
 	}
-	postLog.Info("received file")
 }
 
 func (s *PostServer) postEvent(ctx *gin.Context) {
