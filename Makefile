@@ -23,7 +23,7 @@ tidy:
 
 # Run tests
 test: ginkgo tidy mocks fmt vet
-	ginkgo ./...
+	ginkgo ./... -coverprofile=coverage.out
 
 # Run tests
 helm-lint: helm
