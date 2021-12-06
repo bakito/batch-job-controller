@@ -13,8 +13,8 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/bakito/batch-job-controller/pkg/metrics"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -24,7 +24,7 @@ import (
 
 const (
 	// CallbackBasePath callback path
-	CallbackBasePath = "/report/{node}/{executionID}"
+	CallbackBasePath = "/report/:node/:executionID"
 	// CallbackBaseResultSubPath result sub path
 	CallbackBaseResultSubPath = "/result"
 	// CallbackBaseFileSubPath file sub path
@@ -40,7 +40,8 @@ var log = ctrl.Log.WithName("http-server")
 
 // GenericAPIServer prepare the generic api server
 func GenericAPIServer(port int, reportPath string) manager.Runnable {
-	r := mux.NewRouter()
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
 	s := &PostServer{
 		Server: Server{
 			Port:    port,
@@ -50,19 +51,14 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 		ReportPath: reportPath,
 	}
 
-	rep := r.PathPrefix(CallbackBasePath).Subrouter()
+	rep := r.Group(CallbackBasePath)
 	rep.Use(s.middleware)
 
-	rep.HandleFunc(CallbackBaseResultSubPath, s.postResult).
-		Methods("POST").
-		HeadersRegexp("Content-Type", "application/json")
+	rep.POST(CallbackBaseResultSubPath, s.postResult)
 
-	rep.HandleFunc(CallbackBaseFileSubPath, s.postFile).
-		Methods("POST")
+	rep.POST(CallbackBaseFileSubPath, s.postFile)
 
-	rep.HandleFunc(CallbackBaseEventSubPath, s.postEvent).
-		Methods("POST").
-		HeadersRegexp("Content-Type", "application/json")
+	rep.POST(CallbackBaseEventSubPath, s.postEvent)
 
 	log.Info("starting callback",
 		"port", port,
@@ -76,18 +72,18 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 }
 
 // SetupProfiling setup profiling
-func SetupProfiling(r *mux.Router) {
-	r.HandleFunc("/debug/pprof/", pprof.Index)
-	r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	r.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
-	r.Handle("/debug/pprof/heap", pprof.Handler("heap"))
-	r.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
-	r.Handle("/debug/pprof/block", pprof.Handler("block"))
-	r.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
-	r.Handle("/debug/pprof/allocs", pprof.Handler("allocs"))
-	r.Handle("/debug/pprof/trace", pprof.Handler("trace"))
+func SetupProfiling(r *gin.Engine) {
+	r.GET("/debug/pprof/", gin.WrapF(pprof.Index))
+	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+	r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+	r.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+	r.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
+	r.GET("/debug/pprof/threadcreate", gin.WrapH(pprof.Handler("threadcreate")))
+	r.GET("/debug/pprof/block", gin.WrapH(pprof.Handler("block")))
+	r.GET("/debug/pprof/mutex", gin.WrapH(pprof.Handler("mutex")))
+	r.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
+	r.GET("/debug/pprof/trace", gin.WrapH(pprof.Handler("trace")))
 }
 
 // PostServer post server
@@ -120,41 +116,46 @@ func (s *PostServer) InjectConfig(cfg *config.Config) {
 	s.Config = cfg
 }
 
-func (s *PostServer) postResult(w http.ResponseWriter, r *http.Request) {
-	buf := new(bytes.Buffer)
-	_, _ = buf.ReadFrom(r.Body)
-
-	node, executionID := s.nodeAndID(r)
-
+func (s *PostServer) postResult(ctx *gin.Context) {
+	node, executionID := s.nodeAndID(ctx)
 	postLog := log.WithValues(
 		"node", node,
 		"id", executionID,
-		"length", len(buf.Bytes()),
+	)
+	body, err := ctx.GetRawData()
+
+	if err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		postLog.Error(err, "error reading body")
+		return
+	}
+	postLog = log.WithValues(
+		"length", len(body),
 	)
 
 	results := new(metrics.Results)
 
-	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&results)
+	err = json.NewDecoder(bytes.NewReader(body)).Decode(&results)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		postLog.WithValues("result", buf.String()).Error(err, "error decoding results json")
+		ctx.String(http.StatusBadRequest, err.Error())
+		postLog.Error(err, "error decoding results json")
 		return
 	}
 
 	err = results.Validate(s.Config)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ctx.String(http.StatusBadRequest, err.Error())
 		postLog.Error(err, "results is invalid")
 		return
 	}
 
-	fileName, err := s.SaveFile(executionID, fmt.Sprintf("%s.json", node), buf.Bytes())
+	fileName, err := s.SaveFile(executionID, fmt.Sprintf("%s.json", node), body)
 	postLog = postLog.WithValues(
 		"name", filepath.Base(fileName),
 		"path", fileName,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ctx.String(http.StatusInternalServerError, err.Error())
 		postLog.Error(err, "error receiving file")
 		return
 	}
@@ -162,73 +163,86 @@ func (s *PostServer) postResult(w http.ResponseWriter, r *http.Request) {
 	postLog.Info("received report")
 }
 
-func (s *PostServer) postFile(w http.ResponseWriter, r *http.Request) {
-	buf := new(bytes.Buffer)
-	_, _ = buf.ReadFrom(r.Body)
+func (s *PostServer) postFile(ctx *gin.Context) {
+	node, executionID := s.nodeAndID(ctx)
+	postLog := log.WithValues(
+		"node", node,
+		"id", executionID,
+	)
+	body, err := ctx.GetRawData()
 
-	fileName := r.URL.Query().Get(FileName)
+	if err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		postLog.Error(err, "error reading body")
+		return
+	}
+	postLog = log.WithValues(
+		"length", len(body),
+	)
+
+	fileName := ctx.Query(FileName)
 	if fileName == "" {
-		_, params, _ := mime.ParseMediaType(r.Header.Get("Content-Disposition"))
+		_, params, _ := mime.ParseMediaType(ctx.GetHeader("Content-Disposition"))
 		fileName = params["filename"]
 	}
 	if fileName == "" {
 		fileName = uuid.New().String()
 
-		fileName += s.evaluateExtension(r)
+		fileName += s.evaluateExtension(ctx.Request)
 	}
-	node, executionID := s.nodeAndID(r)
 
-	var err error
-	fileName, err = s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), buf.Bytes())
-	postLog := log.WithValues(
-		"node", node,
-		"id", executionID,
+	fileName, err = s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), body)
+	postLog = log.WithValues(
 		"name", filepath.Base(fileName),
 		"path", fileName,
-		"length", len(buf.Bytes()),
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ctx.String(http.StatusInternalServerError, err.Error())
 		postLog.Error(err, "error receiving file")
 		return
 	}
 	postLog.Info("received file")
 }
 
-func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
-	buf := new(bytes.Buffer)
-	_, _ = buf.ReadFrom(r.Body)
-
-	node, executionID := s.nodeAndID(r)
-
+func (s *PostServer) postEvent(ctx *gin.Context) {
+	node, executionID := s.nodeAndID(ctx)
 	postLog := log.WithValues(
 		"node", node,
 		"id", executionID,
-		"length", len(buf.Bytes()),
+	)
+	body, err := ctx.GetRawData()
+
+	if err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		postLog.Error(err, "error reading body")
+		return
+	}
+	postLog = log.WithValues(
+		"length", len(body),
 	)
 
 	event := new(Event)
-	err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&event)
+	err = json.NewDecoder(bytes.NewReader(body)).Decode(&event)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error decoding event: %s", err.Error()), http.StatusBadRequest)
-		postLog.WithValues("result", buf.String()).Error(err, "error decoding event")
+		ctx.String(http.StatusBadRequest, fmt.Sprintf("error decoding event: %s", err.Error()))
+		postLog.WithValues("result", string(body)).Error(err, "error decoding event")
 		return
 	}
 
 	err = event.Validate()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ctx.String(http.StatusBadRequest, err.Error())
 		postLog.Error(err, "event is invalid")
 		return
 	}
 	podName := s.Config.PodName(node, executionID)
 
 	pod := &corev1.Pod{}
-	err = s.Client.Get(r.Context(), client.ObjectKey{Namespace: s.Config.Namespace, Name: podName}, pod)
+	err = s.Client.Get(ctx, client.ObjectKey{Namespace: s.Config.Namespace, Name: podName}, pod)
 
 	if err != nil {
 		err = fmt.Errorf("error finding pod: %w", err)
-		http.Error(w, err.Error(), http.StatusNotFound)
+		ctx.String(http.StatusNotFound, err.Error())
 		postLog.Error(err, "")
 		return
 	}
@@ -240,10 +254,9 @@ func (s *PostServer) postEvent(w http.ResponseWriter, r *http.Request) {
 	postLog.Info("event created")
 }
 
-func (s *PostServer) nodeAndID(r *http.Request) (string, string) {
-	vars := mux.Vars(r)
-	node := vars["node"]
-	executionID := vars["executionID"]
+func (s *PostServer) nodeAndID(ctx *gin.Context) (string, string) {
+	node := ctx.Param("node")
+	executionID := ctx.Param("executionID")
 	return node, executionID
 }
 

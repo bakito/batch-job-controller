@@ -28,7 +28,7 @@ linters:
   - revive
   - staticcheck
   - structcheck
-  - typecheck
+  #- typecheck
   - unconvert
   - unparam
   - unused
