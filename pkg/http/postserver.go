@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"path/filepath"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -39,7 +40,7 @@ const (
 var log = ctrl.Log.WithName("http-server")
 
 // GenericAPIServer prepare the generic api server
-func GenericAPIServer(port int, reportPath string) manager.Runnable {
+func GenericAPIServer(port int, cfg *config.Config) manager.Runnable {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	s := &PostServer{
@@ -48,7 +49,8 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 			Kind:    "internal",
 			Handler: r,
 		},
-		ReportPath: reportPath,
+		ReportPath: cfg.ReportDirectory,
+		DevMode:    cfg.DevMode,
 	}
 
 	rep := r.Group(CallbackBasePath)
@@ -91,6 +93,7 @@ type PostServer struct {
 	Server
 	Controller    lifecycle.Controller
 	ReportPath    string
+	DevMode       bool
 	EventRecorder record.EventRecorder
 	Config        *config.Config
 	Client        client.Reader
@@ -168,36 +171,62 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 		"node", node,
 		"id", executionID,
 	)
-	body, err := ctx.GetRawData()
-	if err != nil {
-		ctx.String(http.StatusBadRequest, err.Error())
-		postLog.Error(err, "error reading body")
-		return
-	}
 
-	fileName := ctx.Query(FileName)
-	if fileName == "" {
-		_, params, _ := mime.ParseMediaType(ctx.GetHeader("Content-Disposition"))
-		fileName = params["filename"]
-	}
-	if fileName == "" {
-		fileName = uuid.New().String()
+	form, _ := ctx.MultipartForm()
+	if form != nil {
+		cnt := 0
+		for _, files := range form.File {
+			for _, file := range files {
 
-		fileName += s.evaluateExtension(ctx.Request)
-	}
+				// Upload the file to specific dst.
+				if err := s.mkdir(executionID); err != nil {
+					ctx.String(http.StatusInternalServerError, err.Error())
+					postLog.Error(err, "error creating upload directory")
+					return
+				}
 
-	fileName, err = s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), body)
-	postLog = log.WithValues(
-		"name", filepath.Base(fileName),
-		"path", fileName,
-		"length", len(body),
-	)
-	if err != nil {
-		ctx.String(http.StatusInternalServerError, err.Error())
-		postLog.Error(err, "error receiving file")
-		return
+				err := ctx.SaveUploadedFile(file, filepath.Join(s.ReportPath, executionID, fmt.Sprintf("%s-%s", node, file.Filename)))
+				if err != nil {
+					ctx.String(http.StatusInternalServerError, err.Error())
+					postLog.Error(err, "error saving file")
+					return
+				}
+				cnt++
+			}
+		}
+		postLog.Info(fmt.Sprintf("received %d file(s)", cnt))
+	} else {
+		body, err := ctx.GetRawData()
+		if err != nil {
+			ctx.String(http.StatusBadRequest, err.Error())
+			postLog.Error(err, "error reading body")
+			return
+		}
+
+		fileName := ctx.Query(FileName)
+		if fileName == "" {
+			_, params, _ := mime.ParseMediaType(ctx.GetHeader("Content-Disposition"))
+			fileName = params["filename"]
+		}
+		if fileName == "" {
+			fileName = uuid.New().String()
+
+			fileName += s.evaluateExtension(ctx.Request)
+		}
+
+		fileName, err = s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), body)
+		postLog = log.WithValues(
+			"name", filepath.Base(fileName),
+			"path", fileName,
+			"length", len(body),
+		)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			postLog.Error(err, "error receiving file")
+			return
+		}
+		postLog.Info("received 1 file")
 	}
-	postLog.Info("received file")
 }
 
 func (s *PostServer) postEvent(ctx *gin.Context) {
@@ -271,6 +300,13 @@ func (s *PostServer) evaluateExtension(r *http.Request) string {
 
 // SaveFile save a received file
 func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, error) {
+	if err := s.mkdir(executionID); err != nil {
+		return "", err
+	}
 	fileName := filepath.Join(s.ReportPath, executionID, name)
 	return fileName, ioutil.WriteFile(fileName, data, 0o600)
+}
+
+func (s *PostServer) mkdir(executionID string) error {
+	return os.MkdirAll(filepath.Join(s.ReportPath, executionID), 0o755)
 }

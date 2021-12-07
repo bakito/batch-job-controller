@@ -22,6 +22,11 @@ const (
 	EnvHostname = "HOSTNAME"
 	// EnvConfigMapName configmap name env variable
 	EnvConfigMapName = "CONFIG_MAP_NAME"
+	// EnvDevMode enable dev mode
+	EnvDevMode = "DEV_MODE"
+	// EnvReportDirectory override for report directory
+	EnvReportDirectory = "REPORT_DIRECTORY"
+
 	// PodTemplateName key of the pod template in the configmap
 	PodTemplateName = "pod-template.yaml"
 	// ConfigFileName key of the config yaml file in the configmap
@@ -77,9 +82,23 @@ func getInternal(namespace string, apiReader client.Reader) (*Config, error) {
 			cfg.StartupDelay = 10 * time.Second
 		}
 
+		cfg.DevMode = IsDevMode()
+		if cfg.DevMode {
+			log.Info("DEV MODE ENABLED!!!")
+		}
+
+		if dir, ok := os.LookupEnv(EnvReportDirectory); ok {
+			cfg.ReportDirectory = dir
+			log.WithValues("env", EnvReportDirectory, "reportDirectory", dir).Info("override report directory from env")
+		}
+
 		return cfg, nil
 	}
 	return nil, fmt.Errorf("could not find config file %q in configmap %q", ConfigFileName, os.Getenv(EnvConfigMapName))
+}
+
+func IsDevMode() bool {
+	return strings.EqualFold(os.Getenv(EnvDevMode), "true")
 }
 
 func configMap(namespace string, cl client.Reader) (*corev1.ConfigMap, error) {

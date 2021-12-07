@@ -1,8 +1,11 @@
 package http
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -168,70 +171,91 @@ var _ = Describe("HTTP", func() {
 	})
 
 	Context("postFile", func() {
-		var (
-			path                   string
-			fileName               string
-			generatedFileExtension string
-		)
+		var path string
 		BeforeEach(func() {
-			fileName = uuid.New().String() + ".txt"
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseFileSubPath)
 			router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
-
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog)
+		})
+		Context("single file", func() {
+			var (
+				fileName               string
+				generatedFileExtension string
+			)
+			BeforeEach(func() {
+				fileName = uuid.New().String() + ".txt"
 
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
-			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Info("received file")
-		})
-		AfterEach(func() {
-			Ω(rr.Code).Should(Equal(http.StatusOK))
+				mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+				mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
+				mockLog.EXPECT().Info("received 1 file")
+			})
+			AfterEach(func() {
+				Ω(rr.Code).Should(Equal(http.StatusOK))
 
-			files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(files).Should(HaveLen(1))
-			if generatedFileExtension != "" {
-				Ω(files[0].Name()).Should(HavePrefix(node + "-"))
-				Ω(files[0].Name()).Should(HaveSuffix(generatedFileExtension))
-			} else {
-				Ω(files[0].Name()).Should(Equal(node + "-" + fileName))
-			}
+				files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(files).Should(HaveLen(1))
+				if generatedFileExtension != "" {
+					Ω(files[0].Name()).Should(HavePrefix(node + "-"))
+					Ω(files[0].Name()).Should(HaveSuffix(generatedFileExtension))
+				} else {
+					Ω(files[0].Name()).Should(Equal(node + "-" + fileName))
+				}
 
-			b, err := ioutil.ReadFile(filepath.Join(s.ReportPath, executionID, files[0].Name()))
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(b).Should(Equal([]byte("foo")))
+				b, err := ioutil.ReadFile(filepath.Join(s.ReportPath, executionID, files[0].Name()))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(b).Should(Equal([]byte("foo")))
+			})
+			It("succeed if file is saved with correct name from query parameter", func() {
+				req, err := http.NewRequest("POST", fmt.Sprintf("%s?name=%s", path, fileName), strings.NewReader("foo"))
+				Ω(err).ShouldNot(HaveOccurred())
+				router.ServeHTTP(rr, req)
+			})
+			It("succeed if file is saved with correct name from header", func() {
+				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+				req.Header.Add("Content-Disposition", fmt.Sprintf(`attachment;filename="%s"`, fileName))
+				Ω(err).ShouldNot(HaveOccurred())
+				router.ServeHTTP(rr, req)
+			})
+			It("succeed if file is saved with generated name with .file extension", func() {
+				generatedFileExtension = ".file"
+				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+				Ω(err).ShouldNot(HaveOccurred())
+				router.ServeHTTP(rr, req)
+			})
+			It("succeed if file is saved with generated name with .txt extension", func() {
+				generatedFileExtension = ".txt"
+				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+				req.Header.Add("Content-Type", "text/plain")
+				Ω(err).ShouldNot(HaveOccurred())
+				router.ServeHTTP(rr, req)
+			})
+			It("succeed if file is saved with generated name with .json extension", func() {
+				generatedFileExtension = ".json"
+				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+				req.Header.Add("content-type", "application/json")
+				Ω(err).ShouldNot(HaveOccurred())
+				router.ServeHTTP(rr, req)
+			})
 		})
-		It("succeed if file is saved with correct name from query parameter", func() {
-			req, err := http.NewRequest("POST", fmt.Sprintf("%s?name=%s", path, fileName), strings.NewReader("foo"))
-			Ω(err).ShouldNot(HaveOccurred())
-			router.ServeHTTP(rr, req)
-		})
-		It("succeed if file is saved with correct name from header", func() {
-			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
-			req.Header.Add("Content-Disposition", fmt.Sprintf(`attachment;filename="%s"`, fileName))
-			Ω(err).ShouldNot(HaveOccurred())
-			router.ServeHTTP(rr, req)
-		})
-		It("succeed if file is saved with generated name with .file extension", func() {
-			generatedFileExtension = ".file"
-			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
-			Ω(err).ShouldNot(HaveOccurred())
-			router.ServeHTTP(rr, req)
-		})
-		It("succeed if file is saved with generated name with .txt extension", func() {
-			generatedFileExtension = ".txt"
-			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
-			req.Header.Add("Content-Type", "text/plain")
-			Ω(err).ShouldNot(HaveOccurred())
-			router.ServeHTTP(rr, req)
-		})
-		It("succeed if file is saved with generated name with .json extension", func() {
-			generatedFileExtension = ".json"
-			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
-			req.Header.Add("content-type", "application/json")
-			Ω(err).ShouldNot(HaveOccurred())
-			router.ServeHTTP(rr, req)
+		Context("multiple files", func() {
+			It("upload 2 files", func() {
+				mockLog.EXPECT().Info("received 2 file(s)")
+
+				body := &bytes.Buffer{}
+				writer := multipart.NewWriter(body)
+				part1, _ := writer.CreateFormFile("file", filepath.Base("a"))
+				_, _ = io.Copy(part1, strings.NewReader("file a"))
+				part2, _ := writer.CreateFormFile("file", filepath.Base("b"))
+				_, _ = io.Copy(part2, strings.NewReader("file b"))
+				_ = writer.Close()
+
+				req, _ := http.NewRequest("POST", path, body)
+				req.Header.Add("Content-Type", writer.FormDataContentType())
+
+				router.ServeHTTP(rr, req)
+			})
 		})
 	})
 	Context("postEvent", func() {
@@ -334,7 +358,8 @@ var _ = Describe("HTTP", func() {
 
 	Context("StaticFileServer", func() {
 		It("returns a file server", func() {
-			sfs := StaticFileServer(1234, "path")
+			cfg.ReportDirectory = "path"
+			sfs := StaticFileServer(1234, cfg)
 			Ω(sfs).ShouldNot(BeNil())
 			Ω(sfs.(*Server).Port).Should(Equal(1234))
 			Ω(sfs.(*Server).Kind).Should(Equal("public"))
@@ -347,7 +372,8 @@ var _ = Describe("HTTP", func() {
 			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
 		})
 		It("returns a server", func() {
-			sfs := GenericAPIServer(1234, "")
+			cfg.ReportDirectory = ""
+			sfs := GenericAPIServer(1234, cfg)
 			Ω(sfs).ShouldNot(BeNil())
 			Ω(sfs.(*PostServer).Port).Should(Equal(1234))
 			Ω(sfs.(*PostServer).Kind).Should(Equal("internal"))

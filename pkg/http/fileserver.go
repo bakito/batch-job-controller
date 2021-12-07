@@ -6,15 +6,16 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bakito/batch-job-controller/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // StaticFileServer prepare the static file server
-func StaticFileServer(port int, path string) manager.Runnable {
+func StaticFileServer(port int, cfg *config.Config) manager.Runnable {
 	return &Server{
 		Port:    port,
 		Kind:    "public",
-		Handler: http.FileServer(http.Dir(path)),
+		Handler: http.FileServer(http.Dir(cfg.ReportDirectory)),
 	}
 }
 

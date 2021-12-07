@@ -32,6 +32,7 @@ type Config struct {
 	Namespace      string         `json:"-"`
 	JobPodTemplate string         `json:"-"`
 	Owner          runtime.Object `json:"-"`
+	DevMode        bool           `json:"-"`
 }
 
 // PodName get the name of the pod
