@@ -76,7 +76,7 @@ func Setup() *Main {
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:                     scheme,
 		MetricsBindAddress:         ":9153",
-		LeaderElection:             cfg.DevMode,
+		LeaderElection:             !cfg.DevMode,
 		LeaderElectionID:           cfg.Name + "-leader-election",
 		LeaderElectionNamespace:    namespace,
 		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,

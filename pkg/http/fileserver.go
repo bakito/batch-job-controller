@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
-
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
