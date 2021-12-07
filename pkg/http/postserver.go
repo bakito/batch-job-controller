@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"path/filepath"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -39,7 +40,7 @@ const (
 var log = ctrl.Log.WithName("http-server")
 
 // GenericAPIServer prepare the generic api server
-func GenericAPIServer(port int, reportPath string) manager.Runnable {
+func GenericAPIServer(port int, cfg *config.Config) manager.Runnable {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	s := &PostServer{
@@ -48,7 +49,8 @@ func GenericAPIServer(port int, reportPath string) manager.Runnable {
 			Kind:    "internal",
 			Handler: r,
 		},
-		ReportPath: reportPath,
+		ReportPath: cfg.ReportDirectory,
+		DevMode:    cfg.DevMode,
 	}
 
 	rep := r.Group(CallbackBasePath)
@@ -91,6 +93,7 @@ type PostServer struct {
 	Server
 	Controller    lifecycle.Controller
 	ReportPath    string
+	DevMode       bool
 	EventRecorder record.EventRecorder
 	Config        *config.Config
 	Client        client.Reader
@@ -176,10 +179,16 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 			for _, file := range files {
 
 				// Upload the file to specific dst.
-				err := ctx.SaveUploadedFile(file, filepath.Join(s.ReportPath, executionID, file.Filename))
+				if err := s.mkdir(executionID); err != nil {
+					ctx.String(http.StatusInternalServerError, err.Error())
+					postLog.Error(err, "error creating upload directory")
+					return
+				}
+
+				err := ctx.SaveUploadedFile(file, filepath.Join(s.ReportPath, executionID, fmt.Sprintf("%s-%s", node, file.Filename)))
 				if err != nil {
 					ctx.String(http.StatusInternalServerError, err.Error())
-					postLog.Error(err, "error receiving file")
+					postLog.Error(err, "error saving file")
 					return
 				}
 				cnt++
@@ -291,6 +300,13 @@ func (s *PostServer) evaluateExtension(r *http.Request) string {
 
 // SaveFile save a received file
 func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, error) {
+	if err := s.mkdir(executionID); err != nil {
+		return "", err
+	}
 	fileName := filepath.Join(s.ReportPath, executionID, name)
 	return fileName, ioutil.WriteFile(fileName, data, 0o600)
+}
+
+func (s *PostServer) mkdir(executionID string) error {
+	return os.MkdirAll(filepath.Join(s.ReportPath, executionID), 0o755)
 }

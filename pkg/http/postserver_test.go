@@ -334,7 +334,8 @@ var _ = Describe("HTTP", func() {
 
 	Context("StaticFileServer", func() {
 		It("returns a file server", func() {
-			sfs := StaticFileServer(1234, "path")
+			cfg.ReportDirectory = "path"
+			sfs := StaticFileServer(1234, cfg)
 			Ω(sfs).ShouldNot(BeNil())
 			Ω(sfs.(*Server).Port).Should(Equal(1234))
 			Ω(sfs.(*Server).Kind).Should(Equal("public"))
@@ -347,7 +348,8 @@ var _ = Describe("HTTP", func() {
 			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
 		})
 		It("returns a server", func() {
-			sfs := GenericAPIServer(1234, "")
+			cfg.ReportDirectory = ""
+			sfs := GenericAPIServer(1234, cfg)
 			Ω(sfs).ShouldNot(BeNil())
 			Ω(sfs.(*PostServer).Port).Should(Equal(1234))
 			Ω(sfs.(*PostServer).Kind).Should(Equal("internal"))

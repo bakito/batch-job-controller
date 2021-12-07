@@ -33,7 +33,7 @@ func New(resultURL string, fileURL string, eventURL string) Client {
 		resultURL: resultURL,
 		fileURL:   fileURL,
 		eventURL:  eventURL,
-		client:    resty.New().SetHeader("Content-Type", "application/json"),
+		client:    resty.New().SetHeader("Content-Type", "application/json; charset=utf-8"),
 	}
 }
 

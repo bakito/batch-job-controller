@@ -5,7 +5,6 @@ import (
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 
 	bjcc "github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/controller"
@@ -32,8 +31,6 @@ import (
 const (
 	// EnvNamespace namespace env variable name
 	EnvNamespace = "NAMESPACE"
-	// EnvDevMode enable dev mode
-	EnvDevMode = "DEV_MODE"
 )
 
 var (
@@ -51,7 +48,7 @@ func init() {
 func Setup() *Main {
 	o := func(o *zap.Options) {
 		o.DestWriter = os.Stderr
-		o.Development = strings.ToLower(os.Getenv(EnvDevMode)) == "true"
+		o.Development = bjcc.IsDevMode()
 		encCfg := zap2.NewProductionEncoderConfig()
 		encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 		o.Encoder = zapcore.NewJSONEncoder(encCfg)
@@ -79,7 +76,7 @@ func Setup() *Main {
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:                     scheme,
 		MetricsBindAddress:         ":9153",
-		LeaderElection:             strings.ToLower(os.Getenv(EnvDevMode)) != "true",
+		LeaderElection:             cfg.DevMode,
 		LeaderElectionID:           cfg.Name + "-leader-election",
 		LeaderElectionNamespace:    namespace,
 		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,

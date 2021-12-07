@@ -8,7 +8,7 @@ import (
 func main() {
 	main := cmd.Setup()
 	main.Start(
-		http.StaticFileServer(8080, main.Config.ReportDirectory),
-		http.GenericAPIServer(main.Config.CallbackServicePort, main.Config.ReportDirectory),
+		http.StaticFileServer(8080, main.Config),
+		http.GenericAPIServer(main.Config.CallbackServicePort, main.Config),
 	)
 }
