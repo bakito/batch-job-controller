@@ -176,7 +176,6 @@ var _ = Describe("HTTP", func() {
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseFileSubPath)
 			router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog)
 		})
 		Context("single file", func() {
 			var (
@@ -187,6 +186,7 @@ var _ = Describe("HTTP", func() {
 				fileName = uuid.New().String() + ".txt"
 
 				mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
+				mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog)
 				mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
 				mockLog.EXPECT().Info("received 1 file")
 			})
@@ -241,6 +241,7 @@ var _ = Describe("HTTP", func() {
 		})
 		Context("multiple files", func() {
 			It("upload 2 files", func() {
+				mockLog.EXPECT().WithValues("names", gm.Any()).Return(mockLog)
 				mockLog.EXPECT().Info("received 2 file(s)")
 
 				body := &bytes.Buffer{}

@@ -10,6 +10,7 @@ import (
 	"net/http/pprof"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
@@ -174,7 +175,7 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 
 	form, _ := ctx.MultipartForm()
 	if form != nil {
-		cnt := 0
+		var names []string
 		for _, files := range form.File {
 			for _, file := range files {
 
@@ -191,10 +192,12 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 					postLog.Error(err, "error saving file")
 					return
 				}
-				cnt++
+				names = append(names, file.Filename)
 			}
 		}
-		postLog.Info(fmt.Sprintf("received %d file(s)", cnt))
+		log.WithValues(
+			"names", strings.Join(names, ","),
+		).Info(fmt.Sprintf("received %d file(s)", len(names)))
 	} else {
 		body, err := ctx.GetRawData()
 		if err != nil {
