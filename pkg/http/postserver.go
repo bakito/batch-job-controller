@@ -225,7 +225,7 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 			postLog.Error(err, "error receiving file")
 			return
 		}
-		postLog.Info("received file")
+		postLog.Info("received 1 file")
 	}
 }
 

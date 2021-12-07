@@ -38,18 +38,16 @@ func New(resultURL string, fileURL string, eventURL string) Client {
 }
 
 func (c client) SendResult(results *metrics.Results) error {
-	_, err := c.client.R().SetBody(results).SetContentLength(true).Post(c.resultURL)
-	return err
+	return handleResponse(c.client.R().SetBody(results).SetContentLength(true).Post(c.resultURL))
 }
 
 func (c client) CreateEvent(isWaring bool, reason string, message string, args ...string) error {
-	_, err := c.client.R().SetBody(&http.Event{
+	return handleResponse(c.client.R().SetBody(&http.Event{
 		Waring:  isWaring,
 		Reason:  reason,
 		Message: message,
 		Args:    args,
-	}).SetContentLength(true).Post(c.eventURL)
-	return err
+	}).SetContentLength(true).Post(c.eventURL))
 }
 
 func (c client) SendAsFile(name string, data []byte, contentType string) error {
@@ -57,7 +55,13 @@ func (c client) SendAsFile(name string, data []byte, contentType string) error {
 	if contentType != "" {
 		p = p.SetHeader("Content-Type", contentType)
 	}
-	_, err := p.SetBody(data).SetContentLength(true).Post(c.fileURL)
+	return handleResponse(p.SetBody(data).SetContentLength(true).Post(c.fileURL))
+}
+
+func handleResponse(resp *resty.Response, err error) error {
+	if resp != nil && resp.StatusCode() != 200 {
+		return &httpError{status: resp.Status(), message: resp.String()}
+	}
 	return err
 }
 
@@ -66,7 +70,10 @@ func (c client) SendFiles(filePaths ...string) error {
 	for _, path := range filePaths {
 		files[filepath.Base(path)] = path
 	}
-	_, err := c.client.R().SetFiles(files).Post(c.fileURL)
+	resp, err := c.client.R().SetFiles(files).Post(c.fileURL)
+	if resp.StatusCode() != 200 {
+		err = &httpError{status: resp.Status(), message: resp.String()}
+	}
 	return err
 }
 
@@ -75,4 +82,13 @@ type client struct {
 	fileURL   string
 	eventURL  string
 	client    *resty.Client
+}
+
+type httpError struct {
+	message string
+	status  string
+}
+
+func (h httpError) Error() string {
+	return fmt.Sprintf("%s: %s", h.status, h.message)
 }
