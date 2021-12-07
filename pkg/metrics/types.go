@@ -12,7 +12,7 @@ import (
 // Result metrics result
 type Result struct {
 	Value  float64           `json:"value"`
-	Labels map[string]string `json:"labels"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // Results map of results

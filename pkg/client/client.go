@@ -15,7 +15,7 @@ type Client interface {
 	SendResult(results *metrics.Results) error
 	SendAsFile(name string, data []byte, contentType string) error
 	SendFiles(filePaths ...string) error
-	CreateEvent(event *http.Event) error
+	CreateEvent(isWaring bool, reason string, message string, args ...string) error
 }
 
 // Default get a default client with urls from env variables
@@ -42,8 +42,13 @@ func (c client) SendResult(results *metrics.Results) error {
 	return err
 }
 
-func (c client) CreateEvent(event *http.Event) error {
-	_, err := c.client.R().SetBody(event).SetContentLength(true).Post(c.eventURL)
+func (c client) CreateEvent(isWaring bool, reason string, message string, args ...string) error {
+	_, err := c.client.R().SetBody(&http.Event{
+		Waring:  isWaring,
+		Reason:  reason,
+		Message: message,
+		Args:    args,
+	}).SetContentLength(true).Post(c.eventURL)
 	return err
 }
 
