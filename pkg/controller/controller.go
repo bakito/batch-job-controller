@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -27,7 +27,6 @@ const (
 // PodReconciler reconciler
 type PodReconciler struct {
 	client.Client
-	Log        logr.Logger
 	Controller lifecycle.Controller
 }
 
@@ -42,7 +41,7 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Reconcile reconcile pods
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	podLog := r.Log.WithValues("pod", req.NamespacedName)
+	podLog := log.FromContext(ctx)
 	pod := &corev1.Pod{}
 	err := r.Get(ctx, req.NamespacedName, pod)
 	if err != nil {

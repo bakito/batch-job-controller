@@ -17,6 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var _ = Describe("Controller", func() {
@@ -59,22 +60,24 @@ var _ = Describe("Controller", func() {
 			mockController *mock_lifecycle.MockController
 			mockClient     *mock_client.MockClient
 			mockLog        *mock_logr.MockLogger
+			ctx            context.Context
 		)
 		BeforeEach(func() {
 			mockCtrl = gm.NewController(GinkgoT())
 			mockController = mock_lifecycle.NewMockController(mockCtrl)
 			mockClient = mock_client.NewMockClient(mockCtrl)
 			mockLog = mock_logr.NewMockLogger(mockCtrl)
+			ctx = context.Background()
+			log.IntoContext(ctx, mockLog)
 			r = &PodReconciler{}
 			r.Controller = mockController
 			r.Client = mockClient
-			r.Log = mockLog
 		})
 		It("should not find an entry", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: ""}, ""))
 
-			result, err := r.Reconcile(context.Background(), ctrl.Request{})
+			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -84,7 +87,7 @@ var _ = Describe("Controller", func() {
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(fmt.Errorf(""))
 
-			result, err := r.Reconcile(context.Background(), ctrl.Request{})
+			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).Should(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -101,7 +104,7 @@ var _ = Describe("Controller", func() {
 				})
 			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded)
 
-			result, err := r.Reconcile(context.Background(), ctrl.Request{})
+			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -118,7 +121,7 @@ var _ = Describe("Controller", func() {
 				})
 			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodFailed)
 
-			result, err := r.Reconcile(context.Background(), ctrl.Request{})
+			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
@@ -135,7 +138,7 @@ var _ = Describe("Controller", func() {
 				})
 			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
 
-			result, err := r.Reconcile(context.Background(), ctrl.Request{})
+			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).Should(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())

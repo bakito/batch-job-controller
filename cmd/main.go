@@ -130,7 +130,6 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 
 	if err := (&controller.PodReconciler{
 		Client:     m.Manager.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Pod"),
 		Controller: m.Controller,
 	}).SetupWithManager(m.Manager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")

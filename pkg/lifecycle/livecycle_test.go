@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"errors"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -52,7 +53,7 @@ var _ = Describe("lifecycle", func() {
 			c = NewController(cfg, pc).(*controller)
 		})
 		AfterEach(func() {
-			os.RemoveAll(c.reportDir)
+			_ = os.RemoveAll(c.reportDir)
 		})
 		It("should create an id and directory", func() {
 			id := c.NewExecution(0)
@@ -77,6 +78,13 @@ var _ = Describe("lifecycle", func() {
 			Ω(id2).ShouldNot(BeEmpty())
 			_, err = os.Lstat(filepath.Join(repDir, id2))
 			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
+	Context("ExecutionIDNotFound", func() {
+		It("error should match", func() {
+			myErr := &ExecutionIDNotFound{}
+			Ω(errors.Is(myErr, &ExecutionIDNotFound{})).Should(BeTrue())
+			Ω(errors.As(myErr, &myErr)).Should(BeTrue())
 		})
 	})
 })

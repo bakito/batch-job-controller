@@ -270,7 +270,7 @@ func (c *controller) Has(node string, executionID string) bool {
 func (c *controller) forID(id string) (*execution, error) {
 	e, ok := c.executions[id]
 	if !ok {
-		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("execution with id: '%s' not found", id)}
+		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("execution with id: %q not found", id)}
 	}
 	return e, nil
 }
@@ -294,7 +294,7 @@ type execution struct {
 func (e *execution) pod(node string) (*pod, error) {
 	p, ok := e.Load(node)
 	if !ok {
-		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("pod for node: '%s' is not registered", node)}
+		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("pod for node: %q is not registered", node)}
 	}
 	return p.(*pod), nil
 }
