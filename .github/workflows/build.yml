@@ -18,7 +18,7 @@ jobs:
           version: latest
 
   build:
-    name: Build
+    name: Go Tests
     runs-on: ubuntu-latest
     steps:
 
