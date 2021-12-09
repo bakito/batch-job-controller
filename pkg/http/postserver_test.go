@@ -20,7 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/testing"
@@ -34,7 +34,7 @@ const (
 	eventMessageArgsJSON    = `{ "warning": true, "reason": "TestReason", "message": "test message: %s" ,"args" : ["a1"]}`
 )
 
-var _ = Describe("HTTP", func() {
+var _ = XDescribe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
 		mockLog        *mock_logr.MockLogger

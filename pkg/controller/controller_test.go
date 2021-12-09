@@ -8,7 +8,7 @@ import (
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	gm "github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,8 +67,7 @@ var _ = Describe("Controller", func() {
 			mockController = mock_lifecycle.NewMockController(mockCtrl)
 			mockClient = mock_client.NewMockClient(mockCtrl)
 			mockLog = mock_logr.NewMockLogger(mockCtrl)
-			ctx = context.Background()
-			log.IntoContext(ctx, mockLog)
+			ctx = log.IntoContext(context.TODO(), mockLog)
 			r = &PodReconciler{}
 			r.Controller = mockController
 			r.Client = mockClient
@@ -94,7 +93,6 @@ var _ = Describe("Controller", func() {
 		})
 		It("should update controller on pod succeeded", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
 				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
 					pod.Status = corev1.PodStatus{
@@ -111,7 +109,6 @@ var _ = Describe("Controller", func() {
 		})
 		It("should update controller on pod failed", func() {
 			mockLog.EXPECT().WithValues(gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
 				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
 					pod.Status = corev1.PodStatus{

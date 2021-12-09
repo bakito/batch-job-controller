@@ -11,7 +11,7 @@ import (
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
