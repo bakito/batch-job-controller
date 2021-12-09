@@ -12,7 +12,7 @@ const (
 
 func (s *PostServer) middleware(ctx *gin.Context) {
 	if s.Controller != nil {
-		if !s.Controller.Has(s.nodeAndID(ctx)) && !s.DevMode {
+		if !s.Controller.Has(nodeAndID(ctx)) && !s.DevMode {
 			ctx.String(http.StatusNotAcceptable, errorMiddlewareNotAcceptable)
 			ctx.Abort()
 			return

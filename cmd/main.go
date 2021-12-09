@@ -46,16 +46,7 @@ func init() {
 
 // Setup setup main
 func Setup() *Main {
-	o := func(o *zap.Options) {
-		o.DestWriter = os.Stderr
-		o.Development = bjcc.IsDevMode()
-		encCfg := zap2.NewProductionEncoderConfig()
-		encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-		o.Encoder = zapcore.NewJSONEncoder(encCfg)
-	}
-
-	ctrl.SetLogger(zapr.NewLogger(zap.NewRaw(o)))
-	klog.SetLogger(ctrl.Log)
+	SetupLogger(true)
 
 	// read env variables
 	if value, exists := os.LookupEnv(EnvNamespace); exists {
@@ -104,6 +95,22 @@ func Setup() *Main {
 		Config:     cfg,
 		Manager:    mgr,
 	}
+}
+
+func SetupLogger(json bool) {
+	o := func(o *zap.Options) {
+		o.DestWriter = os.Stderr
+		o.Development = bjcc.IsDevMode()
+		encCfg := zap2.NewProductionEncoderConfig()
+		if json {
+			o.Encoder = zapcore.NewJSONEncoder(encCfg)
+		} else {
+			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
+		}
+	}
+
+	ctrl.SetLogger(zapr.NewLogger(zap.NewRaw(o)))
+	klog.SetLogger(ctrl.Log)
 }
 
 // Start start main

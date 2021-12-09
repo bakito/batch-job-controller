@@ -276,6 +276,7 @@ var _ = Describe("HTTP", func() {
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").Return(mockLog)
 			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
 			mockLog.EXPECT().Info("event created")
 			mockReader.EXPECT().
@@ -292,6 +293,7 @@ var _ = Describe("HTTP", func() {
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockLog)
 			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
 			mockLog.EXPECT().Info("event created")
 			mockReader.EXPECT().
