@@ -2,7 +2,7 @@ name: Github Build
 
 on:
   push:
-    branches: [ main, client ]
+    branches: [ main, ginkgo-v2 ]
   pull_request:
     branches: [ main ]
 

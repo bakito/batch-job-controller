@@ -18,11 +18,11 @@ import (
 	"github.com/gin-gonic/gin"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("HTTP", func() {
+var _ = XDescribe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
 		mockLog        *mock_logr.MockLogger
@@ -62,12 +62,12 @@ var _ = Describe("HTTP", func() {
 		// Need to create a router that we can pass the request through so that the vars will be added to the context
 		router = gin.New()
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
-	})
-	AfterEach(func() {
-		_ = os.RemoveAll(s.ReportPath)
+		DeferCleanup(func() error {
+			return os.RemoveAll(s.ReportPath)
+		})
 	})
 	// disable by default
-	XIt("generate parallel load", func() {
+	It("generate parallel load", func() {
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseFileSubPath)
 		router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
 
@@ -86,9 +86,7 @@ var _ = Describe("HTTP", func() {
 		mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog).Times(loops)
 		mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog).Times(loops)
 
-		mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any()).Times(loops)
-		mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog).Times(loops)
-		mockLog.EXPECT().Info("received file").Times(loops)
+		mockLog.EXPECT().Info("received 1 file").Times(loops)
 
 		var wg sync.WaitGroup
 		for i := 0; i < loops; i++ {
@@ -96,13 +94,13 @@ var _ = Describe("HTTP", func() {
 			time.Sleep(sleep)
 			ii := i
 			go func() {
+				defer wg.Done()
 				req, err := http.NewRequest("POST", path, bytes.NewBuffer(data))
 				Ω(err).ShouldNot(HaveOccurred())
 
 				req.Header.Add("content-type", "application/json")
 				req.Header.Add("Content-Disposition", fmt.Sprintf(`attachment;filename="%d.txt"`, ii))
 				router.ServeHTTP(rr, req)
-				defer wg.Done()
 			}()
 		}
 		wg.Wait()

@@ -14,7 +14,7 @@ tidy:
 
 # Run tests
 test: ginkgo tidy mocks
-	ginkgo --cover -r -outputdir=. -coverprofile=coverage.out
+	ginkgo --cover -r -output-dir=. -coverprofile=coverage.out
 
 # Run tests
 helm-lint: helm
@@ -47,7 +47,7 @@ ifeq (, $(shell which mockgen))
 endif
 ginkgo:
 ifeq (, $(shell which ginkgo))
- $(shell go install github.com/onsi/ginkgo/ginkgo@v1.16.5)
+ $(shell go install github.com/onsi/ginkgo/v2/ginkgo@latest)
 endif
 helm:
 ifeq (, $(shell which helm))
