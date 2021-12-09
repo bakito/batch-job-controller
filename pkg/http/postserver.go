@@ -57,17 +57,16 @@ func GenericAPIServer(port int, cfg *config.Config) manager.Runnable {
 
 	rep := r.Group(CallbackBasePath)
 	rep.Use(gin.Recovery(), s.middleware)
-
 	rep.POST(CallbackBaseResultSubPath, s.postResult)
-
 	rep.POST(CallbackBaseFileSubPath, s.postFile)
-
 	rep.POST(CallbackBaseEventSubPath, s.postEvent)
 
 	log.Info("starting callback",
 		"port", port,
 		"method", "POST",
-		"path", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseResultSubPath),
+		"result", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseResultSubPath),
+		"file", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseFileSubPath),
+		"event", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseEventSubPath),
 	)
 
 	SetupProfiling(r)

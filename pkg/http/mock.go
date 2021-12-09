@@ -24,17 +24,16 @@ func MockAPIServer(port int) manager.Runnable {
 	}
 
 	rep := r.Group(CallbackBasePath)
-
 	rep.POST(CallbackBaseResultSubPath, s.postResult)
-
 	rep.POST(CallbackBaseFileSubPath, s.postFile)
-
 	rep.POST(CallbackBaseEventSubPath, s.postEvent)
 
 	log.Info("starting callback",
 		"port", port,
 		"method", "POST",
-		"path", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseResultSubPath),
+		"result", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseResultSubPath),
+		"file", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseFileSubPath),
+		"event", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseEventSubPath),
 	)
 
 	return s

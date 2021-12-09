@@ -46,7 +46,7 @@ func init() {
 
 // Setup setup main
 func Setup() *Main {
-	SetupLogger(true)
+	SetupLogger(true, true)
 
 	// read env variables
 	if value, exists := os.LookupEnv(EnvNamespace); exists {
@@ -97,11 +97,14 @@ func Setup() *Main {
 	}
 }
 
-func SetupLogger(json bool) {
+func SetupLogger(json bool, isoTime bool) {
 	o := func(o *zap.Options) {
 		o.DestWriter = os.Stderr
 		o.Development = bjcc.IsDevMode()
 		encCfg := zap2.NewProductionEncoderConfig()
+		if isoTime {
+			encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+		}
 		if json {
 			o.Encoder = zapcore.NewJSONEncoder(encCfg)
 		} else {

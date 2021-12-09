@@ -372,7 +372,7 @@ var _ = Describe("HTTP", func() {
 
 	Context("GenericAPIServer", func() {
 		BeforeEach(func() {
-			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
+			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
 		})
 		It("returns a server", func() {
 			cfg.ReportDirectory = ""
@@ -380,6 +380,18 @@ var _ = Describe("HTTP", func() {
 			Ω(sfs).ShouldNot(BeNil())
 			Ω(sfs.(*PostServer).Port).Should(Equal(1234))
 			Ω(sfs.(*PostServer).Kind).Should(Equal("internal"))
+		})
+	})
+
+	Context("MockAPIServer", func() {
+		BeforeEach(func() {
+			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
+		})
+		It("returns a server", func() {
+			sfs := MockAPIServer(1234)
+			Ω(sfs).ShouldNot(BeNil())
+			Ω(sfs.(*mockServer).Port).Should(Equal(1234))
+			Ω(sfs.(*mockServer).Kind).Should(Equal("internal"))
 		})
 	})
 })
