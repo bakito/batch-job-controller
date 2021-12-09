@@ -34,7 +34,7 @@ const (
 	eventMessageArgsJSON    = `{ "warning": true, "reason": "TestReason", "message": "test message: %s" ,"args" : ["a1"]}`
 )
 
-var _ = XDescribe("HTTP", func() {
+var _ = Describe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
 		mockLog        *mock_logr.MockLogger
@@ -77,9 +77,9 @@ var _ = XDescribe("HTTP", func() {
 		// Need to create a router that we can pass the request through so that the vars will be added to the context
 		router = gin.New()
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
-	})
-	AfterEach(func() {
-		_ = os.RemoveAll(s.ReportPath)
+		DeferCleanup(func() error {
+			return os.RemoveAll(s.ReportPath)
+		})
 	})
 	Context("postResult", func() {
 		BeforeEach(func() {
@@ -109,8 +109,6 @@ var _ = XDescribe("HTTP", func() {
 			Ω(b).Should(Equal([]byte(reportJSON)))
 		})
 		It("fails if json is invalid", func() {
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
-			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 
 			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
@@ -147,7 +145,6 @@ var _ = XDescribe("HTTP", func() {
 			handler.ValidateRequestCount(GinkgoT(), 1)
 		})
 		It("should allow the request if controller is nil", func() {
-			mockController.EXPECT().Has(node, executionID).Return(true)
 			s.InjectController(nil)
 			req, err := http.NewRequest("POST", path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -185,27 +182,26 @@ var _ = XDescribe("HTTP", func() {
 			BeforeEach(func() {
 				fileName = uuid.New().String() + ".txt"
 
-				mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 				mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog)
-				mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
 				mockLog.EXPECT().Info("received 1 file")
-			})
-			AfterEach(func() {
-				Ω(rr.Code).Should(Equal(http.StatusOK))
+				DeferCleanup(func() error {
+					Ω(rr.Code).Should(Equal(http.StatusOK))
 
-				files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(files).Should(HaveLen(1))
-				if generatedFileExtension != "" {
-					Ω(files[0].Name()).Should(HavePrefix(node + "-"))
-					Ω(files[0].Name()).Should(HaveSuffix(generatedFileExtension))
-				} else {
-					Ω(files[0].Name()).Should(Equal(node + "-" + fileName))
-				}
+					files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(files).Should(HaveLen(1))
+					if generatedFileExtension != "" {
+						Ω(files[0].Name()).Should(HavePrefix(node + "-"))
+						Ω(files[0].Name()).Should(HaveSuffix(generatedFileExtension))
+					} else {
+						Ω(files[0].Name()).Should(Equal(node + "-" + fileName))
+					}
 
-				b, err := ioutil.ReadFile(filepath.Join(s.ReportPath, executionID, files[0].Name()))
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(b).Should(Equal([]byte("foo")))
+					b, err := ioutil.ReadFile(filepath.Join(s.ReportPath, executionID, files[0].Name()))
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(b).Should(Equal([]byte("foo")))
+					return nil
+				})
 			})
 			It("succeed if file is saved with correct name from query parameter", func() {
 				req, err := http.NewRequest("POST", fmt.Sprintf("%s?name=%s", path, fileName), strings.NewReader("foo"))
@@ -269,11 +265,8 @@ var _ = XDescribe("HTTP", func() {
 			s.InjectEventRecorder(mockRecord)
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
 			router.POST(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
-
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 		})
 		It("succeed if event with message is sent", func() {
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").Return(mockLog)
@@ -290,7 +283,6 @@ var _ = XDescribe("HTTP", func() {
 			Ω(rr.Code).Should(Equal(http.StatusOK))
 		})
 		It("succeed if event with message with args is sent", func() {
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockLog)
@@ -308,10 +300,9 @@ var _ = XDescribe("HTTP", func() {
 		})
 
 		It("fails if json is invalid", func() {
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
+			mockLog.EXPECT().WithValues("event", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 
 			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
@@ -324,11 +315,9 @@ var _ = XDescribe("HTTP", func() {
 		})
 
 		It("fails if event is invalid", func() {
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+			mockLog.EXPECT().Error(gm.Any(), "event is invalid")
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageInvalidJSON))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -340,10 +329,8 @@ var _ = XDescribe("HTTP", func() {
 		})
 
 		It("fails if pod not found", func() {
-			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
 			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().WithValues("result", gm.Any()).Return(mockLog)
 			mockLog.EXPECT().Error(gm.Any(), gm.Any())
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{})).
