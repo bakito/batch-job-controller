@@ -19,21 +19,22 @@ type Client interface {
 }
 
 // Default get a default client with urls from env variables
-func Default() Client {
+func Default(retryCount int) Client {
 	return New(
 		os.Getenv(job.EnvCallbackServiceResultURL),
 		os.Getenv(job.EnvCallbackServiceFileURL),
 		os.Getenv(job.EnvCallbackServiceEventURL),
+		retryCount,
 	)
 }
 
 // New create a new client
-func New(resultURL string, fileURL string, eventURL string) Client {
+func New(resultURL string, fileURL string, eventURL string, retryCount int) Client {
 	return &client{
 		resultURL: resultURL,
 		fileURL:   fileURL,
 		eventURL:  eventURL,
-		client:    resty.New().SetHeader("Content-Type", "application/json; charset=utf-8"),
+		client:    resty.New().SetHeader("Content-Type", "application/json; charset=utf-8").SetRetryCount(retryCount),
 	}
 }
 
