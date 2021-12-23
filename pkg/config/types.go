@@ -26,6 +26,7 @@ type Config struct {
 	Custom              map[string]interface{} `json:"custom"`
 	CallbackServiceName string                 `json:"callbackServiceName"`
 	CallbackServicePort int                    `json:"callbackServicePort"`
+	UsePodIPForCallback bool                   `json:"usePodIPForCallback"`
 	// LeaderElectionResourceLock resource lock type. if empty default (resourcelock.ConfigMapsLeasesResourceLock) is used
 	LeaderElectionResourceLock string `json:"leaderElectionResourceLock,omitempty"`
 

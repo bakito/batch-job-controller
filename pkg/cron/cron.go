@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -18,7 +19,7 @@ import (
 
 var log = ctrl.Log.WithName("cron")
 
-// Job prepare the static file server
+// Job creates a new Job runner instance
 func Job(extender ...job.CustomPodEnv) manager.Runnable {
 	return &cronJob{
 		extender: extender,
@@ -120,16 +121,31 @@ func (j *cronJob) startPods() {
 		return
 	}
 
-	// get service
-	svc := &corev1.Service{}
-	err = j.client.Get(context.TODO(), client.ObjectKey{Namespace: j.cfg.Namespace, Name: j.cfg.CallbackServiceName}, svc)
-	if err != nil {
-		jobLog.Error(err, "error getting service %q", j.cfg.CallbackServiceName)
+	var callbackAddress string
+	if j.cfg.UsePodIPForCallback {
+		// get my pod
+		p := &corev1.Pod{}
+		name := os.Getenv("HOSTNAME")
+		err = j.client.Get(context.TODO(), client.ObjectKey{Namespace: j.cfg.Namespace, Name: name}, p)
+		if err != nil {
+			jobLog.Error(err, "error getting pod  %q", name)
+			return
+		}
+		callbackAddress = p.Status.PodIP
+	} else {
+		// get service
+		svc := &corev1.Service{}
+		err = j.client.Get(context.TODO(), client.ObjectKey{Namespace: j.cfg.Namespace, Name: j.cfg.CallbackServiceName}, svc)
+		if err != nil {
+			jobLog.Error(err, "error getting service %q", j.cfg.CallbackServiceName)
+			return
+		}
+		callbackAddress = svc.Spec.ClusterIP
 	}
 
 	jobLog.Info("executing job")
 	for _, n := range nodes {
-		pod, err := job.New(j.cfg, n.ObjectMeta.Name, executionID, svc.Spec.ClusterIP, j.cfg.Owner, j.extender...)
+		pod, err := job.New(j.cfg, n.ObjectMeta.Name, executionID, callbackAddress, j.cfg.Owner, j.extender...)
 		if err != nil {
 			jobLog.Error(err, "error creating pod from template")
 			return

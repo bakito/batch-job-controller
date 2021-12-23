@@ -55,7 +55,7 @@ func MatchingLabels(name string) client.MatchingLabels {
 }
 
 // New create a new job
-func New(cfg *config.Config, nodeName, id, serviceIP string, owner runtime.Object, extender ...CustomPodEnv) (*corev1.Pod, error) {
+func New(cfg *config.Config, nodeName, id, callbackAddress string, owner runtime.Object, extender ...CustomPodEnv) (*corev1.Pod, error) {
 	podName := cfg.PodName(nodeName, id)
 
 	data := map[string]string{
@@ -104,11 +104,11 @@ func New(cfg *config.Config, nodeName, id, serviceIP string, owner runtime.Objec
 
 	// assure correct env
 	for i := range pod.Spec.Containers {
-		newEnv := mergeEnv(cfg, nodeName, id, serviceIP, pod.Spec.Containers[i], extender)
+		newEnv := mergeEnv(cfg, nodeName, id, callbackAddress, pod.Spec.Containers[i], extender)
 		pod.Spec.Containers[i].Env = newEnv
 	}
 	for i := range pod.Spec.InitContainers {
-		newEnv := mergeEnv(cfg, nodeName, id, serviceIP, pod.Spec.InitContainers[i], extender)
+		newEnv := mergeEnv(cfg, nodeName, id, callbackAddress, pod.Spec.InitContainers[i], extender)
 		pod.Spec.InitContainers[i].Env = newEnv
 	}
 
@@ -121,7 +121,7 @@ func New(cfg *config.Config, nodeName, id, serviceIP string, owner runtime.Objec
 	return pod, err
 }
 
-func mergeEnv(cfg *config.Config, nodeName string, id string, serviceIP string, container corev1.Container, extender []CustomPodEnv) []corev1.EnvVar {
+func mergeEnv(cfg *config.Config, nodeName string, id string, callbackAddress string, container corev1.Container, extender []CustomPodEnv) []corev1.EnvVar {
 	var newEnv []corev1.EnvVar
 	for _, e := range container.Env {
 		// keep all non reserved env variables
@@ -131,25 +131,25 @@ func mergeEnv(cfg *config.Config, nodeName string, id string, serviceIP string, 
 	}
 
 	for _, e := range extender {
-		newEnv = append(newEnv, e.ExtendEnv(cfg, nodeName, id, serviceIP, container)...)
+		newEnv = append(newEnv, e.ExtendEnv(cfg, nodeName, id, callbackAddress, container)...)
 	}
 
 	newEnv = append(newEnv, corev1.EnvVar{Name: envExecutionID, Value: id})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envNamespace, Value: cfg.Namespace})
 	newEnv = append(newEnv, corev1.EnvVar{Name: envNodeName, Value: nodeName})
-	newEnv = append(newEnv, corev1.EnvVar{Name: EnvCallbackServiceName, Value: serviceIP})
+	newEnv = append(newEnv, corev1.EnvVar{Name: EnvCallbackServiceName, Value: callbackAddress})
 	newEnv = append(newEnv, corev1.EnvVar{Name: EnvCallbackServicePort, Value: fmt.Sprintf("%d", cfg.CallbackServicePort)})
 	newEnv = append(newEnv, corev1.EnvVar{
 		Name:  EnvCallbackServiceResultURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath),
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", callbackAddress, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath),
 	})
 	newEnv = append(newEnv, corev1.EnvVar{
 		Name:  EnvCallbackServiceFileURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath),
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", callbackAddress, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath),
 	})
 	newEnv = append(newEnv, corev1.EnvVar{
 		Name:  EnvCallbackServiceEventURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", serviceIP, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseEventSubPath),
+		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", callbackAddress, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseEventSubPath),
 	})
 
 	return newEnv
