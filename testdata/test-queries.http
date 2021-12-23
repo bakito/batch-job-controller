@@ -16,22 +16,22 @@ content-type: application/json
 
 
 
-### Send POST file with context disposition header -> filename will be : node-result.http
+### Send POST file with context disposition header -> filename will be : node-test-queries.http
 POST http://localhost:8090/report/node/20200818154200/file
-Content-Disposition: attachment;filename="result.http"
+Content-Disposition: attachment;filename="test-queries.http"
 
-< ./result.http
+< ./test-queries.http
 
 
-### Send POST file with name query parameter -> filename will be : node-result.http
-POST http://localhost:8090/report/node/20200818154200/file?name=result.http
+### Send POST file with name query parameter -> filename will be : node-test-queries.http
+POST http://localhost:8090/report/node/20200818154200/file?name=test-queries.http
 
-< ./result.http
+< ./test-queries.http
 
 ### Send POST file without name definition  -> filename will be : node-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 POST http://localhost:8090/report/node/20200818154200/file
 
-< ./result.http
+< ./test-queries.http
 
 ### Send POST eventcrc-fd5nx-master-0-example-job-controller-job-crc-fd5nx-master-0-20200823184100
 POST http://localhost:8090/report/crcd-fd5nx-master-0/20200823184100/event
@@ -43,3 +43,19 @@ content-type: application/json
   "message": "test message"
 }
 
+
+### Send POST file as multipart form
+POST http://localhost:8090/report/node/20200818154200/file
+Content-Type: multipart/form-data; boundary=abcd
+
+--test-queries1.http
+Content-Disposition: form-data; name="file"; filename="test-queries1.http"
+
+< ./test-queries.http
+--test-querie1s.http--
+
+--test-queries2.http
+Content-Disposition: form-data; name="file"; filename="test-queries2.http"
+
+< ./test-queries.http
+--test-queries2.http--

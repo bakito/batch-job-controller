@@ -55,7 +55,6 @@ var _ = Describe("HTTP", func() {
 		mockCtrl = gm.NewController(GinkgoT())
 		mockLog = mock_logr.NewMockLogger(mockCtrl)
 		mockReader = mock_client.NewMockReader(mockCtrl)
-		log = mockLog
 		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
@@ -67,6 +66,9 @@ var _ = Describe("HTTP", func() {
 
 		s = &PostServer{
 			ReportPath: tempDir(executionID),
+			Server: &Server{
+				Log: mockLog,
+			},
 		}
 		s.InjectReader(mockReader)
 		s.InjectController(mockController)
@@ -91,7 +93,7 @@ var _ = Describe("HTTP", func() {
 		It("succeed if file is saved", func() {
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
 			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Info("received report")
+			mockLog.EXPECT().Info("received results")
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(reportJSON))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -358,9 +360,6 @@ var _ = Describe("HTTP", func() {
 	})
 
 	Context("GenericAPIServer", func() {
-		BeforeEach(func() {
-			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
-		})
 		It("returns a server", func() {
 			cfg.ReportDirectory = ""
 			sfs := GenericAPIServer(1234, cfg)
@@ -371,9 +370,6 @@ var _ = Describe("HTTP", func() {
 	})
 
 	Context("MockAPIServer", func() {
-		BeforeEach(func() {
-			mockLog.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
-		})
 		It("returns a server", func() {
 			sfs := MockAPIServer(1234)
 			Ω(sfs).ShouldNot(BeNil())

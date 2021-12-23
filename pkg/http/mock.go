@@ -8,6 +8,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -16,10 +17,12 @@ func MockAPIServer(port int) manager.Runnable {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	s := &mockServer{
-		Server: Server{
+		Server: &Server{
 			Port:    port,
 			Kind:    "internal",
 			Handler: r,
+			Log:     ctrl.Log.WithName("mock-server"),
+			Config:  &config.Config{Name: "mock"},
 		},
 	}
 
@@ -28,7 +31,7 @@ func MockAPIServer(port int) manager.Runnable {
 	rep.POST(CallbackBaseFileSubPath, s.postFile)
 	rep.POST(CallbackBaseEventSubPath, s.postEvent)
 
-	log.Info("starting callback",
+	s.Log.Info("starting callback",
 		"port", port,
 		"method", "POST",
 		"result", fmt.Sprintf("%s%s", CallbackBasePath, CallbackBaseResultSubPath),
@@ -40,13 +43,13 @@ func MockAPIServer(port int) manager.Runnable {
 }
 
 type mockServer struct {
-	Server
+	*Server
 }
 
-func (s Server) postResult(ctx *gin.Context) {
+func (s *mockServer) postResult(ctx *gin.Context) {
 	processPostResult(
 		ctx,
-		&config.Config{Name: "mock"},
+		s.Server,
 		func(
 			ctx *gin.Context,
 			postLog logr.Logger,
@@ -60,9 +63,9 @@ func (s Server) postResult(ctx *gin.Context) {
 	)
 }
 
-func (s Server) postFile(ctx *gin.Context) {
+func (s *mockServer) postFile(ctx *gin.Context) {
 	node, executionID := nodeAndID(ctx)
-	postLog := log.WithValues(
+	postLog := s.Log.WithValues(
 		"node", node,
 		"id", executionID,
 	)
@@ -71,10 +74,10 @@ func (s Server) postFile(ctx *gin.Context) {
 	println(string(b))
 }
 
-func (s Server) postEvent(ctx *gin.Context) {
+func (s *mockServer) postEvent(ctx *gin.Context) {
 	processPostedEvent(
 		ctx,
-		&config.Config{Name: "mock"},
+		s.Server,
 		func(ctx *gin.Context,
 			postLog logr.Logger,
 			podName string,

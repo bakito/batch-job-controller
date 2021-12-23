@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// disable by default
 var _ = XDescribe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
@@ -41,7 +42,6 @@ var _ = XDescribe("HTTP", func() {
 		gin.SetMode(gin.ReleaseMode)
 		mockCtrl = gm.NewController(GinkgoT())
 		mockLog = mock_logr.NewMockLogger(mockCtrl)
-		log = mockLog
 		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
@@ -53,6 +53,9 @@ var _ = XDescribe("HTTP", func() {
 
 		s = &PostServer{
 			ReportPath: tempDir(executionID),
+			Server: &Server{
+				Log: mockLog,
+			},
 		}
 		s.InjectController(mockController)
 		s.InjectConfig(cfg)
@@ -66,7 +69,6 @@ var _ = XDescribe("HTTP", func() {
 			return os.RemoveAll(s.ReportPath)
 		})
 	})
-	// disable by default
 	It("generate parallel load", func() {
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseFileSubPath)
 		router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
