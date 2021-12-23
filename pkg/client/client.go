@@ -71,6 +71,9 @@ func (c client) SendFiles(filePaths ...string) error {
 		files[filepath.Base(path)] = path
 	}
 	resp, err := c.client.R().SetFiles(files).Post(c.fileURL)
+	if err != nil {
+		return err
+	}
 	if resp.StatusCode() != 200 {
 		err = &httpError{status: resp.Status(), message: resp.String()}
 	}
