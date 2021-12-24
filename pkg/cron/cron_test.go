@@ -72,7 +72,6 @@ var _ = Describe("Cron", func() {
 			mockController.EXPECT().AllAdded(gm.Any())
 			mockController.EXPECT().AddPod(gm.Any())
 			mockClient.EXPECT().DeleteAllOf(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
-			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Service{}))
 			mockClient.EXPECT().List(gm.Any(), gm.AssignableToTypeOf(&corev1.NodeList{}), client.MatchingLabels(nodeSelector)).
 				Do(func(ctx context.Context, list *corev1.NodeList, opts ...client.ListOption) error {
 					list.Items = []corev1.Node{
@@ -93,7 +92,16 @@ var _ = Describe("Cron", func() {
 					return nil
 				})
 		})
-		It("should start all pods", func() {
+		It("should start all pods with service IP for callback", func() {
+			cj.cfg.CallbackServiceName = "any-service-name"
+			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Service{}))
+			mockLog.EXPECT().WithValues("id", id).Return(mockLog)
+			mockLog.EXPECT().Info("executing job")
+			cj.startPods()
+		})
+		It("should start all pods with pod IP for callback", func() {
+			cj.cfg.CallbackServiceName = " "
+			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{}))
 			mockLog.EXPECT().WithValues("id", id).Return(mockLog)
 			mockLog.EXPECT().Info("executing job")
 			cj.startPods()

@@ -22,11 +22,11 @@ type Config struct {
 	StartupDelay          time.Duration     `json:"startupDelay"`
 	Metrics               Metrics           `json:"metrics"`
 	// LatestMetricsLabel if true, each result metric is also created with executionID=latest
-	LatestMetricsLabel  bool                   `json:"latestMetricsLabel"`
-	Custom              map[string]interface{} `json:"custom"`
-	CallbackServiceName string                 `json:"callbackServiceName"`
-	CallbackServicePort int                    `json:"callbackServicePort"`
-	UsePodIPForCallback bool                   `json:"usePodIPForCallback"`
+	LatestMetricsLabel bool                   `json:"latestMetricsLabel"`
+	Custom             map[string]interface{} `json:"custom"`
+	// CallbackServiceName if left blank, the pod IP is used for callback
+	CallbackServiceName string `json:"callbackServiceName"`
+	CallbackServicePort int    `json:"callbackServicePort"`
 	// LeaderElectionResourceLock resource lock type. if empty default (resourcelock.ConfigMapsLeasesResourceLock) is used
 	LeaderElectionResourceLock string `json:"leaderElectionResourceLock,omitempty"`
 

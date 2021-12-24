@@ -3,6 +3,7 @@ package cron
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -122,7 +123,7 @@ func (j *cronJob) startPods() {
 	}
 
 	var callbackAddress string
-	if j.cfg.UsePodIPForCallback {
+	if len(strings.TrimSpace(j.cfg.CallbackServiceName)) == 0 {
 		// get my pod
 		p := &corev1.Pod{}
 		name := os.Getenv("HOSTNAME")
