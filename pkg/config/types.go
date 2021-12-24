@@ -8,6 +8,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	defaultHealthBindAddress         = ":9152"
+	defaultMetricsBindAddressAddress = ":9153"
+)
+
 // Config struct
 type Config struct {
 	Name                  string            `json:"name"`
@@ -21,6 +26,7 @@ type Config struct {
 	RunOnStartup          bool              `json:"runOnStartup"`
 	StartupDelay          time.Duration     `json:"startupDelay"`
 	Metrics               Metrics           `json:"metrics"`
+	HealthProbePort       int               `json:"healthProbePort"`
 	// LatestMetricsLabel if true, each result metric is also created with executionID=latest
 	LatestMetricsLabel bool                   `json:"latestMetricsLabel"`
 	Custom             map[string]interface{} `json:"custom"`
@@ -43,8 +49,16 @@ func (cfg *Config) PodName(nodeName string, id string) string {
 	return podName
 }
 
+func (cfg *Config) HealthProbeBindAddress() string {
+	if cfg.HealthProbePort == 0 {
+		return defaultHealthBindAddress
+	}
+	return fmt.Sprintf(":%d", cfg.HealthProbePort)
+}
+
 // Metrics config
 type Metrics struct {
+	Port   int               `json:"port"`
 	Prefix string            `json:"prefix"`
 	Gauges map[string]Metric `json:"gauges"`
 }
@@ -52,6 +66,13 @@ type Metrics struct {
 // NameFor get the name of a metric
 func (m *Metrics) NameFor(name string) string {
 	return fmt.Sprintf("%s_%s", m.Prefix, name)
+}
+
+func (m *Metrics) BindAddress() string {
+	if m.Port == 0 {
+		return defaultMetricsBindAddressAddress
+	}
+	return fmt.Sprintf(":%d", m.Port)
 }
 
 // Metric config

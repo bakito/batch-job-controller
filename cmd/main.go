@@ -66,12 +66,13 @@ func Setup() *Main {
 
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:                     scheme,
-		MetricsBindAddress:         ":9153",
+		MetricsBindAddress:         cfg.Metrics.BindAddress(),
 		LeaderElection:             !cfg.DevMode,
 		LeaderElectionID:           cfg.Name + "-leader-election",
 		LeaderElectionNamespace:    namespace,
 		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,
 		Namespace:                  namespace,
+		HealthProbeBindAddress:     cfg.HealthProbeBindAddress(),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
