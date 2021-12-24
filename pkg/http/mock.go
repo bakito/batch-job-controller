@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"net/http/httputil"
+	"mime/multipart"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/metrics"
@@ -47,16 +47,8 @@ type mockServer struct {
 }
 
 func (s *mockServer) postResult(ctx *gin.Context) {
-	processPostResult(
-		ctx,
-		s.Server,
-		func(
-			ctx *gin.Context,
-			postLog logr.Logger,
-			results *metrics.Results,
-			node string,
-			executionID string,
-			body []byte,
+	processPostResult(ctx, s.Server,
+		func(ctx *gin.Context, postLog logr.Logger, results *metrics.Results, node string, executionID string, body []byte,
 		) error {
 			return nil
 		},
@@ -64,25 +56,19 @@ func (s *mockServer) postResult(ctx *gin.Context) {
 }
 
 func (s *mockServer) postFile(ctx *gin.Context) {
-	node, executionID := nodeAndID(ctx)
-	postLog := s.Log.WithValues(
-		"node", node,
-		"id", executionID,
+	processPostedFiles(ctx, s.Server,
+		func(ctx *gin.Context, postLog logr.Logger, executionID string, node string, file *multipart.FileHeader) error {
+			return nil
+		},
+		func(ctx *gin.Context, postLog logr.Logger, executionID string, node string, fileName string, body []byte) error {
+			return nil
+		},
 	)
-	postLog.Info("Got file(s)")
-	b, _ := httputil.DumpRequest(ctx.Request, true)
-	println(string(b))
 }
 
 func (s *mockServer) postEvent(ctx *gin.Context) {
-	processPostedEvent(
-		ctx,
-		s.Server,
-		func(ctx *gin.Context,
-			postLog logr.Logger,
-			podName string,
-			event *Event,
-		) error {
+	processPostedEvent(ctx, s.Server,
+		func(ctx *gin.Context, postLog logr.Logger, podName string, event *Event) error {
 			return nil
 		},
 	)
