@@ -116,6 +116,7 @@ func (j *cronJob) startPods() {
 
 	jobLog := log.WithValues("id", executionID)
 
+	jobLog.Info("deleting old job pods")
 	err = j.deleteAll(&corev1.Pod{})
 	if err != nil {
 		jobLog.Error(err, "unable to delete old pods")

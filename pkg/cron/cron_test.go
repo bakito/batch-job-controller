@@ -96,6 +96,7 @@ var _ = Describe("Cron", func() {
 			cj.cfg.CallbackServiceName = "any-service-name"
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Service{}))
 			mockLog.EXPECT().WithValues("id", id).Return(mockLog)
+			mockLog.EXPECT().Info("deleting old job pods")
 			mockLog.EXPECT().Info("executing job")
 			cj.startPods()
 		})
@@ -103,6 +104,7 @@ var _ = Describe("Cron", func() {
 			cj.cfg.CallbackServiceName = " "
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{}))
 			mockLog.EXPECT().WithValues("id", id).Return(mockLog)
+			mockLog.EXPECT().Info("deleting old job pods")
 			mockLog.EXPECT().Info("executing job")
 			cj.startPods()
 		})
