@@ -34,6 +34,10 @@ spec:
               value: {{ .Release.Namespace }}
             - name: CONFIG_MAP_NAME
               value: {{ template "batch-job-controller.name" . }}
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
 {{ include "batch-job-controller.deployment-env" . | indent 12 }}
           image: {{ .Values.deployment.image }}:{{- default .Chart.AppVersion .Values.deployment.imageTag }}
           imagePullPolicy: Always

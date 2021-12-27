@@ -22,6 +22,8 @@ const (
 	EnvHostname = "HOSTNAME"
 	// EnvConfigMapName configmap name env variable
 	EnvConfigMapName = "CONFIG_MAP_NAME"
+	// EnvPodIP the controller pod's IP
+	EnvPodIP = "POD_IP"
 	// EnvDevMode enable dev mode
 	EnvDevMode = "DEV_MODE"
 	// EnvReportDirectory override for report directory

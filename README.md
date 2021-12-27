@@ -6,22 +6,22 @@
 
 # Batch Job Controller
 
-The batch job controller allows executing pods on nodes of a cluster, where the number of concurrent running pods can be configured.
-Each pod can report it's results back to the controller to have them exposed as metrics.
+The batch job controller allows executing pods on nodes of a cluster, where the number of concurrent running pods can be
+configured. Each pod can report it's results back to the controller to have them exposed as metrics.
 
 ## Deployment
 
 The controller expects the following environment variables
 
+| Name | Value                                                                                                                                                                                                                                                          |
+| --- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NAMESPACE | The current namespace                                                                                                                                                                                                                                          |
+| CONFIG_MAP_NAME | The name of the configmap to read the config from                                                                                                                                                                                                              |
+| POD_IP | The IP of the controller Pod. If defined, this IP is used for the callback URL of the job pods.(should be injected via [Downward API](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/#the-downward-api)) |
 
-| Name | Value |
-| --- | --- |
-| NAMESPACE | The current namespace |
-| CONFIG_MAP_NAME | The name of the configmap to read the config from |
+## Configuration
 
-## Configuration 
-
-The configuration has to be stored in a configmap with the following values  
+The configuration has to be stored in a configmap with the following values
 
 ### config.yaml
 
@@ -30,7 +30,7 @@ Controller configuration
 ```yaml
 name: ""                         # name of the controller; will also be used as prefix for the job pods
 jobServiceAccount: ""            # service account to be used for the job pods. If empty the default will be used
-jobNodeSelector: {}              # node selector labels to define in which nodes to run the jobs
+jobNodeSelector: { }              # node selector labels to define in which nodes to run the jobs
 runOnUnscheduledNodes: true      # if true, jobs are also started on nodes that are unschedulable
 cronExpression: "42 3 * * *"     # the cron expression to trigger the job execution
 reportDirectory: "/var/www"      # directory to store and serve the reports
@@ -40,23 +40,23 @@ runOnStartup: true               # if 'true' the jobs are triggered on startup o
 startupDelay: 10s                # the delay as duration that is used to start the jobs if runOnStartup is enabled. default is '10s'
 callbackServiceName: ""          # name of the controller service
 callbackServicePort: 8090        # port of the controller callback api service
-custom: {}                       # additional properties that can be used in a custom implementation
+custom: { }                       # additional properties that can be used in a custom implementation
 latestMetricsLabel: false        # if 'true' each result metric is also created with executionID='latest'
 leaderElectionResourceLock: ""   # type of leader election resource lock to be used. ('configmapsleases' (default), 'configmaps', 'endpoints', 'leases', 'endpointsleases')
 metrics:
   prefix: "foo_...."             # prefix for the metrics exposed by the controller
-  gauges:                        # metric gauges that will be exposed by the jobs. The key is uses as suffix for the metrics. 
-    test:                        # suffix of the metric
+  gauges: # metric gauges that will be exposed by the jobs. The key is uses as suffix for the metrics. 
+    test: # suffix of the metric
       help: "help ..."           # help text for the metric
-      labels:                    # list of labels to be used with the metric. node and executionID are automatically added
+      labels: # list of labels to be used with the metric. node and executionID are automatically added
         - label_a
         - label_b
 ```
 
 ### pod-template.yaml
 
-The template of the pod to be started for each job.
-When a pod is created it gets enriched by the controller specific configuration. [pkg\job\job.go](pkg\job\job.go)
+The template of the pod to be started for each job. When a pod is created it gets enriched by the controller specific
+configuration. [pkg\job\job.go](pkg\job\job.go)
 
 ## Job Pod
 
@@ -77,7 +77,8 @@ The job pod has the following env variables provided by the controller:
 
 ### Callback
 
-The controller exposes by default an endpoint to receive job results. The report is stored locally and metrics of the reports will be exposed.
+The controller exposes by default an endpoint to receive job results. The report is stored locally and metrics of the
+reports will be exposed.
 
 #### URL
 
@@ -85,9 +86,8 @@ The report URL is by default: **${CALLBACK_SERVICE_RESULT_URL}**
 
 #### Body
 
-The body of the report contains the metric suffixes that are also defined in the controller config.
-Each metric has a decimal value and a map where the key is the label name and value is the value to be used for the metric label.
-
+The body of the report contains the metric suffixes that are also defined in the controller config. Each metric has a
+decimal value and a map where the key is the label name and value is the value to be used for the metric label.
 
 ```json
 {
@@ -113,21 +113,24 @@ Each metric has a decimal value and a map where the key is the label name and va
 Example job script: [helm\batch-job-controller\bin\run.sh](helm\batch-job-controller\bin\run.sh)
 
 ### Upload additional files
-Additional files can be uploaded. 
 
-Use default **'Content-Disposition'** header or the **name** query parameter to define the name of the file. If the name is not defined an uuid is generated.
-Each filename is prepended with the node name.
+Additional files can be uploaded.
+
+Use default **'Content-Disposition'** header or the **name** query parameter to define the name of the file. If the name
+is not defined an uuid is generated. Each filename is prepended with the node name.
 
 #### URL
 
 The report URL is by default: **${CALLBACK_SERVICE_FILE_URL}**
 
 ### Create k8s Events from job pod
+
 k8s Event can be created from each job pod by calling the event endpoint.
 
 The 'reason' should be short and unique; it must be in UpperCamelCase format (starting with a capital letter).
 
 Simple Message:
+
 ```json
 {
   "warning": false,
@@ -135,7 +138,9 @@ Simple Message:
   "message": "test message"
 }
 ```
+
 Massage with parameters
+
 ```json
 {
   "warning": true,
