@@ -3,6 +3,7 @@ package cron
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/job"
@@ -104,8 +105,10 @@ var _ = Describe("Cron", func() {
 			cj.startPods()
 		})
 		It("should start all pods with pod IP for callback", func() {
-			cj.cfg.CallbackServiceName = " "
-			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{}))
+			_ = os.Setenv(config.EnvPodIP, "1.2.3.4")
+			defer func() {
+				_ = os.Unsetenv(config.EnvPodIP)
+			}()
 			mockSink.EXPECT().WithValues("id", id).Return(mockSink)
 			mockSink.EXPECT().Info(gm.Any(), "deleting old job pods")
 			mockSink.EXPECT().Info(gm.Any(), "executing job")
