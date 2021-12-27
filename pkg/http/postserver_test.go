@@ -18,6 +18,7 @@ import (
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -37,7 +38,7 @@ const (
 var _ = Describe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
-		mockLog        *mock_logr.MockLogger
+		mockSink       *mock_logr.MockLogSink
 		mockController *mock_lifecycle.MockController
 		mockReader     *mock_client.MockReader
 		executionID    string
@@ -53,7 +54,7 @@ var _ = Describe("HTTP", func() {
 	BeforeEach(func() {
 		gin.SetMode(gin.ReleaseMode)
 		mockCtrl = gm.NewController(GinkgoT())
-		mockLog = mock_logr.NewMockLogger(mockCtrl)
+		mockSink = mock_logr.NewMockLogSink(mockCtrl)
 		mockReader = mock_client.NewMockReader(mockCtrl)
 		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
@@ -64,10 +65,12 @@ var _ = Describe("HTTP", func() {
 			},
 		}
 
+		mockSink.EXPECT().Init(gm.Any())
+		mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
 		s = &PostServer{
 			ReportPath: tempDir(executionID),
 			Server: &Server{
-				Log: mockLog,
+				Log: logr.New(mockSink),
 			},
 		}
 		s.InjectReader(mockReader)
@@ -87,13 +90,13 @@ var _ = Describe("HTTP", func() {
 		BeforeEach(func() {
 			router.POST(CallbackBasePath+CallbackBaseResultSubPath, s.postResult)
 
-			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
+			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
+			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
 		})
 		It("succeed if file is saved", func() {
 			mockController.EXPECT().ReportReceived(executionID, node, gm.Any(), gm.Any())
-			mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Info("received results")
+			mockSink.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockSink)
+			mockSink.EXPECT().Info(gm.Any(), "received results")
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(reportJSON))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -111,7 +114,7 @@ var _ = Describe("HTTP", func() {
 			Ω(b).Should(Equal([]byte(reportJSON)))
 		})
 		It("fails if json is invalid", func() {
-			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 
 			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -174,7 +177,7 @@ var _ = Describe("HTTP", func() {
 		BeforeEach(func() {
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseFileSubPath)
 			router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
-			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
+			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 		})
 		Context("single file", func() {
 			var (
@@ -184,8 +187,8 @@ var _ = Describe("HTTP", func() {
 			BeforeEach(func() {
 				fileName = uuid.New().String() + ".txt"
 
-				mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog)
-				mockLog.EXPECT().Info("received 1 file")
+				mockSink.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockSink)
+				mockSink.EXPECT().Info(gm.Any(), "received 1 file")
 				DeferCleanup(func() error {
 					Ω(rr.Code).Should(Equal(http.StatusOK))
 
@@ -239,8 +242,8 @@ var _ = Describe("HTTP", func() {
 		})
 		Context("multiple files", func() {
 			It("upload 2 files", func() {
-				mockLog.EXPECT().WithValues("names", gm.Any()).Return(mockLog)
-				mockLog.EXPECT().Info("received 2 file(s)")
+				mockSink.EXPECT().WithValues("names", gm.Any()).Return(mockSink)
+				mockSink.EXPECT().Info(gm.Any(), "received 2 file(s)")
 
 				body := &bytes.Buffer{}
 				writer := multipart.NewWriter(body)
@@ -269,11 +272,11 @@ var _ = Describe("HTTP", func() {
 			router.POST(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
 		})
 		It("succeed if event with message is sent", func() {
-			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").Return(mockLog)
+			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
+			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
+			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").Return(mockSink)
 			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
-			mockLog.EXPECT().Info("event created")
+			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
@@ -285,11 +288,11 @@ var _ = Describe("HTTP", func() {
 			Ω(rr.Code).Should(Equal(http.StatusOK))
 		})
 		It("succeed if event with message with args is sent", func() {
-			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockLog)
+			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
+			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
+			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockSink)
 			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
-			mockLog.EXPECT().Info("event created")
+			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
@@ -302,10 +305,10 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("fails if json is invalid", func() {
-			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().WithValues("event", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
+			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
+			mockSink.EXPECT().WithValues("event", gm.Any()).Return(mockSink)
+			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 
 			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -317,9 +320,9 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("fails if event is invalid", func() {
-			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Error(gm.Any(), "event is invalid")
+			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
+			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
+			mockSink.EXPECT().Error(gm.Any(), "event is invalid")
 
 			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageInvalidJSON))
 			Ω(err).ShouldNot(HaveOccurred())
@@ -331,9 +334,9 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("fails if pod not found", func() {
-			mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog)
-			mockLog.EXPECT().WithValues("length", gm.Any()).Return(mockLog)
-			mockLog.EXPECT().Error(gm.Any(), gm.Any())
+			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
+			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
+			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{})).
 				Return(fmt.Errorf("error"))

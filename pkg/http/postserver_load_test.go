@@ -16,6 +16,7 @@ import (
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -26,7 +27,7 @@ import (
 var _ = XDescribe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
-		mockLog        *mock_logr.MockLogger
+		mockSink       *mock_logr.MockLogSink
 		mockController *mock_lifecycle.MockController
 		executionID    string
 		node           string
@@ -41,7 +42,7 @@ var _ = XDescribe("HTTP", func() {
 	BeforeEach(func() {
 		gin.SetMode(gin.ReleaseMode)
 		mockCtrl = gm.NewController(GinkgoT())
-		mockLog = mock_logr.NewMockLogger(mockCtrl)
+		mockSink = mock_logr.NewMockLogSink(mockCtrl)
 		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
@@ -51,10 +52,12 @@ var _ = XDescribe("HTTP", func() {
 			},
 		}
 
+		mockSink.EXPECT().Init(gm.Any())
+		mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
 		s = &PostServer{
 			ReportPath: tempDir(executionID),
 			Server: &Server{
-				Log: mockLog,
+				Log: logr.New(mockSink),
 			},
 		}
 		s.InjectController(mockController)
@@ -85,10 +88,10 @@ var _ = XDescribe("HTTP", func() {
 		data, err := ioutil.ReadFile(file)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		mockLog.EXPECT().WithValues("node", node, "id", executionID).Return(mockLog).Times(loops)
-		mockLog.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockLog).Times(loops)
+		mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink).Times(loops)
+		mockSink.EXPECT().WithValues("name", gm.Any(), "path", gm.Any(), "length", gm.Any()).Return(mockSink).Times(loops)
 
-		mockLog.EXPECT().Info("received 1 file").Times(loops)
+		mockSink.EXPECT().Info(gm.Any(), "received 1 file").Times(loops)
 
 		var wg sync.WaitGroup
 		for i := 0; i < loops; i++ {
@@ -97,6 +100,7 @@ var _ = XDescribe("HTTP", func() {
 			ii := i
 			go func() {
 				defer wg.Done()
+				defer GinkgoRecover()
 				req, err := http.NewRequest("POST", path, bytes.NewBuffer(data))
 				Ω(err).ShouldNot(HaveOccurred())
 

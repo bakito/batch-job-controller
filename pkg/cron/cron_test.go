@@ -9,6 +9,7 @@ import (
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
+	"github.com/go-logr/logr"
 	gm "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -24,7 +25,7 @@ var _ = Describe("Cron", func() {
 		mockCtrl       *gm.Controller // gomock struct
 		mockClient     *mock_client.MockClient
 		mockController *mock_lifecycle.MockController
-		mockLog        *mock_logr.MockLogger
+		mockSink       *mock_logr.MockLogSink
 		namespace      string
 		configName     string
 		id             string
@@ -33,7 +34,7 @@ var _ = Describe("Cron", func() {
 		mockCtrl = gm.NewController(GinkgoT())
 		mockClient = mock_client.NewMockClient(mockCtrl)
 		mockController = mock_lifecycle.NewMockController(mockCtrl)
-		mockLog = mock_logr.NewMockLogger(mockCtrl)
+		mockSink = mock_logr.NewMockLogSink(mockCtrl)
 		namespace = uuid.New().String()
 		configName = uuid.New().String()
 		id = uuid.New().String()
@@ -41,7 +42,9 @@ var _ = Describe("Cron", func() {
 			Name:      configName,
 			Namespace: namespace,
 		}
-		log = mockLog
+		mockSink.EXPECT().Init(gm.Any())
+		mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
+		log = logr.New(mockSink)
 		cj = Job().(*cronJob)
 		cj.InjectController(mockController)
 		cj.InjectConfig(cfg)
@@ -95,24 +98,24 @@ var _ = Describe("Cron", func() {
 		It("should start all pods with service IP for callback", func() {
 			cj.cfg.CallbackServiceName = "any-service-name"
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Service{}))
-			mockLog.EXPECT().WithValues("id", id).Return(mockLog)
-			mockLog.EXPECT().Info("deleting old job pods")
-			mockLog.EXPECT().Info("executing job")
+			mockSink.EXPECT().WithValues("id", id).Return(mockSink)
+			mockSink.EXPECT().Info(gm.Any(), "deleting old job pods")
+			mockSink.EXPECT().Info(gm.Any(), "executing job")
 			cj.startPods()
 		})
 		It("should start all pods with pod IP for callback", func() {
 			cj.cfg.CallbackServiceName = " "
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{}))
-			mockLog.EXPECT().WithValues("id", id).Return(mockLog)
-			mockLog.EXPECT().Info("deleting old job pods")
-			mockLog.EXPECT().Info("executing job")
+			mockSink.EXPECT().WithValues("id", id).Return(mockSink)
+			mockSink.EXPECT().Info(gm.Any(), "deleting old job pods")
+			mockSink.EXPECT().Info(gm.Any(), "executing job")
 			cj.startPods()
 		})
 	})
 
 	Context("startPods - already running", func() {
 		It("should not start all pods", func() {
-			mockLog.EXPECT().Info("last cronjob still running")
+			mockSink.EXPECT().Info(gm.Any(), "last cronjob still running")
 			cj.running = true
 			cj.startPods()
 		})
@@ -134,7 +137,7 @@ var _ = Describe("Cron", func() {
 		})
 		Context("CreatePod", func() {
 			BeforeEach(func() {
-				mockLog.EXPECT().Info("create pod", "node", nodeName)
+				mockSink.EXPECT().Info(gm.Any(), "create pod", "node", nodeName)
 			})
 			It("should create a pod", func() {
 				mockClient.EXPECT().Create(gm.Any(), pj.pod)
@@ -143,7 +146,7 @@ var _ = Describe("Cron", func() {
 			It("should log an error a pod", func() {
 				err := fmt.Errorf("some error")
 				mockClient.EXPECT().Create(gm.Any(), pj.pod).Return(err)
-				mockLog.EXPECT().Error(err, "unable to create pod", "node", nodeName)
+				mockSink.EXPECT().Error(err, "unable to create pod", "node", nodeName)
 
 				pj.CreatePod()
 			})

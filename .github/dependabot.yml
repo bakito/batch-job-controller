@@ -11,4 +11,3 @@ updates:
       interval: "weekly"
     ignore:
       - dependency-name: "k8s.io/klog/*"
-      - dependency-name: "github.com/go-logr/logr/*"
