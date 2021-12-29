@@ -74,6 +74,16 @@ func Setup() *Main {
 		Namespace:                  namespace,
 		HealthProbeBindAddress:     cfg.HealthProbeBindAddress(),
 	})
+
+	if err := mgr.AddHealthzCheck("healthz", cfg.ReportDirExistsChecker()); err != nil {
+		setupLog.Error(err, "unable to set up health check")
+		os.Exit(1)
+	}
+	if err := mgr.AddReadyzCheck("readyz", cfg.ReportDirExistsChecker()); err != nil {
+		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -170,6 +180,18 @@ func (m *Main) addToManager(r manager.Runnable) {
 	}
 	if r, ok := r.(inject.Reader); ok {
 		r.InjectReader(m.Manager.GetAPIReader())
+	}
+	if h, ok := r.(inject.Healthz); ok {
+		if hc := h.HealthzCheck(); hc != nil {
+			if err := m.Manager.AddHealthzCheck(h.Name(), hc); err != nil {
+				setupLog.WithValues("name", h.Name()).Error(err, "could not setup healthz check")
+			}
+		}
+		if rc := h.ReadyzCheck(); rc != nil {
+			if err := m.Manager.AddReadyzCheck(h.Name(), rc); err != nil {
+				setupLog.WithValues("name", h.Name()).Error(err, "could not setup readyz check")
+			}
+		}
 	}
 
 	_ = m.Manager.Add(r)

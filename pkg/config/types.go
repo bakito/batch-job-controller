@@ -1,11 +1,15 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 const (
@@ -54,6 +58,15 @@ func (cfg *Config) HealthProbeBindAddress() string {
 		return defaultHealthBindAddress
 	}
 	return fmt.Sprintf(":%d", cfg.HealthProbePort)
+}
+
+func (cfg *Config) ReportDirExistsChecker() healthz.Checker {
+	return func(req *http.Request) error {
+		if _, err := os.Stat(cfg.ReportDirectory); errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		return nil
+	}
 }
 
 // Metrics config

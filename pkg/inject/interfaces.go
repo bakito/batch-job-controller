@@ -5,6 +5,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 // injects from "sigs.k8s.io/controller-runtime/pkg/runtime/inject" are set by the manager
@@ -27,4 +28,10 @@ type Reader interface {
 // Config inject the config
 type Config interface {
 	InjectConfig(*config.Config)
+}
+
+type Healthz interface {
+	Name() string
+	ReadyzCheck() healthz.Checker
+	HealthzCheck() healthz.Checker
 }

@@ -130,7 +130,7 @@ func (j *cronJob) startPods() {
 		svc := &corev1.Service{}
 		err = j.client.Get(context.TODO(), client.ObjectKey{Namespace: j.cfg.Namespace, Name: j.cfg.CallbackServiceName}, svc)
 		if err != nil {
-			jobLog.Error(err, "error getting service %q", j.cfg.CallbackServiceName)
+			jobLog.WithValues("service-name", j.cfg.CallbackServiceName).Error(err, "error getting service")
 			return
 		}
 		callbackAddress = svc.Spec.ClusterIP
