@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/inject"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
@@ -33,6 +34,14 @@ const (
 	eventMessageJSON        = `{ "warning": true, "reason": "TestReason", "message": "test message" }`
 	eventMessageInvalidJSON = `{ "warning": true, "reason": "testReason", "message": "test message" }`
 	eventMessageArgsJSON    = `{ "warning": true, "reason": "TestReason", "message": "test message: %s" ,"args" : ["a1"]}`
+)
+
+var (
+	_ inject.Healthz       = &PostServer{}
+	_ inject.EventRecorder = &PostServer{}
+	_ inject.Config        = &PostServer{}
+	_ inject.Controller    = &PostServer{}
+	_ inject.Reader        = &PostServer{}
 )
 
 var _ = Describe("HTTP", func() {

@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -126,4 +127,19 @@ func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, er
 
 func (s *PostServer) mkdir(executionID string) error {
 	return os.MkdirAll(filepath.Join(s.ReportPath, executionID), 0o755)
+}
+
+// Name the name of the server
+func (s *PostServer) Name() string {
+	return "api-server"
+}
+
+// ReadyzCheck check if server is running
+func (s *PostServer) ReadyzCheck() healthz.Checker {
+	return s.Server.ReadyzCheck()
+}
+
+// HealthzCheck check if server is running
+func (s *PostServer) HealthzCheck() healthz.Checker {
+	return s.Server.HealthzCheck()
 }

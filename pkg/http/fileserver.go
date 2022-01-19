@@ -4,12 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+)
+
+const (
+	envHealthCheckTimeout = "SELF_HEALTH_CHECK_CONNECTION_TIMEOUT"
 )
 
 // StaticFileServer prepare the static file server
@@ -19,6 +27,7 @@ func StaticFileServer(port int, cfg *config.Config) manager.Runnable {
 		Kind:    "public",
 		Handler: http.FileServer(http.Dir(cfg.ReportDirectory)),
 		Log:     ctrl.Log.WithName("file-server"),
+		Config:  cfg,
 	}
 }
 
@@ -59,4 +68,37 @@ func (s *Server) Start(ctx context.Context) error {
 
 	<-idleConnsClosed
 	return nil
+}
+
+// Name the name of the server
+func (s *Server) Name() string {
+	return "file-server"
+}
+
+// ReadyzCheck check if server is running
+func (s *Server) ReadyzCheck() healthz.Checker {
+	return s.HealthzCheck()
+}
+
+// HealthzCheck check if server is running
+func (s *Server) HealthzCheck() healthz.Checker {
+	timeout := time.Millisecond * 200
+	if to, ok := os.LookupEnv(envHealthCheckTimeout); ok {
+		if d, err := time.ParseDuration(to); err != nil {
+			timeout = d
+		} else {
+			s.Log.WithValues(envHealthCheckTimeout, to, "default", timeout).
+				Error(err, "could not parse self health check connection timeout; using default")
+		}
+	}
+	return func(req *http.Request) error {
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", s.Port), timeout)
+		if err != nil {
+			return err
+		}
+		if conn != nil {
+			defer func() { _ = conn.Close() }()
+		}
+		return nil
+	}
 }
