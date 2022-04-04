@@ -21,7 +21,8 @@ func (s *PostServer) postResultCallback(ctx *gin.Context,
 	results *metrics.Results,
 	node string,
 	executionID string,
-	body []byte) error {
+	body []byte,
+) error {
 	fileName, err := s.SaveFile(executionID, fmt.Sprintf("%s.json", node), body)
 	postLog = postLog.WithValues(
 		"name", filepath.Base(fileName),
