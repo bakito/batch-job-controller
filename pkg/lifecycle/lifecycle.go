@@ -124,7 +124,7 @@ func (c *controller) NewExecution(jobs int) string {
 	return id
 }
 
-//  AllAdded start the processing
+// AllAdded start the processing
 func (c *controller) AllAdded(executionID string) error {
 	e, err := c.forID(executionID)
 	if err != nil {

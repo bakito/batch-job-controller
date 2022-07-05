@@ -15,6 +15,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/config"
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
+	"github.com/bakito/batch-job-controller/pkg/test"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	gm "github.com/golang/mock/gomock"
@@ -46,18 +47,22 @@ var _ = XDescribe("HTTP", func() {
 		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
+		tmp, err := test.TempDir(executionID)
+		Ω(err).ShouldNot(HaveOccurred())
 		cfg = &config.Config{
 			Metrics: config.Metrics{
 				Prefix: "foo",
 			},
+			ReportDirectory: tmp,
 		}
 
 		mockSink.EXPECT().Init(gm.Any())
 		mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
 		s = &PostServer{
-			ReportPath: tempDir(executionID),
+			Config: cfg,
 			Server: &Server{
-				Log: logr.New(mockSink),
+				Log:    logr.New(mockSink),
+				Config: cfg,
 			},
 		}
 		s.InjectController(mockController)
@@ -69,14 +74,14 @@ var _ = XDescribe("HTTP", func() {
 		router = gin.New()
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 		DeferCleanup(func() error {
-			return os.RemoveAll(s.ReportPath)
+			return os.RemoveAll(s.Config.ReportDirectory)
 		})
 	})
 	It("generate parallel load", func() {
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseFileSubPath)
 		router.POST(CallbackBasePath+CallbackBaseFileSubPath, s.postFile)
 
-		file := filepath.Join(s.ReportPath, "file.txt")
+		file := filepath.Join(s.Config.ReportDirectory, "file.txt")
 		fileSizeMB := 50
 		sleep := 2 * time.Millisecond
 		loops := 200

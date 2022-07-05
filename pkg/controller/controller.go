@@ -1,16 +1,21 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"io/ioutil"
 
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -27,11 +32,17 @@ const (
 // PodReconciler reconciler
 type PodReconciler struct {
 	client.Client
+	coreClient corev1client.CoreV1Interface
 	Controller lifecycle.Controller
 }
 
 // SetupWithManager setup
 func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+	r.coreClient = clientset.CoreV1()
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		Watches(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForObject{}).
@@ -59,40 +70,60 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	executionID := pod.GetLabels()[LabelExecutionID]
 	node := pod.Spec.NodeName
 
-	switch pod.Status.Phase {
-	case corev1.PodSucceeded:
-		err = r.Controller.PodTerminated(executionID, node, pod.Status.Phase)
-	case corev1.PodFailed:
-		err = r.Controller.PodTerminated(executionID, node, pod.Status.Phase)
-	}
-	if err != nil {
-		if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
-			podLog.Error(err, "unexpected error")
-			return reconcile.Result{}, err
+	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+		if r.Controller.Config().SavePodLog {
+			r.savePodLogs(ctx, pod, podLog, executionID)
+		}
+		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase); err != nil {
+			if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
+				podLog.Error(err, "unexpected error")
+				return reconcile.Result{}, err
+			}
 		}
 	}
 
 	return reconcile.Result{}, nil
 }
 
-type podPredicate struct{}
-
-func (podPredicate) Create(e event.CreateEvent) bool {
-	return matches(e.Object)
+func (r *PodReconciler) savePodLogs(ctx context.Context, pod *corev1.Pod, podLog logr.Logger, executionID string) {
+	for _, c := range pod.Spec.Containers {
+		clog := podLog.WithValues("container", c.Name)
+		if l, err := r.getPodLog(ctx, pod.Namespace, pod.Name, c.Name); err != nil {
+			clog.Info("could not get log of container")
+		} else {
+			if fileName, err := r.savePodLog(executionID, c.Name, l); err != nil {
+				clog.Error(err, "error saving container log file")
+			} else {
+				clog.WithValues("name", fileName).Info("saved container log file")
+			}
+		}
+	}
 }
 
-func (podPredicate) Update(e event.UpdateEvent) bool {
-	return matches(e.ObjectNew)
+func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name string, containerName string) (string, error) {
+	podLogOpts := corev1.PodLogOptions{
+		Container: containerName,
+	}
+	req := r.coreClient.Pods(namespace).GetLogs(name, &podLogOpts)
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = podLogs.Close() }()
+
+	buf := new(bytes.Buffer)
+	if _, err = io.Copy(buf, podLogs); err != nil {
+		return "", err
+	}
+	str := buf.String()
+
+	return str, nil
 }
 
-func (podPredicate) Delete(e event.DeleteEvent) bool {
-	return matches(e.Object)
-}
-
-func (podPredicate) Generic(e event.GenericEvent) bool {
-	return matches(e.Object)
-}
-
-func matches(m metav1.Object) bool {
-	return m.GetLabels()[LabelExecutionID] != "" && m.GetLabels()[LabelOwner] != ""
+func (r *PodReconciler) savePodLog(executionID string, name string, data string) (string, error) {
+	if err := r.Controller.Config().MkReportDir(executionID); err != nil {
+		return "", err
+	}
+	fileName := r.Controller.Config().ReportFileName(executionID, fmt.Sprintf("container-%s.log", name))
+	return fileName, ioutil.WriteFile(fileName, []byte(data), 0o600)
 }

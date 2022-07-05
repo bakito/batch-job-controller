@@ -18,6 +18,7 @@ import (
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
+	"github.com/bakito/batch-job-controller/pkg/test"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	gm "github.com/golang/mock/gomock"
@@ -68,18 +69,22 @@ var _ = Describe("HTTP", func() {
 		mockController = mock_lifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
+		tmp, err := test.TempDir(executionID)
+		Ω(err).ShouldNot(HaveOccurred())
 		cfg = &config.Config{
 			Metrics: config.Metrics{
 				Prefix: "foo",
 			},
+			ReportDirectory: tmp,
 		}
 
 		mockSink.EXPECT().Init(gm.Any())
 		mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
 		s = &PostServer{
-			ReportPath: tempDir(executionID),
+			Config: cfg,
 			Server: &Server{
-				Log: logr.New(mockSink),
+				Log:    logr.New(mockSink),
+				Config: cfg,
 			},
 		}
 		s.InjectReader(mockReader)
@@ -92,7 +97,7 @@ var _ = Describe("HTTP", func() {
 		router = gin.New()
 		path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseResultSubPath)
 		DeferCleanup(func() error {
-			return os.RemoveAll(s.ReportPath)
+			return os.RemoveAll(s.Config.ReportDirectory)
 		})
 	})
 	Context("postResult", func() {
@@ -114,11 +119,11 @@ var _ = Describe("HTTP", func() {
 
 			Ω(rr.Code).Should(Equal(http.StatusOK))
 
-			files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
+			files, err := ioutil.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(1))
 
-			b, err := ioutil.ReadFile(filepath.Join(s.ReportPath, executionID, files[0].Name()))
+			b, err := ioutil.ReadFile(filepath.Join(s.Config.ReportDirectory, executionID, files[0].Name()))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(b).Should(Equal([]byte(reportJSON)))
 		})
@@ -132,7 +137,7 @@ var _ = Describe("HTTP", func() {
 
 			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
 
-			files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
+			files, err := ioutil.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(0))
 		})
@@ -201,7 +206,7 @@ var _ = Describe("HTTP", func() {
 				DeferCleanup(func() error {
 					Ω(rr.Code).Should(Equal(http.StatusOK))
 
-					files, err := ioutil.ReadDir(filepath.Join(s.ReportPath, executionID))
+					files, err := ioutil.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(files).Should(HaveLen(1))
 					if generatedFileExtension != "" {
@@ -211,7 +216,7 @@ var _ = Describe("HTTP", func() {
 						Ω(files[0].Name()).Should(Equal(node + "-" + fileName))
 					}
 
-					b, err := ioutil.ReadFile(filepath.Join(s.ReportPath, executionID, files[0].Name()))
+					b, err := ioutil.ReadFile(filepath.Join(s.Config.ReportDirectory, executionID, files[0].Name()))
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(b).Should(Equal([]byte("foo")))
 					return nil
@@ -390,11 +395,3 @@ var _ = Describe("HTTP", func() {
 		})
 	})
 })
-
-func tempDir(id string) string {
-	dir, err := ioutil.TempDir("", "go-test-")
-	Ω(err).ShouldNot(HaveOccurred())
-	err = os.MkdirAll(filepath.Join(dir, id), os.ModePerm)
-	Ω(err).ShouldNot(HaveOccurred())
-	return dir
-}
