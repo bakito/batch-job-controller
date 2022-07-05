@@ -9,11 +9,9 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -78,7 +76,6 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					containerLogs[c.Name] = l
 				}
 			}
-
 		}
 		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase, containerLogs); err != nil {
 			if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
@@ -91,28 +88,6 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return reconcile.Result{}, nil
 }
 
-type podPredicate struct{}
-
-func (podPredicate) Create(e event.CreateEvent) bool {
-	return matches(e.Object)
-}
-
-func (podPredicate) Update(e event.UpdateEvent) bool {
-	return matches(e.ObjectNew)
-}
-
-func (podPredicate) Delete(e event.DeleteEvent) bool {
-	return matches(e.Object)
-}
-
-func (podPredicate) Generic(e event.GenericEvent) bool {
-	return matches(e.Object)
-}
-
-func matches(m metav1.Object) bool {
-	return m.GetLabels()[LabelExecutionID] != "" && m.GetLabels()[LabelOwner] != ""
-}
-
 func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name string, containerName string) (string, error) {
 	podLogOpts := corev1.PodLogOptions{
 		Container: containerName,
@@ -122,11 +97,10 @@ func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name st
 	if err != nil {
 		return "", err
 	}
-	defer podLogs.Close()
+	defer func() { _ = podLogs.Close() }()
 
 	buf := new(bytes.Buffer)
-	_, err = io.Copy(buf, podLogs)
-	if err != nil {
+	if _, err = io.Copy(buf, podLogs); err != nil {
 		return "", err
 	}
 	str := buf.String()
