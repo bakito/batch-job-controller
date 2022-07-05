@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/pprof"
-	"os"
-	"path/filepath"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
@@ -41,9 +39,9 @@ func GenericAPIServer(port int, cfg *config.Config) manager.Runnable {
 			Kind:    "internal",
 			Handler: r,
 			Log:     ctrl.Log.WithName("api-server"),
+			Config:  cfg,
 		},
-		ReportPath: cfg.ReportDirectory,
-		DevMode:    cfg.DevMode,
+		Config: cfg,
 	}
 
 	rep := r.Group(CallbackBasePath)
@@ -84,8 +82,7 @@ func SetupProfiling(r *gin.Engine) {
 type PostServer struct {
 	*Server
 	Controller    lifecycle.Controller
-	ReportPath    string
-	DevMode       bool
+	Config        *config.Config
 	EventRecorder record.EventRecorder
 	Client        client.Reader
 }
@@ -118,15 +115,11 @@ func nodeAndID(ctx *gin.Context) (string, string) {
 
 // SaveFile save a received file
 func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, error) {
-	if err := s.mkdir(executionID); err != nil {
+	if err := s.Config.MkReportDir(executionID); err != nil {
 		return "", err
 	}
-	fileName := filepath.Join(s.ReportPath, executionID, name)
+	fileName := s.Config.ReportFileName(executionID, name)
 	return fileName, ioutil.WriteFile(fileName, data, 0o600)
-}
-
-func (s *PostServer) mkdir(executionID string) error {
-	return os.MkdirAll(filepath.Join(s.ReportPath, executionID), 0o755)
 }
 
 // Name the name of the server

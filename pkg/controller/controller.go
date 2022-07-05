@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -28,7 +31,7 @@ const (
 // PodReconciler reconciler
 type PodReconciler struct {
 	client.Client
-	kubeClient *kubernetes.Clientset
+	coreClient corev1client.CoreV1Interface
 	Controller lifecycle.Controller
 }
 
@@ -38,7 +41,7 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
-	r.kubeClient = clientset
+	r.coreClient = clientset.CoreV1()
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		Watches(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForObject{}).
@@ -67,17 +70,21 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	node := pod.Spec.NodeName
 
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
-		containerLogs := make(map[string]string)
 		if r.Controller.Config().SavePodLog {
 			for _, c := range pod.Spec.Containers {
+				clog := podLog.WithValues("container", c.Name)
 				if l, err := r.getPodLog(ctx, pod.Namespace, pod.Name, c.Name); err != nil {
-					podLog.WithValues("container", c.Name).Info("could not get log if container")
+					clog.Info("could not get log of container")
 				} else {
-					containerLogs[c.Name] = l
+					if fileName, err := r.savePodLog(executionID, c.Name, l); err != nil {
+						clog.Error(err, "error saving container log file")
+					} else {
+						clog.WithValues("name", fileName).Info("saved container log file")
+					}
 				}
 			}
 		}
-		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase, containerLogs); err != nil {
+		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase); err != nil {
 			if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
 				podLog.Error(err, "unexpected error")
 				return reconcile.Result{}, err
@@ -92,7 +99,7 @@ func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name st
 	podLogOpts := corev1.PodLogOptions{
 		Container: containerName,
 	}
-	req := r.kubeClient.CoreV1().Pods(namespace).GetLogs(name, &podLogOpts)
+	req := r.coreClient.Pods(namespace).GetLogs(name, &podLogOpts)
 	podLogs, err := req.Stream(ctx)
 	if err != nil {
 		return "", err
@@ -106,4 +113,12 @@ func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name st
 	str := buf.String()
 
 	return str, nil
+}
+
+func (r *PodReconciler) savePodLog(executionID string, name string, data string) (string, error) {
+	if err := r.Controller.Config().MkReportDir(executionID); err != nil {
+		return "", err
+	}
+	fileName := r.Controller.Config().ReportFileName(executionID, fmt.Sprintf("container-%s.log", name))
+	return fileName, ioutil.WriteFile(fileName, []byte(data), 0o600)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -69,6 +70,14 @@ func (cfg *Config) ReportDirExistsChecker() healthz.Checker {
 		}
 		return nil
 	}
+}
+
+func (cfg Config) MkReportDir(executionID string) error {
+	return os.MkdirAll(filepath.Join(cfg.ReportDirectory, executionID), 0o755)
+}
+
+func (cfg Config) ReportFileName(executionID string, name string) string {
+	return filepath.Join(cfg.ReportDirectory, executionID, name)
 }
 
 // Metrics config

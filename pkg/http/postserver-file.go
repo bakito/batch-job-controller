@@ -18,13 +18,13 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 }
 
 func (s *PostServer) saveFormFilesCallback(ctx *gin.Context, postLog logr.Logger, executionID string, node string, file *multipart.FileHeader) error {
-	if err := s.mkdir(executionID); err != nil {
+	if err := s.Config.MkReportDir(executionID); err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		postLog.Error(err, "error creating upload directory")
 		return err
 	}
 
-	err := ctx.SaveUploadedFile(file, filepath.Join(s.ReportPath, executionID, fmt.Sprintf("%s-%s", node, file.Filename)))
+	err := ctx.SaveUploadedFile(file, s.Config.ReportFileName(executionID, fmt.Sprintf("%s-%s", node, file.Filename)))
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		postLog.Error(err, "error saving file")
