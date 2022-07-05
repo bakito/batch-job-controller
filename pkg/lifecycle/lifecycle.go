@@ -40,7 +40,7 @@ type Controller interface {
 	NewExecution(nbrOrJobs int) string
 	AllAdded(executionID string) error
 	AddPod(job Job) error
-	PodTerminated(executionID, node string, phase corev1.PodPhase) error
+	PodTerminated(executionID, node string, phase corev1.PodPhase, containerLogs map[string]string) error
 	ReportReceived(executionID, node string, processingError error, results metrics.Results)
 	Config() config.Config
 	// Has return true if the executionId is known
@@ -124,7 +124,7 @@ func (c *controller) NewExecution(jobs int) string {
 	return id
 }
 
-//  AllAdded start the processing
+// AllAdded start the processing
 func (c *controller) AllAdded(executionID string) error {
 	e, err := c.forID(executionID)
 	if err != nil {
@@ -198,7 +198,7 @@ func (c *controller) AddPod(job Job) error {
 }
 
 // PodTerminated pod was terminated
-func (c *controller) PodTerminated(executionID, node string, phase corev1.PodPhase) error {
+func (c *controller) PodTerminated(executionID, node string, phase corev1.PodPhase, containerLog map[string]string) error {
 	p, err := c.podForID(executionID, node)
 	if err != nil {
 		return err

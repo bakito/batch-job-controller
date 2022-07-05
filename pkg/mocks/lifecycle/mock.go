@@ -108,17 +108,17 @@ func (mr *MockControllerMockRecorder) NewExecution(arg0 interface{}) *gomock.Cal
 }
 
 // PodTerminated mocks base method.
-func (m *MockController) PodTerminated(arg0, arg1 string, arg2 v1.PodPhase) error {
+func (m *MockController) PodTerminated(arg0, arg1 string, arg2 v1.PodPhase, arg3 map[string]string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PodTerminated", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "PodTerminated", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PodTerminated indicates an expected call of PodTerminated.
-func (mr *MockControllerMockRecorder) PodTerminated(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockControllerMockRecorder) PodTerminated(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PodTerminated", reflect.TypeOf((*MockController)(nil).PodTerminated), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PodTerminated", reflect.TypeOf((*MockController)(nil).PodTerminated), arg0, arg1, arg2, arg3)
 }
 
 // ReportReceived mocks base method.

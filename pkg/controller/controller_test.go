@@ -96,6 +96,7 @@ var _ = Describe("Controller", func() {
 			Ω(result.Requeue).Should(BeFalse())
 		})
 		It("should update controller on pod succeeded", func() {
+			mockController.EXPECT().Config()
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
 				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
@@ -104,7 +105,7 @@ var _ = Describe("Controller", func() {
 					}
 					return nil
 				})
-			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded)
+			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded, make(map[string]string))
 
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -112,6 +113,7 @@ var _ = Describe("Controller", func() {
 			Ω(result.Requeue).Should(BeFalse())
 		})
 		It("should update controller on pod failed", func() {
+			mockController.EXPECT().Config()
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
 				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
@@ -120,7 +122,7 @@ var _ = Describe("Controller", func() {
 					}
 					return nil
 				})
-			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodFailed)
+			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodFailed, make(map[string]string))
 
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -128,6 +130,7 @@ var _ = Describe("Controller", func() {
 			Ω(result.Requeue).Should(BeFalse())
 		})
 		It("should return error on update controller error", func() {
+			mockController.EXPECT().Config()
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
@@ -137,7 +140,7 @@ var _ = Describe("Controller", func() {
 					}
 					return nil
 				})
-			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
+			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded, make(map[string]string)).Return(fmt.Errorf("error"))
 
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).Should(HaveOccurred())

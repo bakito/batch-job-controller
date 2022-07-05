@@ -39,6 +39,8 @@ type Config struct {
 	CallbackServicePort int    `json:"callbackServicePort"`
 	// LeaderElectionResourceLock resource lock type. if empty default (resourcelock.ConfigMapsLeasesResourceLock) is used
 	LeaderElectionResourceLock string `json:"leaderElectionResourceLock,omitempty"`
+	// SavePodLog if enabled, pod logs are saved along other with other job files
+	SavePodLog bool `json:"savePodLog"`
 
 	Namespace      string         `json:"-"`
 	JobPodTemplate string         `json:"-"`

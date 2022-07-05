@@ -1,13 +1,16 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -27,11 +30,17 @@ const (
 // PodReconciler reconciler
 type PodReconciler struct {
 	client.Client
+	kubeClient *kubernetes.Clientset
 	Controller lifecycle.Controller
 }
 
 // SetupWithManager setup
 func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+	r.kubeClient = clientset
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		Watches(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForObject{}).
@@ -59,16 +68,23 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	executionID := pod.GetLabels()[LabelExecutionID]
 	node := pod.Spec.NodeName
 
-	switch pod.Status.Phase {
-	case corev1.PodSucceeded:
-		err = r.Controller.PodTerminated(executionID, node, pod.Status.Phase)
-	case corev1.PodFailed:
-		err = r.Controller.PodTerminated(executionID, node, pod.Status.Phase)
-	}
-	if err != nil {
-		if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
-			podLog.Error(err, "unexpected error")
-			return reconcile.Result{}, err
+	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+		containerLogs := make(map[string]string)
+		if r.Controller.Config().SavePodLog {
+			for _, c := range pod.Spec.Containers {
+				if l, err := r.getPodLog(ctx, pod.Namespace, pod.Name, c.Name); err != nil {
+					podLog.WithValues("container", c.Name).Info("could not get log if container")
+				} else {
+					containerLogs[c.Name] = l
+				}
+			}
+
+		}
+		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase, containerLogs); err != nil {
+			if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
+				podLog.Error(err, "unexpected error")
+				return reconcile.Result{}, err
+			}
 		}
 	}
 
@@ -95,4 +111,25 @@ func (podPredicate) Generic(e event.GenericEvent) bool {
 
 func matches(m metav1.Object) bool {
 	return m.GetLabels()[LabelExecutionID] != "" && m.GetLabels()[LabelOwner] != ""
+}
+
+func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name string, containerName string) (string, error) {
+	podLogOpts := corev1.PodLogOptions{
+		Container: containerName,
+	}
+	req := r.kubeClient.CoreV1().Pods(namespace).GetLogs(name, &podLogOpts)
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", err
+	}
+	str := buf.String()
+
+	return str, nil
 }
