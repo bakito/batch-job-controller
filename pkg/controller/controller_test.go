@@ -3,7 +3,9 @@ package controller
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
@@ -126,6 +128,7 @@ var _ = Describe("Controller", func() {
 			mockSink.EXPECT().Info(gm.Any(), gm.Any()).AnyTimes()
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
 				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
+					pod.ObjectMeta = metav1.ObjectMeta{Labels: map[string]string{LabelExecutionID: executionID}}
 					pod.Status = corev1.PodStatus{
 						Phase: corev1.PodSucceeded,
 					}
@@ -143,6 +146,9 @@ var _ = Describe("Controller", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
+			files, err := ioutil.ReadDir(filepath.Join(cfg.ReportDirectory, executionID))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(files).Should(HaveLen(2))
 		})
 		It("should update controller on pod failed", func() {
 			mockController.EXPECT().Config().Return(cfg)
