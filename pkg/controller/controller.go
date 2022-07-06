@@ -91,7 +91,7 @@ func (r *PodReconciler) savePodLogs(ctx context.Context, pod *corev1.Pod, podLog
 		if l, err := r.getPodLog(ctx, pod.Namespace, pod.Name, c.Name); err != nil {
 			clog.Error(err, "could not get log of container")
 		} else {
-			if fileName, err := r.savePodLog(executionID, c.Name, l); err != nil {
+			if fileName, err := r.savePodLog(pod.Spec.NodeName, executionID, c.Name, l); err != nil {
 				clog.Error(err, "error saving container log file")
 			} else {
 				clog.WithValues("name", fileName).Info("saved container log file")
@@ -120,10 +120,10 @@ func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name st
 	return str, nil
 }
 
-func (r *PodReconciler) savePodLog(executionID string, name string, data string) (string, error) {
+func (r *PodReconciler) savePodLog(node string, executionID string, name string, data string) (string, error) {
 	if err := r.Controller.Config().MkReportDir(executionID); err != nil {
 		return "", err
 	}
-	fileName := r.Controller.Config().ReportFileName(executionID, fmt.Sprintf("container-%s.log", name))
+	fileName := r.Controller.Config().ReportFileName(executionID, fmt.Sprintf("%s-container-%s.log", node, name))
 	return fileName, ioutil.WriteFile(fileName, []byte(data), 0o600)
 }
