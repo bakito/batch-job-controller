@@ -124,6 +124,7 @@ var _ = Describe("Controller", func() {
 		It("should update controller on pod succeeded with logs of 2 containers", func() {
 			cfg.SavePodLog = true
 			mockController.EXPECT().Config().Return(cfg).AnyTimes()
+			mockController.EXPECT().Has(gm.Any(), executionID).Return(true)
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink).AnyTimes()
 			mockSink.EXPECT().Info(gm.Any(), gm.Any()).AnyTimes()
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).

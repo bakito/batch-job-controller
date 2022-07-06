@@ -72,7 +72,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	node := pod.Spec.NodeName
 
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
-		if r.Controller.Config().SavePodLog && pod.DeletionTimestamp == nil {
+		if r.Controller.Config().SavePodLog && r.Controller.Has(node, executionID) {
 			r.savePodLogs(ctx, pod, executionID)
 		}
 		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase); err != nil {
