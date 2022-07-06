@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
@@ -28,6 +27,8 @@ const (
 	// LabelExecutionID execution id label
 	LabelExecutionID = "batch-job-controller.bakito.github.com/execution-id"
 )
+
+var clog = ctrl.Log.WithName("pod-controller")
 
 // PodReconciler reconciler
 type PodReconciler struct {
@@ -72,7 +73,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
 		if r.Controller.Config().SavePodLog && pod.DeletionTimestamp == nil {
-			r.savePodLogs(ctx, pod, podLog, executionID)
+			r.savePodLogs(ctx, pod, executionID)
 		}
 		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase); err != nil {
 			if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
@@ -85,16 +86,16 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return reconcile.Result{}, nil
 }
 
-func (r *PodReconciler) savePodLogs(ctx context.Context, pod *corev1.Pod, podLog logr.Logger, executionID string) {
+func (r *PodReconciler) savePodLogs(ctx context.Context, pod *corev1.Pod, executionID string) {
 	for _, c := range pod.Spec.Containers {
-		clog := podLog.WithValues("container", c.Name)
+		clog := clog.WithValues("node", pod.Spec.NodeName, "id", executionID, "container", c.Name)
 		if l, err := r.getPodLog(ctx, pod.Namespace, pod.Name, c.Name); err != nil {
 			clog.Error(err, "could not get log of container")
 		} else {
-			if fileName, err := r.savePodLog(pod.Spec.NodeName, executionID, c.Name, l); err != nil {
+			if err := r.savePodLog(pod.Spec.NodeName, executionID, c.Name, l); err != nil {
 				clog.Error(err, "error saving container log file")
 			} else {
-				clog.WithValues("name", fileName).Info("saved container log file")
+				clog.Info("saved container log file")
 			}
 		}
 	}
@@ -120,10 +121,10 @@ func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name st
 	return str, nil
 }
 
-func (r *PodReconciler) savePodLog(node string, executionID string, name string, data string) (string, error) {
+func (r *PodReconciler) savePodLog(node string, executionID string, name string, data string) error {
 	if err := r.Controller.Config().MkReportDir(executionID); err != nil {
-		return "", err
+		return err
 	}
 	fileName := r.Controller.Config().ReportFileName(executionID, fmt.Sprintf("%s-container-%s.log", node, name))
-	return fileName, ioutil.WriteFile(fileName, []byte(data), 0o600)
+	return ioutil.WriteFile(fileName, []byte(data), 0o600)
 }
