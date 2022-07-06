@@ -71,7 +71,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	node := pod.Spec.NodeName
 
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
-		if r.Controller.Config().SavePodLog {
+		if r.Controller.Config().SavePodLog && pod.DeletionTimestamp == nil {
 			r.savePodLogs(ctx, pod, podLog, executionID)
 		}
 		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase); err != nil {
@@ -89,7 +89,7 @@ func (r *PodReconciler) savePodLogs(ctx context.Context, pod *corev1.Pod, podLog
 	for _, c := range pod.Spec.Containers {
 		clog := podLog.WithValues("container", c.Name)
 		if l, err := r.getPodLog(ctx, pod.Namespace, pod.Name, c.Name); err != nil {
-			clog.Info("could not get log of container")
+			clog.Error(err, "could not get log of container")
 		} else {
 			if fileName, err := r.savePodLog(executionID, c.Name, l); err != nil {
 				clog.Error(err, "error saving container log file")

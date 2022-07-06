@@ -34,6 +34,14 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - pods/log
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - ""
+    resources:
       - services
     verbs:
       - get
