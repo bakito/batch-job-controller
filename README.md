@@ -43,6 +43,7 @@ callbackServicePort: 8090        # port of the controller callback api service
 custom: { }                       # additional properties that can be used in a custom implementation
 latestMetricsLabel: false        # if 'true' each result metric is also created with executionID='latest'
 leaderElectionResourceLock: ""   # type of leader election resource lock to be used. ('configmapsleases' (default), 'configmaps', 'endpoints', 'leases', 'endpointsleases')
+savePodLog: false                # if enabled, pod logs are saved along other with other job files
 metrics:
   prefix: "foo_...."             # prefix for the metrics exposed by the controller
   gauges: # metric gauges that will be exposed by the jobs. The key is uses as suffix for the metrics. 
