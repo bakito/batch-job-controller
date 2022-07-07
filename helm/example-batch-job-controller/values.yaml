@@ -18,7 +18,10 @@ deployment:
   labels:
   annotations:
   env:
-
+  probes:
+    startup: true
+    readiness: true
+    liveness: true
 
 routes:
   metrics: true

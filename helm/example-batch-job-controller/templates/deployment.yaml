@@ -49,18 +49,46 @@ spec:
             - containerPort: 8090
               protocol: TCP
               name: private
+            - containerPort: 9152
+              protocol: TCP
+              name: health
             - containerPort: 9153
               protocol: TCP
               name: metrics
-          readinessProbe:
-            failureThreshold: 3
+{{- if .Values.deployment.probes.startup }}
+          startupProbe:
             httpGet:
-              path: /
-              port: 8080
+              path: /readyz
+              port: 9152
               scheme: HTTP
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            failureThreshold: 3
+{{- if .Values.deployment.probes.readiness }}
+{{- end }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 9152
+              scheme: HTTP
             timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+{{- if .Values.deployment.probes.liveness }}
+{{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9152
+              scheme: HTTP
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+{{- end }}
           resources:
             requests:
               cpu: 100m
