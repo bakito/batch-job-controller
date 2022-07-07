@@ -15,6 +15,7 @@ const (
 	labelValueLatest = "latest"
 	labelExecutionID = "executionID"
 	labelPrefix      = "prefix"
+	labelCron        = "cron"
 
 	versionMetric = "com_github_bakito_batch_job_controller"
 
@@ -167,7 +168,7 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 	c.versionGauge = prom.NewGaugeVec(prom.GaugeOpts{
 		Name: versionMetric,
 		Help: versionHelp,
-	}, []string{config.LabelVersion, config.LabelName, labelPrefix, config.LabelPoolSize, config.LabelReportHistory})
+	}, []string{config.LabelVersion, config.LabelName, labelPrefix, config.LabelPoolSize, config.LabelReportHistory, labelCron})
 
 	for name, metric := range cfg.Metrics.Gauges {
 		if name == procErrorMetric || name == durationMetric || name == podsMetric {
@@ -195,6 +196,7 @@ func NewPromCollector(cfg *config.Config) (*Collector, error) {
 		cfg.Metrics.Prefix,
 		strconv.Itoa(cfg.PodPoolSize),
 		strconv.Itoa(cfg.ReportHistory),
+		cfg.CronExpression,
 	).Set(1)
 
 	return c, nil

@@ -19,7 +19,8 @@ var _ = Describe("metrics", func() {
 	var cfg *config.Config
 	BeforeEach(func() {
 		cfg = &config.Config{
-			Metrics: cfgMetrics,
+			Metrics:        cfgMetrics,
+			CronExpression: "42 3 * * *",
 		}
 	})
 	Context("NewPromCollector", func() {
@@ -133,6 +134,7 @@ var _ = Describe("metrics", func() {
 					"prefix":        cfg.Metrics.Prefix,
 					"reportHistory": strconv.Itoa(cfg.ReportHistory),
 					"version":       version.Version,
+					"cron":          cfg.CronExpression,
 				},
 				"1",
 			)
