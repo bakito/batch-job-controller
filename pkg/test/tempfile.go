@@ -1,13 +1,12 @@
 package test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
 func TempDir(id string) (string, error) {
-	dir, err := ioutil.TempDir("", "go-test-")
+	dir, err := os.MkdirTemp("", "go-test-")
 	if err != nil {
 		return "", err
 	}

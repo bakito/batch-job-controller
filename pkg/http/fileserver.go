@@ -45,8 +45,9 @@ func (s *Server) Start(ctx context.Context) error {
 	s.Log.Info("starting http server", "port", s.Port, "type", s.Kind)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", s.Port),
-		Handler: s.Handler,
+		Addr:              fmt.Sprintf(":%v", s.Port),
+		Handler:           s.Handler,
+		ReadHeaderTimeout: 1 * time.Second,
 	}
 
 	idleConnsClosed := make(chan struct{})

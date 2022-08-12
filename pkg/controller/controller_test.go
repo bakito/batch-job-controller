@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -147,7 +146,7 @@ var _ = Describe("Controller", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
 			Ω(result.Requeue).Should(BeFalse())
-			files, err := ioutil.ReadDir(filepath.Join(cfg.ReportDirectory, executionID))
+			files, err := os.ReadDir(filepath.Join(cfg.ReportDirectory, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(2))
 		})

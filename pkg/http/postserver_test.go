@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -119,11 +118,11 @@ var _ = Describe("HTTP", func() {
 
 			Ω(rr.Code).Should(Equal(http.StatusOK))
 
-			files, err := ioutil.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
+			files, err := os.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(1))
 
-			b, err := ioutil.ReadFile(filepath.Join(s.Config.ReportDirectory, executionID, files[0].Name()))
+			b, err := os.ReadFile(filepath.Join(s.Config.ReportDirectory, executionID, files[0].Name()))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(b).Should(Equal([]byte(reportJSON)))
 		})
@@ -137,7 +136,7 @@ var _ = Describe("HTTP", func() {
 
 			Ω(rr.Code).Should(Equal(http.StatusBadRequest))
 
-			files, err := ioutil.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
+			files, err := os.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(0))
 		})
@@ -206,7 +205,7 @@ var _ = Describe("HTTP", func() {
 				DeferCleanup(func() error {
 					Ω(rr.Code).Should(Equal(http.StatusOK))
 
-					files, err := ioutil.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
+					files, err := os.ReadDir(filepath.Join(s.Config.ReportDirectory, executionID))
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(files).Should(HaveLen(1))
 					if generatedFileExtension != "" {
@@ -216,7 +215,7 @@ var _ = Describe("HTTP", func() {
 						Ω(files[0].Name()).Should(Equal(node + "-" + fileName))
 					}
 
-					b, err := ioutil.ReadFile(filepath.Join(s.Config.ReportDirectory, executionID, files[0].Name()))
+					b, err := os.ReadFile(filepath.Join(s.Config.ReportDirectory, executionID, files[0].Name()))
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(b).Should(Equal([]byte("foo")))
 					return nil

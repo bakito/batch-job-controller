@@ -2,8 +2,8 @@ package http
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http/pprof"
+	"os"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
@@ -119,7 +119,7 @@ func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, er
 		return "", err
 	}
 	fileName := s.Config.ReportFileName(executionID, name)
-	return fileName, ioutil.WriteFile(fileName, data, 0o600)
+	return fileName, os.WriteFile(fileName, data, 0o600)
 }
 
 // Name the name of the server

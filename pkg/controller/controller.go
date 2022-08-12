@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	corev1 "k8s.io/api/core/v1"
@@ -126,5 +126,5 @@ func (r *PodReconciler) savePodLog(node string, executionID string, name string,
 		return err
 	}
 	fileName := r.Controller.Config().ReportFileName(executionID, fmt.Sprintf("%s-container-%s.log", node, name))
-	return ioutil.WriteFile(fileName, []byte(data), 0o600)
+	return os.WriteFile(fileName, []byte(data), 0o600)
 }

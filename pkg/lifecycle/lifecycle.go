@@ -2,7 +2,6 @@ package lifecycle
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -131,13 +130,15 @@ func (c *controller) AllAdded(executionID string) error {
 		return err
 	}
 
-	files, err := ioutil.ReadDir(c.reportDir)
+	files, err := os.ReadDir(c.reportDir)
 	if err != nil {
 		c.log.WithValues("dir ", c.reportDir).Error(err, "could not list report dir files")
 		return err
 	}
 	sort.Slice(files, func(i, j int) bool {
-		return files[i].ModTime().Before(files[j].ModTime())
+		ii, _ := files[i].Info()
+		ji, _ := files[j].Info()
+		return ii.ModTime().Before(ji.ModTime())
 	})
 
 	if len(files) > c.reportHistory {

@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -90,7 +89,7 @@ var _ = XDescribe("HTTP", func() {
 		_, err := cmd.Output()
 		Ω(err).ShouldNot(HaveOccurred())
 
-		data, err := ioutil.ReadFile(file)
+		data, err := os.ReadFile(file)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink).Times(loops)
