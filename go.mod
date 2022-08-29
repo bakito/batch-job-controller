@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/common v0.37.0
 	github.com/robfig/cron/v3 v3.0.1
-	go.uber.org/zap v1.22.0
+	go.uber.org/zap v1.23.0
 	gopkg.in/resty.v1 v1.12.0
 	k8s.io/api v0.24.4
 	k8s.io/apimachinery v0.24.4
