@@ -5,7 +5,6 @@ metadata:
   labels:
     app: {{ template "batch-job-controller.name" . }}
 {{ include "batch-job-controller.helm-labels" . | indent 4 }}
-    component: {{ template "batch-job-controller.name" . }}-controller
   name: {{ template "batch-job-controller.name" . }}-pvc
   namespace: {{ .Release.Namespace }}
 spec:

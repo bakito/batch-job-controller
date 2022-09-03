@@ -6,13 +6,12 @@ metadata:
   labels:
     app: {{ template "batch-job-controller.name" . }}
 {{ include "batch-job-controller.helm-labels" . | indent 4 }}
-    component: {{ template "batch-job-controller.name" . }}-controller
   name: {{ template "batch-job-controller.name" . }}
   namespace: {{ .Release.Namespace }}
 
 ---
 # Role creation which is limited to job/pod creation and deletion in namespcae
-apiVersion: authorization.openshift.io/v1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ template "batch-job-controller.name" . }}-role
@@ -92,7 +91,7 @@ subjects:
   namespace: {{ .Release.Namespace }}
 
 ---
-apiVersion: authorization.openshift.io/v1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ template "batch-job-controller.name" . }}-list-nodes
@@ -111,7 +110,7 @@ rules:
 
 ---
 # ClusterRoleBinding for listing nodes required by openscap controller
-apiVersion: authorization.openshift.io/v1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   namespace: {{ .Release.Namespace }}
@@ -124,8 +123,6 @@ subjects:
     name: {{ template "batch-job-controller.name" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
+  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: {{ template "batch-job-controller.name" . }}-list-nodes
-userNames:
-- system:serviceaccount:{{ .Release.Namespace }}:{{ template "batch-job-controller.name" . }}
-groupNames: []
