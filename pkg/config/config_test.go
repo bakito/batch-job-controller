@@ -86,7 +86,7 @@ var _ = Describe("Config", func() {
 
 			It("should return an error if no config is found", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
+					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
 						cm.Data = map[string]string{}
 						return nil
 					})
@@ -99,7 +99,7 @@ var _ = Describe("Config", func() {
 
 			It("should return an error if no config can not be parsed", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
+					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName: "foo",
 						}
@@ -114,7 +114,7 @@ var _ = Describe("Config", func() {
 
 			It("should return an error if no pod template config is found", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
+					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName: "name: foo",
 						}
@@ -131,7 +131,7 @@ var _ = Describe("Config", func() {
 		Context("success", func() {
 			It("should return a config without owner", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
+					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName:  "name: foo",
 							PodTemplateName: "kind: Pod",
@@ -151,7 +151,7 @@ var _ = Describe("Config", func() {
 
 			It("should return a config with owner", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap) error {
+					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName:  "name: foo",
 							PodTemplateName: "kind: Pod",
@@ -159,7 +159,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-					Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
+					Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
 						pod.OwnerReferences = []metav1.OwnerReference{
 							{
 								Kind: "ReplicaSet",
@@ -169,7 +169,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&unstructured.Unstructured{})).
-					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured) error {
+					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured, opts ...client.GetOption) error {
 						us.Object["metadata"] = map[string]interface{}{
 							"ownerReferences": []interface{}{
 								map[string]interface{}{
@@ -181,7 +181,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&unstructured.Unstructured{})).
-					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured) error {
+					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured, opts ...client.GetOption) error {
 						us.Object["metadata"] = map[string]interface{}{
 							"name": "deployment-1",
 						}

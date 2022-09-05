@@ -127,7 +127,7 @@ var _ = Describe("Controller", func() {
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink).AnyTimes()
 			mockSink.EXPECT().Info(gm.Any(), gm.Any()).AnyTimes()
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
+				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
 					pod.ObjectMeta = metav1.ObjectMeta{Labels: map[string]string{LabelExecutionID: executionID}}
 					pod.Status = corev1.PodStatus{
 						Phase: corev1.PodSucceeded,
@@ -154,7 +154,7 @@ var _ = Describe("Controller", func() {
 			mockController.EXPECT().Config().Return(cfg)
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
+				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
 					pod.Status = corev1.PodStatus{
 						Phase: corev1.PodFailed,
 					}
@@ -172,7 +172,7 @@ var _ = Describe("Controller", func() {
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod) error {
+				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
 					pod.Status = corev1.PodStatus{
 						Phase: corev1.PodSucceeded,
 					}
