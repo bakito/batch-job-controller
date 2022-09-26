@@ -17,9 +17,9 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	go.uber.org/zap v1.23.0
 	gopkg.in/resty.v1 v1.12.0
-	k8s.io/api v0.25.1
-	k8s.io/apimachinery v0.25.1
-	k8s.io/client-go v0.25.1
+	k8s.io/api v0.25.2
+	k8s.io/apimachinery v0.25.2
+	k8s.io/client-go v0.25.2
 	k8s.io/klog/v2 v2.70.1
 	sigs.k8s.io/controller-runtime v0.13.0
 )
