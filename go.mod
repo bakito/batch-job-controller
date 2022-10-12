@@ -10,8 +10,8 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
-	github.com/onsi/ginkgo/v2 v2.2.0
-	github.com/onsi/gomega v1.21.1
+	github.com/onsi/ginkgo/v2 v2.3.1
+	github.com/onsi/gomega v1.22.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/common v0.37.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -20,7 +20,7 @@ require (
 	k8s.io/api v0.25.2
 	k8s.io/apimachinery v0.25.2
 	k8s.io/client-go v0.25.2
-	k8s.io/klog/v2 v2.70.1
+	k8s.io/klog/v2 v2.80.1
 	sigs.k8s.io/controller-runtime v0.13.0
 )
 
@@ -86,5 +86,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/dgrijalva/jwt-go v3.2.0+incompatible => github.com/form3tech-oss/jwt-go v3.2.2+incompatible

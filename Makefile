@@ -47,7 +47,7 @@ ifeq (, $(shell which mockgen))
 endif
 ginkgo:
 ifeq (, $(shell which ginkgo))
- $(shell go install github.com/onsi/ginkgo/v2/ginkgo@v2.2.0)
+ $(shell go install github.com/onsi/ginkgo/v2/ginkgo@v2.3.1)
 endif
 helm:
 ifeq (, $(shell which helm))
