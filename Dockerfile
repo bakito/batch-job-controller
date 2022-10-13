@@ -15,12 +15,13 @@ RUN go build -a -installsuffix cgo -ldflags="-w -s -X github.com/bakito/batch-jo
     upx ${upx_brute} -q batch-job-controller
 
 # application image
+
 FROM scratch
 
 LABEL maintainer="bakito <github@bakito.ch>"
 EXPOSE 8080 8090 9153
 WORKDIR /opt/go/
 USER 1001
-ENTRYPOINT ["/opt/go/batch-job-controller"]
+ENTRYPOINT ["/opt/go//batch-job-controller"]
 
 COPY --from=builder /build/batch-job-controller /opt/go//batch-job-controller
