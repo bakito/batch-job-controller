@@ -2,30 +2,50 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# -- Name
 name: example-job-controller
 
 deployment:
+  # --  Controller pod count
   replicas: 1
+  # --  Repository to use
   image: ghcr.io/bakito/batch-job-controller
+  # -- Overrides the image tag whose default is the chart appVersion.
   imageTag:
-  cronexpression: "* * * * *"
+  # -- Cron expression to start the jobs with
+  cronExpression: "* * * * *"
+  # -- Report directory
   reportDirectory: "/var/www"
+  # -- Define for how many jobs the reports sould be kept
   reportHistory: 10 # number of reports to be used
+  # -- The parallel pod pool size
   podPoolSize: 10 # number of pods allowed to run parallel
+  # -- Run jobs on startup
   runOnStartup: false
+  # -- Enable persistent storage
   withPersistentVolume: true
+  # -- Storage class name to be used if storage is enabled
   storageClassName: ""
+  # -- additional pod labels
   labels:
+  # -- additional pod annotations
   annotations:
+  # -- additional pod env
   env:
   probes:
+    # -- Enable startup probes
     startup: true
+    # -- Enable readiness probes
     readiness: true
+    # -- Enable liveness probes
     liveness: true
 
 routes:
+  # -- enable a route to access metrics
   metrics: true
+  # -- enable a route to access the internal files
   internal: true
 
 jobPod:
+  # -- The iabe to be uses as job pod
   image: registry.access.redhat.com/ubi8/ubi

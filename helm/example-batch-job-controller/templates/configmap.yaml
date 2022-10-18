@@ -15,7 +15,7 @@ data:
     name:  {{ template "batch-job-controller.name" . }}
     jobServiceAccount: ""
     jobNodeSelector: {}
-    cronExpression: "{{ .Values.deployment.cronexpression }}"
+    cronExpression: "{{ .Values.deployment.cronExpression }}"
     reportHistory: {{ .Values.deployment.reportHistory }}
     podPoolSize: {{ .Values.deployment.podPoolSize }}
     runOnStartup: {{ .Values.deployment.runOnStartup }}

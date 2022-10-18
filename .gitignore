@@ -13,3 +13,4 @@ dependency-licenses.csv
 batch-job-controller-*.tgz
 gomock_reflect_*
 test.log
+bin
