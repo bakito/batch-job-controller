@@ -46,6 +46,9 @@ ifeq (, $(shell which helm))
  $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
 endif
 
+
+
+## toolbox - start
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
@@ -53,35 +56,47 @@ $(LOCALBIN):
 
 ## Tool Binaries
 SEMVER ?= $(LOCALBIN)/semver
-HELM_DOCS ?= $(LOCALBIN)/helm-docs
 MOCKGEN ?= $(LOCALBIN)/mockgen
+HELM_DOCS ?= $(LOCALBIN)/helm-docs
 GINKGO ?= $(LOCALBIN)/ginkgo
 
 ## Tool Versions
-SEMVER_VERSION ?= latest
-HELM_DOCS_VERSION ?= v1.11.0
+SEMVER_VERSION ?= v1.1.3
 MOCKGEN_VERSION ?= v1.6.0
-GINKGO_VERSION ?= v2.3.1
+HELM_DOCS_VERSION ?= v1.11.0
+GINKGO_VERSION ?= v2.6.1
 
+## Tool Installer
 .PHONY: semver
 semver: $(SEMVER) ## Download semver locally if necessary.
 $(SEMVER): $(LOCALBIN)
 	test -s $(LOCALBIN)/semver || GOBIN=$(LOCALBIN) go install github.com/bakito/semver@$(SEMVER_VERSION)
-
+.PHONY: mockgen
+mockgen: $(MOCKGEN) ## Download mockgen locally if necessary.
+$(MOCKGEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/mockgen || GOBIN=$(LOCALBIN) go install github.com/golang/mock/mockgen@$(MOCKGEN_VERSION)
 .PHONY: helm-docs
 helm-docs: $(HELM_DOCS) ## Download helm-docs locally if necessary.
 $(HELM_DOCS): $(LOCALBIN)
 	test -s $(LOCALBIN)/helm-docs || GOBIN=$(LOCALBIN) go install github.com/norwoodj/helm-docs/cmd/helm-docs@$(HELM_DOCS_VERSION)
-
-.PHONY: mockgen
-mockgen: $(MOCKGEN) ## Download mockgen locally if necessary.
-$(MOCKGEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/mockgen|| GOBIN=$(LOCALBIN) go install github.com/golang/mock/mockgen@$(MOCKGEN_VERSION)
-
 .PHONY: ginkgo
 ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
 $(GINKGO): $(LOCALBIN)
-	test -s $(LOCALBIN)/ginkgo|| GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
+	test -s $(LOCALBIN)/ginkgo || GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
-docs: helm-docs
-	@$(LOCALBIN)/helm-docs
+## Update Tools
+.PHONY: update-toolbox-tools
+update-toolbox-tools:
+	@rm -f \
+		$(LOCALBIN)/semver \
+		$(LOCALBIN)/mockgen \
+		$(LOCALBIN)/helm-docs \
+		$(LOCALBIN)/ginkgo
+	toolbox makefile -f $$(pwd)/Makefile \
+		github.com/bakito/semver \
+		github.com/golang/mock/mockgen \
+		github.com/norwoodj/helm-docs/cmd/helm-docs \
+		github.com/onsi/ginkgo/v2/ginkgo
+## toolbox - end
+
+
