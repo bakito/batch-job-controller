@@ -49,8 +49,10 @@ endif
 
 
 ## toolbox - start
+## Current working directory
+LOCALDIR ?= $(shell which cygpath > /dev/null 2>&1 && cygpath -m $$(pwd) || pwd)
 ## Location to install dependencies to
-LOCALBIN ?= $(shell test -s "cygpath -m $$(pwd)" || pwd)/bin
+LOCALBIN ?= $(LOCALDIR)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
@@ -64,7 +66,7 @@ GINKGO ?= $(LOCALBIN)/ginkgo
 SEMVER_VERSION ?= v1.1.3
 MOCKGEN_VERSION ?= v1.6.0
 HELM_DOCS_VERSION ?= v1.11.0
-GINKGO_VERSION ?= v2.6.1
+GINKGO_VERSION ?= v2.9.1
 
 ## Tool Installer
 .PHONY: semver
@@ -92,7 +94,7 @@ update-toolbox-tools:
 		$(LOCALBIN)/mockgen \
 		$(LOCALBIN)/helm-docs \
 		$(LOCALBIN)/ginkgo
-	toolbox makefile -f $$(pwd)/Makefile \
+	toolbox makefile -f $(LOCALDIR)/Makefile \
 		github.com/bakito/semver \
 		github.com/golang/mock/mockgen \
 		github.com/norwoodj/helm-docs/cmd/helm-docs \

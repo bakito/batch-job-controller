@@ -132,7 +132,7 @@ var _ = Describe("Job", func() {
 
 type customEnv struct{}
 
-func (ce *customEnv) ExtendEnv(cfg *config.Config, nodeName string, id string, serviceIP string, containers corev1.Container) []corev1.EnvVar {
+func (ce *customEnv) ExtendEnv(_ *config.Config, _ string, _ string, _ string, _ corev1.Container) []corev1.EnvVar {
 	return []corev1.EnvVar{{Name: envNamespace, Value: "notMyNamespace"}, {Name: "CUSTOM", Value: "VALUE"}}
 }
 
