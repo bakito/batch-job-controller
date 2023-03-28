@@ -1,5 +1,4 @@
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bakito/batch-job-controller/Github%20Build?logo=github)](https://github.com/bakito/batch-job-controller/actions?query=workflow%3A%22Github+Build%22)
-[![Docker Repository on Quay](https://quay.io/repository/bakito/batch-job-controller/status "Docker Repository on Quay")](https://quay.io/repository/bakito/batch-job-controller)
+[![Github Build](https://github.com/bakito/batch-job-controller/actions/workflows/build.yml/badge.svg)](https://github.com/bakito/batch-job-controller/actions/workflows/build.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bakito/batch-job-controller)](https://goreportcard.com/report/github.com/bakito/batch-job-controller)
 [![Coveralls github](https://img.shields.io/coveralls/github/bakito/batch-job-controller?logo=coveralls)](https://coveralls.io/github/bakito/batch-job-controller?branch=master)
 [![GitHub Release](https://img.shields.io/github/release/bakito/batch-job-controller.svg?style=flat)](https://github.com/bakito/batch-job-controller/releases)
