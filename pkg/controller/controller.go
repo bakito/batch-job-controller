@@ -18,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -46,7 +45,7 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.coreClient = clientset.CoreV1()
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
-		Watches(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&corev1.Pod{}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(&podPredicate{}).
 		Complete(r)
 }
