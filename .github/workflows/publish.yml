@@ -35,6 +35,7 @@ jobs:
           push: true
           tags: ghcr.io/bakito/batch-job-controller:latest,ghcr.io/bakito/batch-job-controller:${{ github.event.release.tag_name }},quay.io/bakito/batch-job-controller:latest,quay.io/bakito/batch-job-controller:${{ github.event.release.tag_name }}
           platforms: linux/amd64
+          provenance: false
           build-args: VERSION=${{ github.event.release.tag_name }}
 
       - name: Build and push main
@@ -45,6 +46,7 @@ jobs:
           push: true
           tags: ghcr.io/bakito/batch-job-controller:main,quay.io/bakito/batch-job-controller:main
           platforms: linux/amd64
+          provenance: false
           build-args: VERSION=main
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
