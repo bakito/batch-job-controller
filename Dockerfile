@@ -1,4 +1,4 @@
-FROM golang:1.20 as builder
+FROM golang:1.20-bullseye as builder
 ARG upx_brute="--ultra-brute"
 WORKDIR /build
 
