@@ -24,8 +24,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	crtlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
@@ -65,14 +67,18 @@ func Setup() *Main {
 	}
 
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
-		Scheme:                     scheme,
-		MetricsBindAddress:         cfg.Metrics.BindAddress(),
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: cfg.Metrics.BindAddress(),
+		},
 		LeaderElection:             !cfg.DevMode,
 		LeaderElectionID:           cfg.Name + "-leader-election",
 		LeaderElectionNamespace:    namespace,
 		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,
-		Namespace:                  namespace,
-		HealthProbeBindAddress:     cfg.HealthProbeBindAddress(),
+		Cache: crtlcache.Options{
+			DefaultNamespaces: map[string]crtlcache.Config{namespace: {}},
+		},
+		HealthProbeBindAddress: cfg.HealthProbeBindAddress(),
 	})
 
 	if err := mgr.AddHealthzCheck("healthz", cfg.ReportDirExistsChecker()); err != nil {
