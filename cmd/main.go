@@ -27,7 +27,6 @@ import (
 	crtlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
@@ -67,16 +66,14 @@ func Setup() *Main {
 	}
 
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: cfg.Metrics.BindAddress(),
-		},
+		Scheme:                     scheme,
+		MetricsBindAddress:         cfg.Metrics.BindAddress(),
 		LeaderElection:             !cfg.DevMode,
 		LeaderElectionID:           cfg.Name + "-leader-election",
 		LeaderElectionNamespace:    namespace,
 		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,
 		Cache: crtlcache.Options{
-			DefaultNamespaces: map[string]crtlcache.Config{namespace: {}},
+			Namespaces: []string{namespace},
 		},
 		HealthProbeBindAddress: cfg.HealthProbeBindAddress(),
 	})
