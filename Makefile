@@ -65,8 +65,8 @@ GINKGO ?= $(LOCALBIN)/ginkgo
 ## Tool Versions
 SEMVER_VERSION ?= v1.1.3
 MOCKGEN_VERSION ?= v1.6.0
-HELM_DOCS_VERSION ?= v1.11.3
-GINKGO_VERSION ?= v2.13.0
+HELM_DOCS_VERSION ?= v1.12.0
+GINKGO_VERSION ?= v2.14.0
 
 ## Tool Installer
 .PHONY: semver
