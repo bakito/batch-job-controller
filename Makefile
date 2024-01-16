@@ -46,7 +46,14 @@ ifeq (, $(shell which helm))
  $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
 endif
 
+docs: helm-docs update-docs
+	@$(LOCALBIN)/helm-docs
 
+update-docs: semver
+	@version=$$($(LOCALBIN)/semver -next); \
+	versionNum=$$($(LOCALBIN)/semver -next -numeric); \
+	sed -i "s/^version:.*$$/version: $${versionNum}/"    ./helm/example-batch-job-controller/Chart.yaml; \
+	sed -i "s/^appVersion:.*$$/appVersion: $${version}/" ./helm/example-batch-job-controller/Chart.yaml
 
 ## toolbox - start
 ## Current working directory
