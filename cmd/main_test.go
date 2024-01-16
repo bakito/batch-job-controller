@@ -7,9 +7,9 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	mock_manager "github.com/bakito/batch-job-controller/pkg/mocks/manager"
 	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
-	gm "github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	gm "go.uber.org/mock/gomock"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
