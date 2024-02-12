@@ -16,6 +16,9 @@ tidy:
 test: ginkgo tidy mocks
 	$(GINKGO) --cover -r -output-dir=. -coverprofile=coverage.out
 
+lint: golangci-lint
+	$(GOLANGCI_LINT) run --fix
+
 # Run tests
 helm-lint: helm
 	helm lint helm/example-batch-job-controller/ --set routes.hostSuffix=test.com --strict
@@ -65,6 +68,7 @@ $(LOCALBIN):
 
 ## Tool Binaries
 GINKGO ?= $(LOCALBIN)/ginkgo
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 HELM_DOCS ?= $(LOCALBIN)/helm-docs
 MOCKGEN ?= $(LOCALBIN)/mockgen
 SEMVER ?= $(LOCALBIN)/semver
@@ -74,6 +78,10 @@ SEMVER ?= $(LOCALBIN)/semver
 ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
 $(GINKGO): $(LOCALBIN)
 	test -s $(LOCALBIN)/ginkgo || GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	test -s $(LOCALBIN)/golangci-lint || GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint
 .PHONY: helm-docs
 helm-docs: $(HELM_DOCS) ## Download helm-docs locally if necessary.
 $(HELM_DOCS): $(LOCALBIN)
@@ -92,6 +100,7 @@ $(SEMVER): $(LOCALBIN)
 update-toolbox-tools:
 	@rm -f \
 		$(LOCALBIN)/ginkgo \
+		$(LOCALBIN)/golangci-lint \
 		$(LOCALBIN)/helm-docs \
 		$(LOCALBIN)/mockgen \
 		$(LOCALBIN)/semver

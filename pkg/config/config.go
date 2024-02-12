@@ -65,7 +65,6 @@ func getInternal(namespace string, apiReader client.Reader) (*Config, error) {
 		cfg := &Config{}
 		decoder := yaml.NewYAMLOrJSONDecoder(strings.NewReader(c), 20)
 		err = decoder.Decode(cfg)
-
 		if err != nil {
 			return nil, fmt.Errorf("could not read config file %q in configmap %q: %w", ConfigFileName, os.Getenv(EnvConfigMapName), err)
 		}
