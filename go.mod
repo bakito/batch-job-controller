@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/validator/v10 v10.18.0
 	github.com/golangci/golangci-lint v1.56.2
 	github.com/google/uuid v1.6.0
-	github.com/norwoodj/helm-docs v1.12.0
+	github.com/norwoodj/helm-docs v1.13.0
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
 	github.com/prometheus/client_golang v1.18.0
