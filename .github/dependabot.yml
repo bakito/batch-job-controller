@@ -17,6 +17,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      prometheus:
+        patterns:
+          - "github.com/prometheus/*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
