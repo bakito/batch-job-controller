@@ -13,7 +13,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/norwoodj/helm-docs v1.13.1
 	github.com/onsi/ginkgo/v2 v2.17.2
-	github.com/onsi/gomega v1.33.0
+	github.com/onsi/gomega v1.33.1
 	github.com/prometheus/client_golang v1.19.0
 	github.com/prometheus/common v0.53.0
 	github.com/robfig/cron/v3 v3.0.1
