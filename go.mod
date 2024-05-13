@@ -14,7 +14,7 @@ require (
 	github.com/norwoodj/helm-docs v1.13.1
 	github.com/onsi/ginkgo/v2 v2.17.3
 	github.com/onsi/gomega v1.33.1
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.53.0
 	github.com/robfig/cron/v3 v3.0.1
 	go.uber.org/mock v0.4.0
