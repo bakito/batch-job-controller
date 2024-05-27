@@ -6,7 +6,7 @@ require (
 	github.com/bakito/semver v1.1.3
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-gonic/gin v1.10.0
-	github.com/go-logr/logr v1.4.1
+	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-playground/validator/v10 v10.20.0
 	github.com/golangci/golangci-lint v1.59.0
