@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -20,18 +21,19 @@ const (
 
 // Config struct
 type Config struct {
-	Name                  string            `json:"name"`
-	JobServiceAccount     string            `json:"jobServiceAccount"`
-	JobNodeSelector       map[string]string `json:"jobNodeSelector"`
-	RunOnUnscheduledNodes bool              `json:"runOnUnscheduledNodes"`
-	CronExpression        string            `json:"cronExpression"`
-	ReportDirectory       string            `json:"reportDirectory"`
-	ReportHistory         int               `json:"reportHistory"`
-	PodPoolSize           int               `json:"podPoolSize"`
-	RunOnStartup          bool              `json:"runOnStartup"`
-	StartupDelay          time.Duration     `json:"startupDelay"`
-	Metrics               Metrics           `json:"metrics"`
-	HealthProbePort       int               `json:"healthProbePort"`
+	Name                  string                        `json:"name"`
+	JobServiceAccount     string                        `json:"jobServiceAccount"`
+	JobImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets"`
+	JobNodeSelector       map[string]string             `json:"jobNodeSelector"`
+	RunOnUnscheduledNodes bool                          `json:"runOnUnscheduledNodes"`
+	CronExpression        string                        `json:"cronExpression"`
+	ReportDirectory       string                        `json:"reportDirectory"`
+	ReportHistory         int                           `json:"reportHistory"`
+	PodPoolSize           int                           `json:"podPoolSize"`
+	RunOnStartup          bool                          `json:"runOnStartup"`
+	StartupDelay          time.Duration                 `json:"startupDelay"`
+	Metrics               Metrics                       `json:"metrics"`
+	HealthProbePort       int                           `json:"healthProbePort"`
 	// LatestMetricsLabel if true, each result metric is also created with executionID=latest
 	LatestMetricsLabel bool                   `json:"latestMetricsLabel"`
 	Custom             map[string]interface{} `json:"custom"`

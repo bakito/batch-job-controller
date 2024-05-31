@@ -14,6 +14,7 @@ data:
   config.yaml: |-
     name:  {{ template "batch-job-controller.name" . }}
     jobServiceAccount: ""
+    jobImagePullSecrets: {}
     jobNodeSelector: {}
     cronExpression: "{{ .Values.deployment.cronExpression }}"
     reportHistory: {{ .Values.deployment.reportHistory }}
