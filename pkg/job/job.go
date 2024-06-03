@@ -99,7 +99,7 @@ func New(cfg *config.Config, nodeName, id, callbackAddress string, owner runtime
 	// assure correct service account
 	pod.Spec.ServiceAccountName = cfg.JobServiceAccount
 
-	//assure correct image pull secrets
+	// assure correct image pull secrets
 	pod.Spec.ImagePullSecrets = cfg.JobImagePullSecrets
 
 	// assure restart policy is set to never
