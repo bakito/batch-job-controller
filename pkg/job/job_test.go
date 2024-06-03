@@ -16,22 +16,25 @@ import (
 var _ = Describe("Job", func() {
 	Context("New", func() {
 		var (
-			cfg       *config.Config
-			name      string
-			namespace string
-			nodeName  string
-			id        string
-			serviceIP string
-			sacc      string
+			cfg              *config.Config
+			name             string
+			namespace        string
+			nodeName         string
+			id               string
+			serviceIP        string
+			sacc             string
+			imagePullSecrets []corev1.LocalObjectReference
 		)
 		BeforeEach(func() {
 			name = uuid.New().String()
 			namespace = uuid.New().String()
 			sacc = uuid.New().String()
+			imagePullSecrets = []corev1.LocalObjectReference{{Name: "mySecret"}}
 			cfg = &config.Config{
 				Name:                name,
 				Namespace:           namespace,
 				JobServiceAccount:   sacc,
+				JobImagePullSecrets: imagePullSecrets,
 				JobPodTemplate:      "kind: Pod",
 				CallbackServicePort: 12345,
 			}
@@ -49,6 +52,7 @@ var _ = Describe("Job", func() {
 			Ω(pod.Spec.RestartPolicy).Should(Equal(corev1.RestartPolicyNever))
 			Ω(pod.Spec.NodeName).Should(Equal(nodeName))
 			Ω(pod.Spec.ServiceAccountName).Should(Equal(sacc))
+			Ω(pod.Spec.ImagePullSecrets).Should(Equal(imagePullSecrets))
 
 			Ω(pod.Labels[controller.LabelExecutionID]).Should(Equal(id))
 			Ω(pod.Labels[controller.LabelOwner]).Should(Equal(name))

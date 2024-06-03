@@ -29,7 +29,9 @@ Controller configuration
 ```yaml
 name: ""                         # name of the controller; will also be used as prefix for the job pods
 jobServiceAccount: ""            # service account to be used for the job pods. If empty the default will be used
-jobNodeSelector: { }              # node selector labels to define in which nodes to run the jobs
+jobImagePullSecrets:             # pull secrets to be used for the job pods for pulling the image
+  - name: secret_name 
+jobNodeSelector: { }             # node selector labels to define in which nodes to run the jobs
 runOnUnscheduledNodes: true      # if true, jobs are also started on nodes that are unschedulable
 cronExpression: "42 3 * * *"     # the cron expression to trigger the job execution
 reportDirectory: "/var/www"      # directory to store and serve the reports
