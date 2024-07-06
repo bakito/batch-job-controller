@@ -1,7 +1,7 @@
 apiVersion: v2
 name: batch-job-controller
-version: 1.4.6
-appVersion: v1.4.6
+version: 1.4.7
+appVersion: v1.4.7
 description: Install batch job controller
 icon: https://emojigraph.org/media/google/man-construction-worker_1f477-200d-2642-fe0f.png
 sources:
