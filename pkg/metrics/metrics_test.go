@@ -96,8 +96,8 @@ var _ = Describe("metrics", func() {
 
 		It("check error 'Execution Duration in milliseconds'", func() {
 			d := rand.Int() // #nosec G404 ok for tests
-			duaration := float64(d)
-			pc.Duration(node, executionID, duaration)
+			duration := float64(d)
+			pc.Duration(node, executionID, duration)
 			checkMetric(
 				pc,
 				durationHelp,
@@ -164,7 +164,8 @@ var _ = Describe("metrics", func() {
 
 func checkMissingMetric(collector *Collector, name string) {
 	err := testutil.CollectAndCompare(collector, strings.NewReader(""), name)
-	Ω(err).ShouldNot(HaveOccurred())
+	Ω(err).Should(HaveOccurred())
+	Ω(err.Error()).Should(Equal(fmt.Sprintf("expected metric name(s) not found: [%s]", name)))
 }
 
 func checkMetric(collector *Collector, help string, name string, labels map[string]string, value string) {
