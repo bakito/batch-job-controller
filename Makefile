@@ -75,10 +75,15 @@ MOCKGEN ?= $(LOCALBIN)/mockgen
 SEMVER ?= $(LOCALBIN)/semver
 
 ## Tool Versions
-GOLANGCI_LINT_VERSION ?= v1.60.1
-GORELEASER_VERSION ?= v2.2.0
+# renovate: packageName=github.com/golangci/golangci-lint/cmd/golangci-lint
+GOLANGCI_LINT_VERSION ?= v1.61.0
+# renovate: packageName=github.com/goreleaser/goreleaser/v2
+GORELEASER_VERSION ?= v2.3.2
+# renovate: packageName=github.com/norwoodj/helm-docs/cmd/helm-docs
 HELM_DOCS_VERSION ?= v1.14.2
+# renovate: packageName=go.uber.org/mock/mockgen
 MOCKGEN_VERSION ?= v0.4.0
+# renovate: packageName=github.com/bakito/semver
 SEMVER_VERSION ?= v1.1.3
 
 ## Tool Installer
