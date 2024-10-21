@@ -23,6 +23,7 @@ import (
 type MockController struct {
 	ctrl     *gomock.Controller
 	recorder *MockControllerMockRecorder
+	isgomock struct{}
 }
 
 // MockControllerMockRecorder is the mock recorder for MockController.
@@ -43,31 +44,31 @@ func (m *MockController) EXPECT() *MockControllerMockRecorder {
 }
 
 // AddPod mocks base method.
-func (m *MockController) AddPod(arg0 lifecycle.Job) error {
+func (m *MockController) AddPod(job lifecycle.Job) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddPod", arg0)
+	ret := m.ctrl.Call(m, "AddPod", job)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddPod indicates an expected call of AddPod.
-func (mr *MockControllerMockRecorder) AddPod(arg0 any) *gomock.Call {
+func (mr *MockControllerMockRecorder) AddPod(job any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPod", reflect.TypeOf((*MockController)(nil).AddPod), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPod", reflect.TypeOf((*MockController)(nil).AddPod), job)
 }
 
 // AllAdded mocks base method.
-func (m *MockController) AllAdded(arg0 string) error {
+func (m *MockController) AllAdded(executionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AllAdded", arg0)
+	ret := m.ctrl.Call(m, "AllAdded", executionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AllAdded indicates an expected call of AllAdded.
-func (mr *MockControllerMockRecorder) AllAdded(arg0 any) *gomock.Call {
+func (mr *MockControllerMockRecorder) AllAdded(executionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllAdded", reflect.TypeOf((*MockController)(nil).AllAdded), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllAdded", reflect.TypeOf((*MockController)(nil).AllAdded), executionID)
 }
 
 // Config mocks base method.
@@ -85,55 +86,55 @@ func (mr *MockControllerMockRecorder) Config() *gomock.Call {
 }
 
 // Has mocks base method.
-func (m *MockController) Has(arg0, arg1 string) bool {
+func (m *MockController) Has(node, executionID string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Has", arg0, arg1)
+	ret := m.ctrl.Call(m, "Has", node, executionID)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // Has indicates an expected call of Has.
-func (mr *MockControllerMockRecorder) Has(arg0, arg1 any) *gomock.Call {
+func (mr *MockControllerMockRecorder) Has(node, executionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockController)(nil).Has), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockController)(nil).Has), node, executionID)
 }
 
 // NewExecution mocks base method.
-func (m *MockController) NewExecution(arg0 int) string {
+func (m *MockController) NewExecution(nbrOrJobs int) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewExecution", arg0)
+	ret := m.ctrl.Call(m, "NewExecution", nbrOrJobs)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
 // NewExecution indicates an expected call of NewExecution.
-func (mr *MockControllerMockRecorder) NewExecution(arg0 any) *gomock.Call {
+func (mr *MockControllerMockRecorder) NewExecution(nbrOrJobs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewExecution", reflect.TypeOf((*MockController)(nil).NewExecution), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewExecution", reflect.TypeOf((*MockController)(nil).NewExecution), nbrOrJobs)
 }
 
 // PodTerminated mocks base method.
-func (m *MockController) PodTerminated(arg0, arg1 string, arg2 v1.PodPhase) error {
+func (m *MockController) PodTerminated(executionID, node string, phase v1.PodPhase) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PodTerminated", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "PodTerminated", executionID, node, phase)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PodTerminated indicates an expected call of PodTerminated.
-func (mr *MockControllerMockRecorder) PodTerminated(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockControllerMockRecorder) PodTerminated(executionID, node, phase any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PodTerminated", reflect.TypeOf((*MockController)(nil).PodTerminated), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PodTerminated", reflect.TypeOf((*MockController)(nil).PodTerminated), executionID, node, phase)
 }
 
 // ReportReceived mocks base method.
-func (m *MockController) ReportReceived(arg0, arg1 string, arg2 error, arg3 metrics.Results) {
+func (m *MockController) ReportReceived(executionID, node string, processingError error, results metrics.Results) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ReportReceived", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "ReportReceived", executionID, node, processingError, results)
 }
 
 // ReportReceived indicates an expected call of ReportReceived.
-func (mr *MockControllerMockRecorder) ReportReceived(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockControllerMockRecorder) ReportReceived(executionID, node, processingError, results any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportReceived", reflect.TypeOf((*MockController)(nil).ReportReceived), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportReceived", reflect.TypeOf((*MockController)(nil).ReportReceived), executionID, node, processingError, results)
 }

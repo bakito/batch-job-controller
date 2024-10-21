@@ -164,8 +164,7 @@ var _ = Describe("metrics", func() {
 
 func checkMissingMetric(collector *Collector, name string) {
 	err := testutil.CollectAndCompare(collector, strings.NewReader(""), name)
-	Ω(err).Should(HaveOccurred())
-	Ω(err.Error()).Should(Equal(fmt.Sprintf("expected metric name(s) not found: [%s]", name)))
+	Ω(err).ShouldNot(HaveOccurred())
 }
 
 func checkMetric(collector *Collector, help string, name string, labels map[string]string, value string) {

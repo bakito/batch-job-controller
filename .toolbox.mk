@@ -17,10 +17,15 @@ TB_MOCKGEN ?= $(TB_LOCALBIN)/mockgen
 TB_SEMVER ?= $(TB_LOCALBIN)/semver
 
 ## Tool Versions
+# renovate: packageName=github.com/golangci/golangci-lint/cmd/golangci-lint
 TB_GOLANGCI_LINT_VERSION ?= v1.61.0
+# renovate: packageName=github.com/goreleaser/goreleaser/v2
 TB_GORELEASER_VERSION ?= v2.3.2
+# renovate: packageName=github.com/norwoodj/helm-docs/cmd/helm-docs
 TB_HELM_DOCS_VERSION ?= v1.14.2
-TB_MOCKGEN_VERSION ?= v0.4.0
+# renovate: packageName=go.uber.org/mock/mockgen
+TB_MOCKGEN_VERSION ?= v0.5.0
+# renovate: packageName=github.com/bakito/semver
 TB_SEMVER_VERSION ?= v1.1.3
 
 ## Tool Installer
@@ -63,7 +68,7 @@ tb.reset:
 ## Update Tools
 .PHONY: tb.update
 tb.update: tb.reset
-	toolbox makefile -f $(TB_LOCALDIR)/Makefile \
+	toolbox makefile --renovate -f $(TB_LOCALDIR)/Makefile \
 		github.com/golangci/golangci-lint/cmd/golangci-lint \
 		github.com/goreleaser/goreleaser/v2 \
 		github.com/norwoodj/helm-docs/cmd/helm-docs \
