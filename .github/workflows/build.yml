@@ -45,6 +45,9 @@ jobs:
         uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: coverage.out
+          
+      - name: Test Release
+        run: make test-release
 
   test-helm:
     name: Test Helm Chart
