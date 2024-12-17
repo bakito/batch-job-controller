@@ -84,7 +84,7 @@ var _ = Describe("Controller", func() {
 			mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
 			ctx = log.IntoContext(context.TODO(), logr.New(mockSink))
 
-			coreClient = fake.NewSimpleClientset().CoreV1()
+			coreClient = fake.NewClientset().CoreV1()
 
 			tmp, err := test.TempDir(executionID)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -125,7 +125,7 @@ var _ = Describe("Controller", func() {
 			mockController.EXPECT().Config().Return(cfg).AnyTimes()
 			mockController.EXPECT().Has(gm.Any(), executionID).Return(true)
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink).AnyTimes()
-			mockSink.EXPECT().Info(gm.Any(), gm.Any()).AnyTimes()
+			mockSink.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any()).AnyTimes()
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
 				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
 					pod.ObjectMeta = metav1.ObjectMeta{Labels: map[string]string{LabelExecutionID: executionID}}
