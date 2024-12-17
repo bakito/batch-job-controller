@@ -38,10 +38,10 @@ build-podman:
 release: tb.semver
 	@version=$$($(TB_SEMVER)); \
 	git tag -s $$version -m"Release $$version"
-	goreleaser --clean
+	$(TB_GORELEASER) --clean
 
 test-release:
-	goreleaser --skip=publish --snapshot --clean
+	$(TB_GORELEASER) --skip=publish --snapshot --clean
 
 tools: tb.mockgen tb.ginkgo helm
 
