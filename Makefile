@@ -35,13 +35,13 @@ build-docker:
 build-podman:
 	podman build --build-arg upx_brute=" " -t batch-job-controller .
 
-release: tb.semver
+release: tb.semver tb.goreleaser
 	@version=$$($(TB_SEMVER)); \
 	git tag -s $$version -m"Release $$version"
-	goreleaser --clean
+	$(TB_GORELEASER) --clean
 
-test-release:
-	goreleaser --skip=publish --snapshot --clean
+test-release: tb.goreleaser
+	$(TB_GORELEASER) --skip=publish --snapshot --clean
 
 tools: tb.mockgen tb.ginkgo helm
 
