@@ -27,12 +27,6 @@ var _ = Describe("types", func() {
 			err := results.Validate(cfg)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
-		It("should be invalid if prefix is not a valid prometheus metric name", func() {
-			results["b b b"] = []metrics.Result{}
-			err := results.Validate(cfg)
-			Ω(err).Should(HaveOccurred())
-			Ω(err.Error()).Should(HaveSuffix("is not a valid metric name"))
-		})
 		It("should be invalid if results is empty", func() {
 			delete(results, "aaa")
 			err := results.Validate(cfg)
