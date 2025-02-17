@@ -1,8 +1,8 @@
-FROM golang:1.23-bullseye as builder
-ARG upx_brute="--ultra-brute"
+FROM golang:1.24-alpine AS builder
 WORKDIR /build
 
-RUN apt-get update && apt-get install -y upx
+RUN apk update && apk add upx
+
 COPY . .
 
 ARG VERSION=main
@@ -11,7 +11,7 @@ ENV GO111MODULE=on \
     GOOS=linux
 
 RUN go build -a -installsuffix cgo -ldflags="-w -s -X github.com/bakito/batch-job-controller/version.Version=${VERSION}" -o batch-job-controller cmd/generic/main.go && \
-    upx ${upx_brute} -q batch-job-controller
+    upx -q batch-job-controller
 
 # application image
 
