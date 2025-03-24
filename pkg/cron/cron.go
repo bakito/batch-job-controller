@@ -138,7 +138,7 @@ func (j *cronJob) startPods() {
 
 	jobLog.Info("executing job")
 	for _, n := range nodes {
-		pod, err := job.New(j.cfg, n.ObjectMeta.Name, executionID, callbackAddress, j.cfg.Owner, j.extender...)
+		pod, err := job.New(j.cfg, n.Name, executionID, callbackAddress, j.cfg.Owner, j.extender...)
 		if err != nil {
 			jobLog.Error(err, "error creating pod from template")
 			return
@@ -146,7 +146,7 @@ func (j *cronJob) startPods() {
 
 		_ = j.controller.AddPod(&podJob{
 			id:       executionID,
-			nodeName: n.ObjectMeta.Name,
+			nodeName: n.Name,
 			log:      jobLog,
 			client:   j.client,
 			pod:      pod,

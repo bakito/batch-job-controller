@@ -17,8 +17,8 @@ TB_MOCKGEN ?= $(TB_LOCALBIN)/mockgen
 TB_SEMVER ?= $(TB_LOCALBIN)/semver
 
 ## Tool Versions
-TB_GOLANGCI_LINT_VERSION ?= v1.63.4
-TB_GORELEASER_VERSION ?= v2.5.1
+TB_GOLANGCI_LINT_VERSION ?= v2.0.1
+TB_GORELEASER_VERSION ?= v2.8.1
 TB_HELM_DOCS_VERSION ?= v1.14.2
 TB_MOCKGEN_VERSION ?= v0.5.0
 TB_SEMVER_VERSION ?= v1.1.3
@@ -31,7 +31,7 @@ $(TB_GINKGO): $(TB_LOCALBIN)
 .PHONY: tb.golangci-lint
 tb.golangci-lint: $(TB_GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(TB_GOLANGCI_LINT): $(TB_LOCALBIN)
-	test -s $(TB_LOCALBIN)/golangci-lint || GOBIN=$(TB_LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(TB_GOLANGCI_LINT_VERSION)
+	test -s $(TB_LOCALBIN)/golangci-lint || GOBIN=$(TB_LOCALBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(TB_GOLANGCI_LINT_VERSION)
 .PHONY: tb.goreleaser
 tb.goreleaser: $(TB_GORELEASER) ## Download goreleaser locally if necessary.
 $(TB_GORELEASER): $(TB_LOCALBIN)
@@ -64,7 +64,7 @@ tb.reset:
 .PHONY: tb.update
 tb.update: tb.reset
 	toolbox makefile -f $(TB_LOCALDIR)/Makefile \
-		github.com/golangci/golangci-lint/cmd/golangci-lint \
+		github.com/golangci/golangci-lint/v2/cmd/golangci-lint \
 		github.com/goreleaser/goreleaser/v2 \
 		github.com/norwoodj/helm-docs/cmd/helm-docs \
 		go.uber.org/mock/mockgen@github.com/uber/mock \
