@@ -86,8 +86,8 @@ func New(cfg *config.Config, nodeName, id, callbackAddress string, owner runtime
 		return nil, err
 	}
 
-	pod.ObjectMeta.Name = podName
-	pod.ObjectMeta.Namespace = cfg.Namespace
+	pod.Name = podName
+	pod.Namespace = cfg.Namespace
 
 	// assure correct labels
 	pod.Labels[controller.LabelExecutionID] = id

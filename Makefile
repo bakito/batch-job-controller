@@ -17,7 +17,7 @@ tidy:
 test: tb.ginkgo tidy mocks
 	$(TB_GINKGO) --cover -r -output-dir=. -coverprofile=coverage.out
 
-lint: golangci-lint
+lint: tb.golangci-lint
 	$(TB_GOLANGCI_LINT) run --fix
 
 # Run tests

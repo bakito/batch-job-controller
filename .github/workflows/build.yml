@@ -20,10 +20,9 @@ jobs:
         with:
           go-version-file: "go.mod"
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          skip-cache: true
+      - name: Lint
+        run: make lint
+
   build:
     name: Go Tests
     runs-on: ubuntu-latest
