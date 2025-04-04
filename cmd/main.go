@@ -71,10 +71,12 @@ func Setup() *Main {
 		Metrics: server.Options{
 			BindAddress: cfg.Metrics.BindAddress(),
 		},
-		LeaderElection:             !cfg.DevMode,
-		LeaderElectionID:           cfg.Name + "-leader-election",
-		LeaderElectionNamespace:    namespace,
-		LeaderElectionResourceLock: cfg.LeaderElectionResourceLock,
+		LeaderElection:                !cfg.DevMode,
+		LeaderElectionID:              cfg.Name + "-leader-election",
+		LeaderElectionNamespace:       namespace,
+		LeaderElectionResourceLock:    cfg.LeaderElectionResourceLock,
+		LeaderElectionReleaseOnCancel: true,
+	
 		Cache: crtlcache.Options{
 			DefaultNamespaces: map[string]crtlcache.Config{
 				namespace: {},
