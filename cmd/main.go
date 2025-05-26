@@ -76,7 +76,7 @@ func Setup() *Main {
 		LeaderElectionNamespace:       namespace,
 		LeaderElectionResourceLock:    cfg.LeaderElectionResourceLock,
 		LeaderElectionReleaseOnCancel: true,
-	
+
 		Cache: crtlcache.Options{
 			DefaultNamespaces: map[string]crtlcache.Config{
 				namespace: {},

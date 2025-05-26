@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
@@ -108,7 +109,7 @@ var _ = Describe("Controller", func() {
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
-			Ω(result.Requeue).Should(BeFalse())
+			Ω(result.RequeueAfter).Should(Equal(time.Duration(0)))
 		})
 		It("should return an error", func() {
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
@@ -118,7 +119,7 @@ var _ = Describe("Controller", func() {
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).Should(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
-			Ω(result.Requeue).Should(BeFalse())
+			Ω(result.RequeueAfter).Should(Equal(time.Duration(0)))
 		})
 		It("should update controller on pod succeeded with logs of 2 containers", func() {
 			cfg.SavePodLog = true
@@ -145,7 +146,7 @@ var _ = Describe("Controller", func() {
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
-			Ω(result.Requeue).Should(BeFalse())
+			Ω(result.RequeueAfter).Should(Equal(time.Duration(0)))
 			files, err := os.ReadDir(filepath.Join(cfg.ReportDirectory, executionID))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(files).Should(HaveLen(2))
@@ -165,7 +166,7 @@ var _ = Describe("Controller", func() {
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
-			Ω(result.Requeue).Should(BeFalse())
+			Ω(result.RequeueAfter).Should(Equal(time.Duration(0)))
 		})
 		It("should return error on update controller error", func() {
 			mockController.EXPECT().Config().Return(cfg)
@@ -183,7 +184,7 @@ var _ = Describe("Controller", func() {
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).Should(HaveOccurred())
 			Ω(result).ShouldNot(BeNil())
-			Ω(result.Requeue).Should(BeFalse())
+			Ω(result.RequeueAfter).Should(Equal(time.Duration(0)))
 		})
 	})
 })
