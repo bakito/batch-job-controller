@@ -1,6 +1,6 @@
 # batch-job-controller
 
-![Version: 1.4.7](https://img.shields.io/badge/Version-1.4.7-informational?style=flat-square) ![AppVersion: v1.4.7](https://img.shields.io/badge/AppVersion-v1.4.7-informational?style=flat-square)
+![Version: 1.4.8](https://img.shields.io/badge/Version-1.4.8-informational?style=flat-square) ![AppVersion: v1.4.8](https://img.shields.io/badge/AppVersion-v1.4.8-informational?style=flat-square)
 
 Install batch job controller
 
@@ -9,14 +9,14 @@ Install batch job controller
 ### oci
 
 ```console
-helm install my-batch-job-controller oci://ghcr.io/bakito/helm-charts/batch-job-controller --version 1.4.7
+helm install my-batch-job-controller oci://ghcr.io/bakito/helm-charts/batch-job-controller --version 1.4.8
 ```
 
 ### helm repository
 
 ```console
 helm repo add bakito https://charts.bakito.net
-helm install my-batch-job-controller bakito/batch-job-controller --version 1.4.7
+helm install my-batch-job-controller bakito/batch-job-controller --version 1.4.8
 ```
 
 ## Values

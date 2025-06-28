@@ -50,7 +50,7 @@ ifeq (, $(shell which helm))
  $(shell curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
 endif
 
-docs: tb.helm-docs update-docs
+helm-docs: tb.helm-docs update-docs
 	@$(TB_HELM_DOCS)
 
 update-docs: tb.semver
