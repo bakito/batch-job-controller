@@ -24,7 +24,7 @@ func (r Results) Validate(cfg *config.Config) error {
 		return fmt.Errorf("results must not be empty")
 	}
 	for name := range r {
-		if !model.IsValidMetricName(model.LabelValue(cfg.Metrics.NameFor(name))) {
+		if !model.UTF8Validation.IsValidMetricName(cfg.Metrics.NameFor(name)) {
 			return fmt.Errorf("%q is not a valid metric name", name)
 		}
 	}
