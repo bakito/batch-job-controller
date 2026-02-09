@@ -5,8 +5,8 @@ import (
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	mock_events "github.com/bakito/batch-job-controller/pkg/mocks/events"
 	mock_manager "github.com/bakito/batch-job-controller/pkg/mocks/manager"
-	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	gm "go.uber.org/mock/gomock"
@@ -19,18 +19,18 @@ var _ = Describe("Main", func() {
 		m                 *Main
 		mockCtrl          *gm.Controller // gomock struct
 		mockManager       *mock_manager.MockManager
-		mockEventRecorder *mock_record.MockEventRecorder
+		mockEventRecorder *mock_events.MockEventRecorder
 	)
 
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
 		mockManager = mock_manager.NewMockManager(mockCtrl)
-		mockEventRecorder = mock_record.NewMockEventRecorder(mockCtrl)
+		mockEventRecorder = mock_events.NewMockEventRecorder(mockCtrl)
 		m = &Main{
 			Manager: mockManager,
 			Config:  &config.Config{},
 		}
-		mockManager.EXPECT().GetEventRecorderFor(gm.Any()).Return(mockEventRecorder)
+		mockManager.EXPECT().GetEventRecorder(gm.Any()).Return(mockEventRecorder)
 		mockManager.EXPECT().GetAPIReader()
 		mockManager.EXPECT().Add(gm.Any())
 	})

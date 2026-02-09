@@ -14,9 +14,9 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/inject"
 	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mock_events "github.com/bakito/batch-job-controller/pkg/mocks/events"
 	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
 	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
-	mock_record "github.com/bakito/batch-job-controller/pkg/mocks/record"
 	"github.com/bakito/batch-job-controller/pkg/test"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
@@ -276,10 +276,10 @@ var _ = Describe("HTTP", func() {
 	Context("postEvent", func() {
 		var (
 			path       string
-			mockRecord *mock_record.MockEventRecorder
+			mockRecord *mock_events.MockEventRecorder
 		)
 		BeforeEach(func() {
-			mockRecord = mock_record.NewMockEventRecorder(mockCtrl)
+			mockRecord = mock_events.NewMockEventRecorder(mockCtrl)
 			s.InjectEventRecorder(mockRecord)
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
 			router.POST(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
@@ -288,7 +288,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").Return(mockSink)
-			mockRecord.EXPECT().Event(gm.Any(), "Warning", "TestReason", "test message")
+			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "", "test message")
 			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
@@ -304,7 +304,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockSink)
-			mockRecord.EXPECT().Eventf(gm.Any(), "Warning", "TestReason", "test message: %s", "a1")
+			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "", "test message: %s", "a1")
 			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))

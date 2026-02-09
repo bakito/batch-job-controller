@@ -27,9 +27,9 @@ func (s *PostServer) postEventCallback(ctx *gin.Context, postLog logr.Logger, po
 	}
 
 	if len(event.Args) > 0 {
-		s.EventRecorder.Eventf(pod, event.Type(), event.Reason, event.Message, event.args()...)
+		s.EventRecorder.Eventf(pod, pod, event.Type(), event.Reason, "", event.Message, event.args()...)
 	} else {
-		s.EventRecorder.Event(pod, event.Type(), event.Reason, event.Message)
+		s.EventRecorder.Eventf(pod, pod, event.Type(), event.Reason, "", event.Message)
 	}
 	return nil
 }

@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	crtlcache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -177,7 +177,7 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 func (m *Main) addToManager(r manager.Runnable) {
 	if er, ok := r.(inject.EventRecorder); ok {
 		if m.eventRecorder == nil {
-			m.eventRecorder = m.Manager.GetEventRecorderFor(m.Config.Name)
+			m.eventRecorder = m.Manager.GetEventRecorder(m.Config.Name)
 		}
 		er.InjectEventRecorder(m.eventRecorder)
 	}
@@ -233,5 +233,5 @@ type Main struct {
 	Config        *bjcc.Config
 	Controller    lifecycle.Controller
 	Manager       manager.Manager
-	eventRecorder record.EventRecorder
+	eventRecorder events.EventRecorder
 }
