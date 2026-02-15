@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	gm "go.uber.org/mock/gomock"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -68,7 +68,7 @@ func (r *r) InjectController(_ lifecycle.Controller) {
 }
 
 // InjectEventRecorder inject the event recorder
-func (r *r) InjectEventRecorder(_ record.EventRecorder) {
+func (r *r) InjectEventRecorder(_ events.EventRecorder) {
 	r.withEventRecorder = true
 }
 
