@@ -8,7 +8,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/gin-gonic/gin"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -83,12 +83,12 @@ type PostServer struct {
 	*Server
 	Controller    lifecycle.Controller
 	Config        *config.Config
-	EventRecorder record.EventRecorder
+	EventRecorder events.EventRecorder
 	Client        client.Reader
 }
 
 // InjectEventRecorder inject the event recorder
-func (s *PostServer) InjectEventRecorder(er record.EventRecorder) {
+func (s *PostServer) InjectEventRecorder(er events.EventRecorder) {
 	s.EventRecorder = er
 }
 

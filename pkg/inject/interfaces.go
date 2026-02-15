@@ -3,7 +3,7 @@ package inject
 import (
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -12,7 +12,7 @@ import (
 
 // EventRecorder inject the event recorder
 type EventRecorder interface {
-	InjectEventRecorder(record.EventRecorder)
+	InjectEventRecorder(events.EventRecorder)
 }
 
 // Controller inject the cache

@@ -5,7 +5,7 @@ include ./.toolbox.mk
 mocks: tb.mockgen
 	$(TB_MOCKGEN) -destination pkg/mocks/lifecycle/mock.go github.com/bakito/batch-job-controller/pkg/lifecycle Controller
 	$(TB_MOCKGEN) -destination pkg/mocks/logr/mock.go      github.com/go-logr/logr                              LogSink
-	$(TB_MOCKGEN) -destination pkg/mocks/record/mock.go    k8s.io/client-go/tools/record                        EventRecorder
+	$(TB_MOCKGEN) -destination pkg/mocks/events/mock.go    k8s.io/client-go/tools/events                        EventRecorder
 	$(TB_MOCKGEN) -destination pkg/mocks/client/mock.go    sigs.k8s.io/controller-runtime/pkg/client            Client,Reader
 	$(TB_MOCKGEN) -destination pkg/mocks/manager/mock.go   sigs.k8s.io/controller-runtime/pkg/manager           Manager
 
