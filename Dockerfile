@@ -1,26 +1,38 @@
-FROM golang:1.26-alpine AS builder
+# Build stage
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
+
 WORKDIR /build
 
-RUN apk update && apk add upx
+RUN apk update && apk add --no-cache upx
 
 COPY . .
 
 ARG VERSION=main
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
+
 ENV GO111MODULE=on \
     CGO_ENABLED=0 \
-    GOOS=linux
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GOARM=${TARGETVARIANT}
 
-RUN go build -a -installsuffix cgo -ldflags="-w -s -X github.com/bakito/batch-job-controller/version.Version=${VERSION}" -o batch-job-controller cmd/generic/main.go && \
+RUN go build \
+    -a \
+    -installsuffix cgo \
+    -ldflags="-w -s -X github.com/bakito/batch-job-controller/version.Version=${VERSION}" \
+    -o batch-job-controller \
+    cmd/generic/main.go && \
     upx -q batch-job-controller
 
-# application image
-
+# Application image
 FROM scratch
 
 LABEL maintainer="bakito <github@bakito.ch>"
 EXPOSE 8080 8090 9153
 WORKDIR /opt/go/
 USER 1001
-ENTRYPOINT ["/opt/go//batch-job-controller"]
+ENTRYPOINT ["/opt/go/batch-job-controller"]
 
-COPY --from=builder /build/batch-job-controller /opt/go//batch-job-controller
+COPY --from=builder /build/batch-job-controller /opt/go/batch-job-controller
