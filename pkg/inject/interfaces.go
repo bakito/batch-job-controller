@@ -27,7 +27,7 @@ type Reader interface {
 
 // Client inject the api client
 type Client interface {
-	InjectClient(client.Client) error
+	InjectClient(client.Client)
 }
 
 // Config inject the config
