@@ -45,9 +45,8 @@ func (j *cronJob) InjectController(c lifecycle.Controller) {
 }
 
 // InjectClient inject the client
-func (j *cronJob) InjectClient(c client.Client) error {
+func (j *cronJob) InjectClient(c client.Client) {
 	j.client = c
-	return nil
 }
 
 // NeedLeaderElection may only start if leader is elected

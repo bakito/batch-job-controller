@@ -191,6 +191,9 @@ func (m *Main) addToManager(r manager.Runnable) {
 	if r, ok := r.(inject.Reader); ok {
 		r.InjectReader(m.Manager.GetAPIReader())
 	}
+	if r, ok := r.(inject.Client); ok {
+		r.InjectClient(m.Manager.GetClient())
+	}
 	if h, ok := r.(inject.Healthz); ok {
 		if hc := h.HealthzCheck(); hc != nil {
 			if err := m.Manager.AddHealthzCheck(h.Name(), hc); err != nil {
