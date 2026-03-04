@@ -39,7 +39,7 @@ helm install my-batch-job-controller bakito/batch-job-controller --version 1.4.9
 | deployment.reportHistory | int | `10` | Define for how many jobs the reports should be kept |
 | deployment.runOnStartup | bool | `false` | Run jobs on startup |
 | deployment.storageClassName | string | `""` | Storage class name to be used if storage is enabled |
-| deployment.withPersistentVolume | bool | `true` | Enable persistent storage |
+| deployment.withPersistentVolume | bool | `false` | Enable persistent storage |
 | jobPod.image | string | `"redhat/ubi10:latest"` | The image to be uses as job pod |
 | name | string | `"example-job-controller"` | Name |
 

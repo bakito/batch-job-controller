@@ -2,3 +2,5 @@ deployment:
   image: batch-job-controller
   imageTag: e2e
   imagePullPolicy: IfNotPresent
+
+  cronExpression: "* * * * *"

@@ -15,17 +15,20 @@ jobs:
     name: Run end-2-end Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 🛒 Checkout
         uses: actions/checkout@v6
 
-      - name: Build image
+      - name: 🖼 Build image
         run: docker build -f Dockerfile --build-arg VERSION=e2e-tests -t batch-job-controller:e2e .
 
-      - name: Install kind with registry
+      - name: 🤖 Install kind with registry
         uses: bakito/kind-with-registry-action@main
         with:
           docker_image_name: batch-job-controller:e2e
 
-      - name: Install helm chart
-        run: |
-          ./testdata/e2e/installChart.sh
+      - name: 🚀 Install helm chart
+        run: ./testdata/e2e/installChart.sh
+
+      - name: ⏳ Wait for a job pod to be executed
+        run: ./testdata/e2e/findExecutedJobPod.sh
+
