@@ -30,7 +30,7 @@ jobs:
         run: ./testdata/e2e/installChart.sh
       - name: ⏳ Wait for a job pod to be executed
         run: ./testdata/e2e/findExecutedJobPod.sh
-      - name: 🧾 Print controller logs
-        run: ./testdata/e2e/printControllerLogs.sh
+      - name: 🧾 Print and check controller logs/events
+        run: ./testdata/e2e/checkAndPrintControllerLogsAndEvents.sh
 
 
