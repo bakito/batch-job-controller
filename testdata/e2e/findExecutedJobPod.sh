@@ -1,6 +1,4 @@
 #!/bin/bash
-
-#!/usr/bin/env bash
 set -euo pipefail
 
 LABEL_SELECTOR='batch-job-controller.bakito.github.com/owner=example-job-controller'
