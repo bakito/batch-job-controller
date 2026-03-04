@@ -82,6 +82,12 @@ rules:
       - update
       - patch
       - delete
+  - verbs:
+      - create
+    apiGroups:
+      - events.k8s.io
+    resources:
+      - events
 
 ---
 # RoleBinding for the new role to the batch-job-controller service account
