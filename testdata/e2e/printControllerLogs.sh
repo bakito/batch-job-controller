@@ -7,6 +7,7 @@ NAMESPACE=e2e-batch
 
 pod="$(kubectl get pod -n "${NAMESPACE}" -l "${LABEL_SELECTOR}" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')"
 
+echo "---- logs (pod/${pod}) ----"
 logs="$(kubectl logs -n "${NAMESPACE}" "${pod}" --all-containers=true)"
 echo -n "${logs}"
 
@@ -16,3 +17,15 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   echo -n "${logs}" >> $GITHUB_STEP_SUMMARY
   echo '```' >> $GITHUB_STEP_SUMMARY
 fi
+
+echo "---- events (namespace/${NAMESPACE}) ----"
+events="$(kubectl get events -n "${NAMESPACE}" --sort-by='.lastTimestamp')"
+echo "${events}"
+
+if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+  echo 'Namespace Events' >> $GITHUB_STEP_SUMMARY
+  echo '```' >> $GITHUB_STEP_SUMMARY
+  echo "${events}" >> $GITHUB_STEP_SUMMARY
+  echo '```' >> $GITHUB_STEP_SUMMARY
+fi
+
