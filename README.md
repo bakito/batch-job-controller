@@ -57,8 +57,8 @@ metrics:
 
 ### pod-template.yaml
 
-The template of the pod to be started for each job. When a pod is created it gets enriched by the controller specific
-configuration. [pkg\job\job.go](pkg\job\job.go)
+The template of the pod to be started for each job. When a pod is created, it gets enriched by the controller-specific
+configuration. [pkg/job/job.go](pkg/job/job.go)
 
 ## Job Pod
 
@@ -66,16 +66,16 @@ The job pod has the following env variables provided by the controller:
 
 ### Environment
 
-| Name | Value |
-| --- | --- |
-| NAMESPACE | The current namespace |
-| NODE_NAME | The name of the node it is running on |
-| EXECUTION_ID | The id of the current job execution |
-| CALLBACK_SERVICE_NAME | The name/host/ip of the callback service to send the report to |
-| CALLBACK_SERVICE_PORT | The port of the callback service to send the report to |
-| CALLBACK_SERVICE_RESULT_URL | The full qualified URL of the result callback service  |
-| CALLBACK_SERVICE_FILE_URL | The full qualified URL of the file callback service, to send files to the controller |
-| CALLBACK_SERVICE_EVENT_URL | The full qualified URL of the event callback service, to create k8s event |
+| Name                        | Value                                                                                |
+|-----------------------------|--------------------------------------------------------------------------------------|
+| NAMESPACE                   | The current namespace                                                                |
+| NODE_NAME                   | The name of the node it is running on                                                |
+| EXECUTION_ID                | The id of the current job execution                                                  |
+| CALLBACK_SERVICE_NAME       | The name/host/ip of the callback service to send the report to                       |
+| CALLBACK_SERVICE_PORT       | The port of the callback service to send the report to                               |
+| CALLBACK_SERVICE_RESULT_URL | The full qualified URL of the result callback service                                |
+| CALLBACK_SERVICE_FILE_URL   | The full qualified URL of the file callback service, to send files to the controller |
+| CALLBACK_SERVICE_EVENT_URL  | The full qualified URL of the event callback service, to create k8s event            |
 
 ### Callback
 
@@ -112,7 +112,7 @@ decimal value and a map where the key is the label name and value is the value t
 }
 ```
 
-Example job script: [helm\batch-job-controller\bin\run.sh](helm\batch-job-controller\bin\run.sh)
+Example job script: [helm/example-batch-job-controller/bin/run.sh](helm/example-batch-job-controller/bin/run.sh)
 
 ### Upload additional files
 

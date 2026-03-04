@@ -22,10 +22,10 @@ lint: tb.golangci-lint
 
 # Run tests
 helm-lint: helm
-	helm lint helm/example-batch-job-controller/ --set routes.hostSuffix=test.com --strict
+	helm lint helm/example-batch-job-controller/ --strict
 
 helm-template: helm-lint
-	helm template helm/example-batch-job-controller/ --debug --set routes.hostSuffix=test.com
+	helm template helm/example-batch-job-controller/ --debug
 
 # Build docker image
 build-docker:

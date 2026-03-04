@@ -7,7 +7,7 @@ spec:
         - /opt/job/run.sh
       image: {{ $.Values.jobPod.image }}
       imagePullPolicy: Always
-      name: openscap-scanner
+      name: test-job
       resources:
         limits:
           cpu: 100m
