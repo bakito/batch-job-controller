@@ -31,8 +31,8 @@ import (
 
 const (
 	reportJSON              = `{ "test": [{ "value": 1.0, "labels": { "label_a": "AAA", "label_b": "BBB" }}] }`
-	eventMessageJSON        = `{ "warning": true, "reason": "TestReason", "message": "test message" }`
-	eventMessageInvalidJSON = `{ "warning": true, "reason": "testReason", "message": "test message" }`
+	eventMessageJSON        = `{ "warning": true, "action": "TestAction", "reason": "TestReason", "message": "test message" }`
+	eventMessageInvalidJSON = `{ "warning": true, "action": "TestAction", "reason": "testReason", "message": "test message" }`
 	eventMessageArgsJSON    = `{ "warning": true, "reason": "TestReason", "message": "test message: %s" ,"args" : ["a1"]}`
 )
 
@@ -288,7 +288,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").Return(mockSink)
-			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "", "test message")
+			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "TestAction", "test message")
 			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
@@ -304,7 +304,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockSink)
-			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "", "test message: %s", "a1")
+			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "N/A", "test message: %s", "a1")
 			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))

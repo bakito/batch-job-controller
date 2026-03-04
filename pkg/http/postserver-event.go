@@ -26,10 +26,15 @@ func (s *PostServer) postEventCallback(ctx *gin.Context, postLog logr.Logger, po
 		return err
 	}
 
+	action := event.Action
+	if action == "" {
+		action = "N/A"
+	}
+
 	if len(event.Args) > 0 {
-		s.EventRecorder.Eventf(pod, pod, event.Type(), event.Reason, "", event.Message, event.args()...)
+		s.EventRecorder.Eventf(pod, pod, event.Type(), event.Reason, action, event.Message, event.args()...)
 	} else {
-		s.EventRecorder.Eventf(pod, pod, event.Type(), event.Reason, "", event.Message)
+		s.EventRecorder.Eventf(pod, pod, event.Type(), event.Reason, action, event.Message)
 	}
 	return nil
 }

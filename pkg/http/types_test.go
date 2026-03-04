@@ -14,6 +14,7 @@ var _ = Describe("types", func() {
 			Waring:  false,
 			Reason:  "AnyReason",
 			Message: "message",
+			Action:  "action",
 		}
 	})
 	Context("Event.Validate", func() {
