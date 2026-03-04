@@ -70,6 +70,18 @@ rules:
       - deploymentconfigs
     verbs:
       - get
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
 
 ---
 # RoleBinding for the new role to the batch-job-controller service account

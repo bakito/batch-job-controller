@@ -3,9 +3,8 @@ set -e
 
 NAMESPACE=e2e-batch
 
-kubectl create ns "${NAMESPACE}" || true
-
 if ! helm upgrade --install e2e-batch helm/example-batch-job-controller \
+  --create-namespace \
   --namespace "${NAMESPACE}" \
   -f testdata/e2e/values-e2e.yaml \
   --rollback-on-failure

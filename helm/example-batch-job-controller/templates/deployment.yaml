@@ -102,10 +102,7 @@ spec:
             - mountPath: /tmp
               name: tmp-data
       dnsPolicy: ClusterFirst
-      nodeSelector:
-        node-group: app
       restartPolicy: Always
-      serviceAccount:  {{ template "batch-job-controller.name" . }}
       serviceAccountName:  {{ template "batch-job-controller.name" . }}
       volumes:
         - name: tmp-data

@@ -25,7 +25,7 @@ deployment:
   # -- Run jobs on startup
   runOnStartup: false
   # -- Enable persistent storage
-  withPersistentVolume: true
+  withPersistentVolume: false
   # -- Storage class name to be used if storage is enabled
   storageClassName: ""
   # -- additional pod labels
