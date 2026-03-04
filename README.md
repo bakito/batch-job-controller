@@ -5,18 +5,62 @@
 
 # Batch Job Controller
 
-The batch job controller allows executing pods on nodes of a cluster, where the number of concurrent running pods can be
-configured. Each pod can report it's results back to the controller to have them exposed as metrics.
+The **Batch Job Controller** is a Kubernetes-native tool designed to execute jobs across multiple nodes in a cluster.
+It provides a flexible way to run diagnostic, maintenance, or data-collection tasks on specific nodes and aggregate the
+results.
+
+Each job is executed as a Pod on a target node. These Pods can report their results back to the controller via a
+callback API.
+The controller then exposes these results as Prometheus metrics and stores any uploaded files or logs for later
+analysis.
+
+## Features
+
+- **Node-based Execution**: Automatically schedules a Pod on every node matching a specific selector.
+- **Cron Scheduling**: Supports standard cron expressions for recurring job executions.
+- **Concurrency Control**: A configurable worker pool limits the number of concurrent job Pods to prevent cluster
+  overload.
+- **Callback API**:
+    - **Metrics**: Pods can send JSON-formatted results that are dynamically converted into Prometheus metrics.
+    - **File Upload**: Pods can upload arbitrary files (e.g., reports, logs, traces) to the controller.
+    - **Kubernetes Events**: Pods can request the controller to create Kubernetes Events on their behalf.
+- **Result Persistence**:
+    - Stores job results and uploaded files in a structured directory format.
+    - Keeps a configurable history of past executions.
+    - Optionally collects and stores logs from job Pods.
+- **Static File Server**: Built-in HTTP server to browse and download execution reports and uploaded files.
+- **Leader Election**: Supports high-availability deployments with multiple controller replicas.
+
+## Installation
+
+### Helm
+
+A sample controller can be installed via Helm.
+As use-cases and configurations differ based on how to set up the controller, this chart should only be used as
+a reference and not used as is in production.
+
+#### OCI Registry
+
+```console
+helm install my-batch-job-controller oci://ghcr.io/bakito/helm-charts/batch-job-controller --version 1.4.9
+```
+
+#### Helm Repository
+
+```console
+helm repo add bakito https://charts.bakito.net
+helm install my-batch-job-controller bakito/batch-job-controller --version 1.4.9
+```
 
 ## Deployment
 
 The controller expects the following environment variables
 
-| Name | Value                                                                                                                                                                                                                                                          |
-| --- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NAMESPACE | The current namespace                                                                                                                                                                                                                                          |
+| Name            | Value                                                                                                                                                                                                                                                          |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NAMESPACE       | The current namespace                                                                                                                                                                                                                                          |
 | CONFIG_MAP_NAME | The name of the configmap to read the config from                                                                                                                                                                                                              |
-| POD_IP | The IP of the controller Pod. If defined, this IP is used for the callback URL of the job pods.(should be injected via [Downward API](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/#the-downward-api)) |
+| POD_IP          | The IP of the controller Pod. If defined, this IP is used for the callback URL of the job pods.(should be injected via [Downward API](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/#the-downward-api)) |
 
 ## Configuration
 
@@ -29,9 +73,9 @@ Controller configuration
 ```yaml
 name: ""                         # name of the controller; will also be used as prefix for the job pods
 jobServiceAccount: ""            # service account to be used for the job pods. If empty the default will be used
-jobImagePullSecrets:             # pull secrets to be used for the job pods for pulling the image
-  - name: secret_name 
-jobNodeSelector: { }             # node selector labels to define in which nodes to run the jobs
+jobImagePullSecrets: # pull secrets to be used for the job pods for pulling the image
+  - name: secret_name
+jobNodeSelector: {}             # node selector labels to define in which nodes to run the jobs
 runOnUnscheduledNodes: true      # if true, jobs are also started on nodes that are unschedulable
 cronExpression: "42 3 * * *"     # the cron expression to trigger the job execution
 reportDirectory: "/var/www"      # directory to store and serve the reports
@@ -41,7 +85,7 @@ runOnStartup: true               # if 'true' the jobs are triggered on startup o
 startupDelay: 10s                # the delay as duration that is used to start the jobs if runOnStartup is enabled. default is '10s'
 callbackServiceName: ""          # name of the controller service
 callbackServicePort: 8090        # port of the controller callback api service
-custom: { }                       # additional properties that can be used in a custom implementation
+custom: {}                       # additional properties that can be used in a custom implementation
 latestMetricsLabel: false        # if 'true' each result metric is also created with executionID='latest'
 leaderElectionResourceLock: ""   # type of leader election resource lock to be used. ('configmapsleases' (default), 'configmaps', 'endpoints', 'leases', 'endpointsleases')
 savePodLog: false                # if enabled, pod logs are saved along other with other job files
@@ -161,3 +205,26 @@ The event URL is by default: **${CALLBACK_SERVICE_EVENT_URL}**
 ### Examples
 
 [test-queries.http](./testdata/test-queries.http)
+
+## Development & Testing
+
+### End-to-End Tests
+
+The end-to-end tests are automated through GitHub Actions but can also be run locally.
+
+#### Local E2E workflow:
+
+1. **Build image**:
+   ```bash
+   docker build -f Dockerfile --build-arg VERSION=e2e-tests -t batch-job-controller:e2e .
+   ```
+
+2. **Setup kind cluster**:
+   Use `kind-with-registry` or a similar tool to load the image into a local cluster.
+
+3. **Run E2E scripts**:
+   The scripts in `testdata/e2e/` are used to execute the tests:
+    - `./testdata/e2e/installChart.sh`: Installs the Helm chart for E2E testing.
+    - `./testdata/e2e/findExecutedJobPod.sh`: Waits for and identifies the executed job pod.
+    - `./testdata/e2e/checkAndPrintControllerLogsAndEvents.sh`: Validates results by checking logs and events.
+
