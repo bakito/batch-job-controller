@@ -6,9 +6,9 @@
 name: example-job-controller
 
 deployment:
-  # --  Controller pod count
+  # -- Controller pod count
   replicas: 1
-  # --  Repository to use
+  # -- Repository to use
   image: ghcr.io/bakito/batch-job-controller
   # -- Overrides the image tag whose default is the chart appVersion.
   imageTag:
@@ -42,12 +42,6 @@ deployment:
     # -- Enable liveness probes
     liveness: true
 
-routes:
-  # -- enable a route to access metrics
-  metrics: true
-  # -- enable a route to access the internal files
-  internal: true
-
 jobPod:
   # -- The image to be uses as job pod
-  image: registry.access.redhat.com/ubi8/ubi
+  image: redhat/ubi10:latest
