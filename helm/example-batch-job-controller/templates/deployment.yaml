@@ -40,7 +40,7 @@ spec:
                   fieldPath: status.podIP
 {{ include "batch-job-controller.deployment-env" . | indent 12 }}
           image: {{ .Values.deployment.image }}:{{- default .Chart.AppVersion .Values.deployment.imageTag }}
-          imagePullPolicy: Always
+          imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
           name: {{ template "batch-job-controller.name" . }}
           ports:
             - containerPort: 8080

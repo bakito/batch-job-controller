@@ -12,11 +12,13 @@ deployment:
   image: ghcr.io/bakito/batch-job-controller
   # -- Overrides the image tag whose default is the chart appVersion.
   imageTag:
+  # -- Overrides the image pull policy.
+  imagePullPolicy: Always
   # -- Cron expression to start the jobs with
   cronExpression: "* * * * *"
   # -- Report directory
   reportDirectory: "/var/www"
-  # -- Define for how many jobs the reports sould be kept
+  # -- Define for how many jobs the reports should be kept
   reportHistory: 10 # number of reports to be used
   # -- The parallel pod pool size
   podPoolSize: 10 # number of pods allowed to run parallel
@@ -47,5 +49,5 @@ routes:
   internal: true
 
 jobPod:
-  # -- The iabe to be uses as job pod
+  # -- The image to be uses as job pod
   image: registry.access.redhat.com/ubi8/ubi
