@@ -10,6 +10,7 @@ import (
 // Event to be sent as k8s event
 type Event struct {
 	Waring  bool     `json:"warning"`
+	Action  string   `json:"action"`
 	Reason  string   `json:"reason" validate:"required,first_char_must_be_uppercase"`
 	Message string   `json:"message,omitempty" validate:"required"`
 	Args    []string `json:"args,omitempty"`
