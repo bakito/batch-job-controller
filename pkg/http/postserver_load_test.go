@@ -98,7 +98,7 @@ var _ = XDescribe("HTTP", func() {
 		mockSink.EXPECT().Info(gm.Any(), "received 1 file").Times(loops)
 
 		var wg sync.WaitGroup
-		for i := 0; i < loops; i++ {
+		for i := range loops {
 			wg.Add(1)
 			time.Sleep(sleep)
 			ii := i

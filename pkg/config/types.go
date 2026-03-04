@@ -35,8 +35,8 @@ type Config struct {
 	Metrics               Metrics                       `json:"metrics"`
 	HealthProbePort       int                           `json:"healthProbePort"`
 	// LatestMetricsLabel if true, each result metric is also created with executionID=latest
-	LatestMetricsLabel bool                   `json:"latestMetricsLabel"`
-	Custom             map[string]interface{} `json:"custom"`
+	LatestMetricsLabel bool           `json:"latestMetricsLabel"`
+	Custom             map[string]any `json:"custom"`
 	// CallbackServiceName if left blank, the pod IP is used for callback
 	CallbackServiceName string `json:"callbackServiceName"`
 	CallbackServicePort int    `json:"callbackServicePort"`

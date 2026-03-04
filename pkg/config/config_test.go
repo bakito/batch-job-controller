@@ -170,9 +170,9 @@ var _ = Describe("Config", func() {
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&unstructured.Unstructured{})).
 					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured, opts ...client.GetOption) error {
-						us.Object["metadata"] = map[string]interface{}{
-							"ownerReferences": []interface{}{
-								map[string]interface{}{
+						us.Object["metadata"] = map[string]any{
+							"ownerReferences": []any{
+								map[string]any{
 									"kind": "Deployment",
 									"name": "deployment-1",
 								},
@@ -182,7 +182,7 @@ var _ = Describe("Config", func() {
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&unstructured.Unstructured{})).
 					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured, opts ...client.GetOption) error {
-						us.Object["metadata"] = map[string]interface{}{
+						us.Object["metadata"] = map[string]any{
 							"name": "deployment-1",
 						}
 						us.Object["kind"] = "Deployment"

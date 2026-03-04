@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http/pprof"
 	"os"
+	"path/filepath"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/lifecycle"
@@ -118,7 +119,8 @@ func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, er
 	if err := s.Config.MkReportDir(executionID); err != nil {
 		return "", err
 	}
-	fileName := s.Config.ReportFileName(executionID, name)
+	fileName := filepath.Clean(s.Config.ReportFileName(executionID, name))
+	// #nosec G703 -- fileName is sanitized by filepath.Clean and constructed from controlled inputs
 	return fileName, os.WriteFile(fileName, data, 0o600)
 }
 

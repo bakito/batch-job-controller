@@ -15,8 +15,8 @@ type Event struct {
 	Args    []string `json:"args,omitempty"`
 }
 
-func (e *Event) args() []interface{} {
-	var args []interface{}
+func (e *Event) args() []any {
+	var args []any
 	for _, a := range e.Args {
 		args = append(args, a)
 	}

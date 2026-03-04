@@ -130,7 +130,7 @@ func findOwner(obj client.Object, namespace string, name string, cl client.Reade
 		if ob, ok := obj.(metav1.Object); ok {
 			for _, or := range ob.GetOwnerReferences() {
 				var us runtime.Unstructured = &unstructured.Unstructured{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"kind":       or.Kind,
 						"apiVersion": or.APIVersion,
 					},

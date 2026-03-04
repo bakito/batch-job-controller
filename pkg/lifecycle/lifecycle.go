@@ -143,7 +143,7 @@ func (c *controller) AllAdded(executionID string) error {
 
 	if len(files) > c.reportHistory {
 		pruneCnt := len(files) - c.reportHistory
-		for i := 0; i < pruneCnt; i++ {
+		for i := range pruneCnt {
 			name := files[i].Name()
 			// delete the execution
 			delete(c.executions, name)

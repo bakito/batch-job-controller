@@ -211,7 +211,7 @@ func (m *Main) addToManager(r manager.Runnable) {
 }
 
 // CustomConfigValue get a custom config value
-func (m *Main) CustomConfigValue(name string) interface{} {
+func (m *Main) CustomConfigValue(name string) any {
 	if v, ok := m.Config.Custom[name]; ok {
 		return v
 	}
