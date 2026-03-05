@@ -16,6 +16,8 @@ func (s *PostServer) postEvent(ctx *gin.Context) {
 	processPostedEvent(ctx, s.Server, s.postEventCallback)
 }
 
+const eventActionNotAvailable = "n/a"
+
 func (s *PostServer) postEventCallback(ctx *gin.Context, postLog logr.Logger, podName string, event *Event) error {
 	pod := &corev1.Pod{}
 	err := s.Client.Get(ctx, client.ObjectKey{Namespace: s.Config.Namespace, Name: podName}, pod)
@@ -28,7 +30,7 @@ func (s *PostServer) postEventCallback(ctx *gin.Context, postLog logr.Logger, po
 
 	action := event.Action
 	if action == "" {
-		action = "N/A"
+		action = eventActionNotAvailable
 	}
 
 	if len(event.Args) > 0 {

@@ -304,7 +304,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockSink)
-			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "N/A", "test message: %s", "a1")
+			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", eventActionNotAvailable, "test message: %s", "a1")
 			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
