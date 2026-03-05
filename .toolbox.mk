@@ -18,6 +18,7 @@ TB_GORELEASER ?= $(TB_LOCALBIN)/goreleaser
 TB_HELM_DOCS ?= $(TB_LOCALBIN)/helm-docs
 TB_MOCKGEN ?= $(TB_LOCALBIN)/mockgen
 TB_SEMVER ?= $(TB_LOCALBIN)/semver
+TB_SYFT ?= $(TB_LOCALBIN)/syft
 
 ## Tool Versions
 TB_GOLANGCI_LINT_VERSION ?= v2.10.1
@@ -28,6 +29,8 @@ TB_HELM_DOCS_VERSION ?= v1.14.2
 TB_MOCKGEN_VERSION ?= v0.6.0
 TB_SEMVER_VERSION ?= v1.1.10
 TB_SEMVER_VERSION_NUM ?= $(call STRIP_V,$(TB_SEMVER_VERSION))
+TB_SYFT_VERSION ?= v1.42.1
+TB_SYFT_VERSION_NUM ?= $(call STRIP_V,$(TB_SYFT_VERSION))
 
 ## Tool Installer
 .PHONY: tb.ginkgo
@@ -54,6 +57,10 @@ tb.mockgen: ## Download mockgen locally if necessary.
 tb.semver: ## Download semver locally if necessary.
 	@test -s $(TB_SEMVER) && $(TB_SEMVER) -version | grep -q $(TB_SEMVER_VERSION_NUM) || \
 		GOBIN=$(TB_LOCALBIN) go install github.com/bakito/semver@$(TB_SEMVER_VERSION)
+.PHONY: tb.syft
+tb.syft: ## Download syft locally if necessary.
+	@test -s $(TB_SYFT) && $(TB_SYFT) --version | grep -q $(TB_SYFT_VERSION_NUM) || \
+		GOBIN=$(TB_LOCALBIN) go install github.com/anchore/syft/cmd/syft@$(TB_SYFT_VERSION)
 
 ## Reset Tools
 .PHONY: tb.reset
@@ -64,7 +71,8 @@ tb.reset:
 		$(TB_GORELEASER) \
 		$(TB_HELM_DOCS) \
 		$(TB_MOCKGEN) \
-		$(TB_SEMVER)
+		$(TB_SEMVER) \
+		$(TB_SYFT)
 
 ## Update Tools
 .PHONY: tb.update
@@ -74,5 +82,6 @@ tb.update: tb.reset
 		github.com/goreleaser/goreleaser/v2?--version \
 		github.com/norwoodj/helm-docs/cmd/helm-docs \
 		go.uber.org/mock/mockgen@github.com/uber/mock \
-		github.com/bakito/semver?-version
+		github.com/bakito/semver?-version \
+		github.com/anchore/syft/cmd/syft?--version
 ## toolbox - end
