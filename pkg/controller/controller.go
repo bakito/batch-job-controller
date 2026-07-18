@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
@@ -18,25 +17,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 )
 
 const (
-	// LabelOwner owner label
+	// LabelOwner owner label.
 	LabelOwner = "batch-job-controller.bakito.github.com/owner"
-	// LabelExecutionID execution id label
+	// LabelExecutionID execution id label.
 	LabelExecutionID = "batch-job-controller.bakito.github.com/execution-id"
 )
 
 var clog = ctrl.Log.WithName("pod-controller")
 
-// PodReconciler reconciler
+// PodReconciler reconciler.
 type PodReconciler struct {
 	client.Client
 	coreClient corev1client.CoreV1Interface
 	Controller lifecycle.Controller
 }
 
-// SetupWithManager setup
+// SetupWithManager setup.
 func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
@@ -50,7 +51,7 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Reconcile reconcile pods
+// Reconcile reconcile pods.
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	podLog := log.FromContext(ctx)
 	pod := &corev1.Pod{}
@@ -75,7 +76,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			r.savePodLogs(ctx, pod, executionID)
 		}
 		if err := r.Controller.PodTerminated(executionID, node, pod.Status.Phase); err != nil {
-			if !errors.Is(err, &lifecycle.ExecutionIDNotFound{}) {
+			if !errors.Is(err, &lifecycle.ExecutionIDNotFoundError{}) {
 				podLog.Error(err, "unexpected error")
 				return reconcile.Result{}, err
 			}
@@ -100,7 +101,7 @@ func (r *PodReconciler) savePodLogs(ctx context.Context, pod *corev1.Pod, execut
 	}
 }
 
-func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name string, containerName string) (string, error) {
+func (r *PodReconciler) getPodLog(ctx context.Context, namespace, name, containerName string) (string, error) {
 	podLogOpts := corev1.PodLogOptions{
 		Container: containerName,
 	}
@@ -120,7 +121,7 @@ func (r *PodReconciler) getPodLog(ctx context.Context, namespace string, name st
 	return str, nil
 }
 
-func (r *PodReconciler) savePodLog(node string, executionID string, name string, data string) error {
+func (r *PodReconciler) savePodLog(node, executionID, name, data string) error {
 	if err := r.Controller.Config().MkReportDir(executionID); err != nil {
 		return err
 	}

@@ -3,8 +3,10 @@ package metrics
 import (
 	"testing"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/google/uuid"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

@@ -7,20 +7,22 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
 )
 
 const (
 	envHealthCheckTimeout = "SELF_HEALTH_CHECK_CONNECTION_TIMEOUT"
 )
 
-// StaticFileServer prepare the static file server
+// StaticFileServer prepare the static file server.
 func StaticFileServer(port int, cfg *config.Config) manager.Runnable {
 	return &Server{
 		Port:    port,
@@ -31,7 +33,7 @@ func StaticFileServer(port int, cfg *config.Config) manager.Runnable {
 	}
 }
 
-// Server default server
+// Server default server.
 type Server struct {
 	Port    int
 	Kind    string
@@ -40,7 +42,7 @@ type Server struct {
 	Config  *config.Config
 }
 
-// Start the server
+// Start the server.
 func (s *Server) Start(ctx context.Context) error {
 	s.Log.Info("starting http server", "port", s.Port, "type", s.Kind)
 
@@ -71,17 +73,17 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-// Name the name of the server
-func (s *Server) Name() string {
+// Name the name of the server.
+func (*Server) Name() string {
 	return "file-server"
 }
 
-// ReadyzCheck check if server is running
+// ReadyzCheck check if server is running.
 func (s *Server) ReadyzCheck() healthz.Checker {
 	return s.HealthzCheck()
 }
 
-// HealthzCheck check if server is running
+// HealthzCheck check if server is running.
 func (s *Server) HealthzCheck() healthz.Checker {
 	timeout := time.Millisecond * 200
 	if to, ok := os.LookupEnv(envHealthCheckTimeout); ok {
@@ -92,8 +94,9 @@ func (s *Server) HealthzCheck() healthz.Checker {
 				Error(err, "could not parse self health check connection timeout; using default")
 		}
 	}
-	return func(req *http.Request) error {
-		conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", s.Port), timeout)
+	return func(*http.Request) error {
+		dialer := &net.Dialer{Timeout: timeout}
+		conn, err := dialer.DialContext(context.Background(), "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(s.Port)))
 		if err != nil {
 			return err
 		}

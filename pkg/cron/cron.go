@@ -5,9 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/job"
-	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/robfig/cron/v3"
 	corev1 "k8s.io/api/core/v1"
@@ -15,11 +12,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/job"
+	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 )
 
 var log = ctrl.Log.WithName("cron")
 
-// Job creates a new Job runner instance
+// Job creates a new Job runner instance.
 func Job(extender ...job.CustomPodEnv) manager.Runnable {
 	return &cronJob{
 		extender: extender,
@@ -34,27 +35,27 @@ type cronJob struct {
 	extender   []job.CustomPodEnv
 }
 
-// InjectConfig inject the config
+// InjectConfig inject the config.
 func (j *cronJob) InjectConfig(cfg *config.Config) {
 	j.cfg = cfg
 }
 
-// InjectController inject the controller
+// InjectController inject the controller.
 func (j *cronJob) InjectController(c lifecycle.Controller) {
 	j.controller = c
 }
 
-// InjectClient inject the client
+// InjectClient inject the client.
 func (j *cronJob) InjectClient(c client.Client) {
 	j.client = c
 }
 
-// NeedLeaderElection may only start if leader is elected
-func (j *cronJob) NeedLeaderElection() bool {
+// NeedLeaderElection may only start if leader is elected.
+func (*cronJob) NeedLeaderElection() bool {
 	return true
 }
 
-// Start implement manager.Runnable
+// Start implement manager.Runnable.
 func (j *cronJob) Start(_ context.Context) error {
 	log.WithValues("expression", j.cfg.CronExpression).Info("starting cron")
 	c := cron.New()
@@ -183,7 +184,7 @@ func (j *podJob) Node() string {
 	return j.nodeName
 }
 
-// CreatePod create a worker pod
+// CreatePod create a worker pod.
 func (j *podJob) CreatePod() {
 	log.Info("create pod", "node", j.nodeName)
 	err := j.client.Create(context.TODO(), j.pod)

@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/google/uuid"
+
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/pkg/metrics"
-	"github.com/google/uuid"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -50,7 +52,9 @@ var _ = Describe("lifecycle", func() {
 		var c *controller
 		BeforeEach(func() {
 			cfg.PodPoolSize = 0
-			c = NewController(cfg, pc).(*controller)
+			var ok bool
+			c, ok = NewController(cfg, pc).(*controller)
+			Ω(ok).Should(BeTrue())
 		})
 		AfterEach(func() {
 			_ = os.RemoveAll(c.reportDir)
@@ -82,8 +86,8 @@ var _ = Describe("lifecycle", func() {
 	})
 	Context("ExecutionIDNotFound", func() {
 		It("error should match", func() {
-			myErr := &ExecutionIDNotFound{}
-			Ω(errors.Is(myErr, &ExecutionIDNotFound{})).Should(BeTrue())
+			myErr := &ExecutionIDNotFoundError{}
+			Ω(errors.Is(myErr, &ExecutionIDNotFoundError{})).Should(BeTrue())
 			Ω(errors.As(myErr, &myErr)).Should(BeTrue())
 		})
 	})

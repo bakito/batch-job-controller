@@ -17,7 +17,13 @@ func (s *PostServer) postFile(ctx *gin.Context) {
 	processPostedFiles(ctx, s.Server, s.saveFormFilesCallback, s.saveBodyFileCallback)
 }
 
-func (s *PostServer) saveFormFilesCallback(ctx *gin.Context, postLog logr.Logger, executionID string, node string, file *multipart.FileHeader) error {
+func (s *PostServer) saveFormFilesCallback(
+	ctx *gin.Context,
+	postLog logr.Logger,
+	executionID string,
+	node string,
+	file *multipart.FileHeader,
+) error {
 	if err := s.Config.MkReportDir(executionID); err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		postLog.Error(err, "error creating upload directory")
@@ -33,7 +39,14 @@ func (s *PostServer) saveFormFilesCallback(ctx *gin.Context, postLog logr.Logger
 	return nil
 }
 
-func (s *PostServer) saveBodyFileCallback(ctx *gin.Context, postLog logr.Logger, executionID string, node string, fileName string, body []byte) error {
+func (s *PostServer) saveBodyFileCallback(
+	ctx *gin.Context,
+	postLog logr.Logger,
+	executionID string,
+	node string,
+	fileName string,
+	body []byte,
+) error {
 	fileName, err := s.SaveFile(executionID, fmt.Sprintf("%s-%s", node, fileName), body)
 	postLog = postLog.WithValues(
 		"name", filepath.Base(fileName),
@@ -65,7 +78,6 @@ func processPostedFiles(ctx *gin.Context, s *Server, ffCallback saveFormFiles, b
 		var names []string
 		for _, files := range form.File {
 			for _, file := range files {
-
 				if ffCallback(ctx, postLog, executionID, node, file) != nil {
 					return
 				}

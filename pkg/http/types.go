@@ -7,11 +7,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// Event to be sent as k8s event
+// Event to be sent as k8s event.
 type Event struct {
 	Waring  bool     `json:"warning"`
 	Action  string   `json:"action"`
-	Reason  string   `json:"reason" validate:"required,first_char_must_be_uppercase"`
+	Reason  string   `json:"reason"            validate:"required,first_char_must_be_uppercase"`
 	Message string   `json:"message,omitempty" validate:"required"`
 	Args    []string `json:"args,omitempty"`
 }
@@ -24,14 +24,14 @@ func (e *Event) args() []any {
 	return args
 }
 
-// Validate the event
+// Validate the event.
 func (e *Event) Validate() error {
 	validate := validator.New()
 	_ = validate.RegisterValidation("first_char_must_be_uppercase", firstIsUpper)
 	return validate.Struct(e)
 }
 
-// Type get the warning type
+// Type get the warning type.
 func (e *Event) Type() string {
 	if e.Waring {
 		return corev1.EventTypeWarning

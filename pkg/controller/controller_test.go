@@ -2,20 +2,13 @@ package controller
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
-	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
-	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
-	"github.com/bakito/batch-job-controller/pkg/test"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	gm "go.uber.org/mock/gomock"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +20,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	mockclient "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mocklifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
+	mocklogr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
+	"github.com/bakito/batch-job-controller/pkg/test"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Controller", func() {
@@ -66,9 +68,9 @@ var _ = Describe("Controller", func() {
 		var (
 			r              *PodReconciler
 			mockCtrl       *gm.Controller // gomock struct
-			mockController *mock_lifecycle.MockController
-			mockClient     *mock_client.MockClient
-			mockSink       *mock_logr.MockLogSink
+			mockController *mocklifecycle.MockController
+			mockClient     *mockclient.MockClient
+			mockSink       *mocklogr.MockLogSink
 			ctx            context.Context
 			coreClient     corev1client.CoreV1Interface
 			cfg            config.Config
@@ -77,13 +79,13 @@ var _ = Describe("Controller", func() {
 		BeforeEach(func() {
 			executionID = uuid.NewString()
 			mockCtrl = gm.NewController(GinkgoT())
-			mockController = mock_lifecycle.NewMockController(mockCtrl)
-			mockClient = mock_client.NewMockClient(mockCtrl)
-			mockSink = mock_logr.NewMockLogSink(mockCtrl)
+			mockController = mocklifecycle.NewMockController(mockCtrl)
+			mockClient = mockclient.NewMockClient(mockCtrl)
+			mockSink = mocklogr.NewMockLogSink(mockCtrl)
 
 			mockSink.EXPECT().Init(gm.Any())
 			mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
-			ctx = log.IntoContext(context.TODO(), logr.New(mockSink))
+			ctx = log.IntoContext(context.TODO(), logr.New(mockSink)) //nolint:fatcontext // need to assign the context here
 
 			coreClient = fake.NewClientset().CoreV1()
 
@@ -104,7 +106,9 @@ var _ = Describe("Controller", func() {
 		})
 		It("should not find an entry", func() {
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
-			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: ""}, ""))
+			mockClient.EXPECT().
+				Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
+				Return(k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: ""}, ""))
 
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -114,7 +118,7 @@ var _ = Describe("Controller", func() {
 		It("should return an error", func() {
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockSink.EXPECT().Error(gm.Any(), gm.Any())
-			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(fmt.Errorf(""))
+			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).Return(errors.New(""))
 
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).Should(HaveOccurred())
@@ -128,7 +132,7 @@ var _ = Describe("Controller", func() {
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink).AnyTimes()
 			mockSink.EXPECT().Info(gm.Any(), gm.Any(), gm.Any(), gm.Any()).AnyTimes()
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+				Do(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 					pod.ObjectMeta = metav1.ObjectMeta{Labels: map[string]string{LabelExecutionID: executionID}}
 					pod.Status = corev1.PodStatus{
 						Phase: corev1.PodSucceeded,
@@ -155,7 +159,7 @@ var _ = Describe("Controller", func() {
 			mockController.EXPECT().Config().Return(cfg)
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+				Do(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 					pod.Status = corev1.PodStatus{
 						Phase: corev1.PodFailed,
 					}
@@ -173,13 +177,13 @@ var _ = Describe("Controller", func() {
 			mockSink.EXPECT().WithValues(gm.Any()).Return(mockSink)
 			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 			mockClient.EXPECT().Get(gm.Any(), gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-				Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+				Do(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 					pod.Status = corev1.PodStatus{
 						Phase: corev1.PodSucceeded,
 					}
 					return nil
 				})
-			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(fmt.Errorf("error"))
+			mockController.EXPECT().PodTerminated(gm.Any(), gm.Any(), corev1.PodSucceeded).Return(errors.New("error"))
 
 			result, err := r.Reconcile(ctx, ctrl.Request{})
 			Ω(err).Should(HaveOccurred())

@@ -11,24 +11,26 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
-	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
-	"github.com/bakito/batch-job-controller/pkg/test"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	gm "go.uber.org/mock/gomock"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	mocklifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
+	mocklogr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
+	"github.com/bakito/batch-job-controller/pkg/test"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	gm "go.uber.org/mock/gomock"
 )
 
-// disable by default
+// disable by default.
 var _ = XDescribe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
-		mockSink       *mock_logr.MockLogSink
-		mockController *mock_lifecycle.MockController
+		mockSink       *mocklogr.MockLogSink
+		mockController *mocklifecycle.MockController
 		executionID    string
 		node           string
 
@@ -42,8 +44,8 @@ var _ = XDescribe("HTTP", func() {
 	BeforeEach(func() {
 		gin.SetMode(gin.ReleaseMode)
 		mockCtrl = gm.NewController(GinkgoT())
-		mockSink = mock_logr.NewMockLogSink(mockCtrl)
-		mockController = mock_lifecycle.NewMockController(mockCtrl)
+		mockSink = mocklogr.NewMockLogSink(mockCtrl)
+		mockController = mocklifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
 		tmp, err := test.TempDir(executionID)
@@ -85,7 +87,7 @@ var _ = XDescribe("HTTP", func() {
 		sleep := 2 * time.Millisecond
 		loops := 200
 
-		cmd := exec.Command("dd", "if=/dev/urandom", fmt.Sprintf("of=%s", file), "bs=1M", fmt.Sprintf("count=%d", fileSizeMB)) // #nosec G204:
+		cmd := exec.Command("dd", "if=/dev/urandom", "of="+file, "bs=1M", fmt.Sprintf("count=%d", fileSizeMB)) // #nosec G204:
 		_, err := cmd.Output()
 		Ω(err).ShouldNot(HaveOccurred())
 
@@ -105,10 +107,10 @@ var _ = XDescribe("HTTP", func() {
 			go func() {
 				defer wg.Done()
 				defer GinkgoRecover()
-				req, err := http.NewRequest("POST", path, bytes.NewBuffer(data))
+				req, err := http.NewRequest(http.MethodPost, path, bytes.NewBuffer(data))
 				Ω(err).ShouldNot(HaveOccurred())
 
-				req.Header.Add("content-type", "application/json")
+				req.Header.Add("Content-Type", "application/json")
 				req.Header.Add("Content-Disposition", fmt.Sprintf(`attachment;filename="%d.txt"`, ii))
 				router.ServeHTTP(rr, req)
 			}()

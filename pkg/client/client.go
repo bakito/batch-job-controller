@@ -5,10 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-resty/resty/v2"
+
 	"github.com/bakito/batch-job-controller/pkg/http"
 	"github.com/bakito/batch-job-controller/pkg/job"
 	"github.com/bakito/batch-job-controller/pkg/metrics"
-	"github.com/go-resty/resty/v2"
 )
 
 type Client interface {
@@ -18,7 +19,7 @@ type Client interface {
 	PostEvent(isWaring bool, reason string, message string, args ...string) error
 }
 
-// Default get a default client with urls from env variables
+// Default get a default client with urls from env variables.
 func Default(retryCount int) Client {
 	return New(
 		os.Getenv(job.EnvCallbackServiceResultURL),
@@ -28,8 +29,20 @@ func Default(retryCount int) Client {
 	)
 }
 
-// New create a new client
-func New(resultURL string, fileURL string, eventURL string, retryCount int) Client {
+type client struct {
+	resultURL string
+	fileURL   string
+	eventURL  string
+	client    *resty.Client
+}
+
+type httpError struct {
+	message string
+	status  string
+}
+
+// New create a new client.
+func New(resultURL, fileURL, eventURL string, retryCount int) Client {
 	return &client{
 		resultURL: resultURL,
 		fileURL:   fileURL,
@@ -42,7 +55,7 @@ func (c client) SendResult(results *metrics.Results) error {
 	return handleResponse(c.client.R().SetBody(results).SetContentLength(true).Post(c.resultURL))
 }
 
-func (c client) PostEvent(isWaring bool, reason string, message string, args ...string) error {
+func (c client) PostEvent(isWaring bool, reason, message string, args ...string) error {
 	return handleResponse(c.client.R().SetBody(&http.Event{
 		Waring:  isWaring,
 		Reason:  reason,
@@ -52,7 +65,7 @@ func (c client) PostEvent(isWaring bool, reason string, message string, args ...
 }
 
 func (c client) SendAsFile(name string, data []byte, contentType string) error {
-	p := c.client.R().SetHeader("Content-Disposition", fmt.Sprintf(`attachment;filename="%s"`, name))
+	p := c.client.R().SetHeader("Content-Disposition", fmt.Sprintf("attachment;filename=%q", name))
 	if contentType != "" {
 		p = p.SetHeader("Content-Type", contentType)
 	}
@@ -79,18 +92,6 @@ func (c client) SendFiles(filePaths ...string) error {
 		err = &httpError{status: resp.Status(), message: resp.String()}
 	}
 	return err
-}
-
-type client struct {
-	resultURL string
-	fileURL   string
-	eventURL  string
-	client    *resty.Client
-}
-
-type httpError struct {
-	message string
-	status  string
 }
 
 func (h httpError) Error() string {

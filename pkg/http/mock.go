@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"mime/multipart"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 )
 
-// MockAPIServer prepare the mock api server
+// MockAPIServer prepare the mock api server.
 func MockAPIServer(port int) manager.Runnable {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -48,7 +49,7 @@ type mockServer struct {
 
 func (s *mockServer) postResult(ctx *gin.Context) {
 	processPostResult(ctx, s.Server,
-		func(ctx *gin.Context, postLog logr.Logger, results *metrics.Results, node string, executionID string, body []byte,
+		func(*gin.Context, logr.Logger, *metrics.Results, string, string, []byte,
 		) error {
 			return nil
 		},
@@ -57,10 +58,10 @@ func (s *mockServer) postResult(ctx *gin.Context) {
 
 func (s *mockServer) postFile(ctx *gin.Context) {
 	processPostedFiles(ctx, s.Server,
-		func(ctx *gin.Context, postLog logr.Logger, executionID string, node string, file *multipart.FileHeader) error {
+		func(*gin.Context, logr.Logger, string, string, *multipart.FileHeader) error {
 			return nil
 		},
-		func(ctx *gin.Context, postLog logr.Logger, executionID string, node string, fileName string, body []byte) error {
+		func(*gin.Context, logr.Logger, string, string, string, []byte) error {
 			return nil
 		},
 	)
@@ -68,7 +69,7 @@ func (s *mockServer) postFile(ctx *gin.Context) {
 
 func (s *mockServer) postEvent(ctx *gin.Context) {
 	processPostedEvent(ctx, s.Server,
-		func(ctx *gin.Context, postLog logr.Logger, podName string, event *Event) error {
+		func(*gin.Context, logr.Logger, string, *Event) error {
 			return nil
 		},
 	)

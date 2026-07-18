@@ -2,16 +2,16 @@ package lifecycle
 
 import "errors"
 
-// ExecutionIDNotFound custom error
-type ExecutionIDNotFound struct {
+// ExecutionIDNotFoundError custom error.
+type ExecutionIDNotFoundError struct {
 	Err error
 }
 
-func (e ExecutionIDNotFound) Error() string {
+func (e ExecutionIDNotFoundError) Error() string {
 	return e.Err.Error()
 }
 
-func (e ExecutionIDNotFound) Is(err error) bool {
-	e2 := &ExecutionIDNotFound{}
+func (ExecutionIDNotFoundError) Is(err error) bool {
+	e2 := &ExecutionIDNotFoundError{}
 	return errors.As(err, &e2)
 }

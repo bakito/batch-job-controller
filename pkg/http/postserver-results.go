@@ -3,13 +3,13 @@ package http
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"path/filepath"
 
-	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 )
 
 func (s *PostServer) postResult(ctx *gin.Context) {
@@ -23,7 +23,7 @@ func (s *PostServer) postResultCallback(ctx *gin.Context,
 	executionID string,
 	body []byte,
 ) error {
-	fileName, err := s.SaveFile(executionID, fmt.Sprintf("%s.json", node), body)
+	fileName, err := s.SaveFile(executionID, node+".json", body)
 	postLog = postLog.WithValues(
 		"name", filepath.Base(fileName),
 		"path", fileName,

@@ -1,26 +1,28 @@
 package lifecycle
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/metrics"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
 )
 
 var log = ctrl.Log.WithName("lifecycle")
 
-// NewController get a new controller
+// NewController get a new controller.
 func NewController(cfg *config.Config, prom *metrics.Collector) Controller {
 	return &controller{
 		executions:    make(map[string]*execution),
@@ -34,7 +36,7 @@ func NewController(cfg *config.Config, prom *metrics.Collector) Controller {
 	}
 }
 
-// Controller interface
+// Controller interface.
 type Controller interface {
 	NewExecution(nbrOrJobs int) string
 	AllAdded(executionID string) error
@@ -59,10 +61,17 @@ type controller struct {
 	progressStep  float64
 }
 
-// verify interface is implemented
+type execution struct {
+	sync.Map
+	id         string
+	jobChan    chan Job
+	controller *controller
+}
+
+// verify interface is implemented.
 var _ Controller = &controller{}
 
-// Config get the config
+// Config get the config.
 func (c *controller) Config() config.Config {
 	return c.config
 }
@@ -75,7 +84,7 @@ func (c *controller) addProgress(p uint64) {
 	atomic.AddUint64(&c.progress, p)
 }
 
-// NewExecution setup a new execution
+// NewExecution setup a new execution.
 func (c *controller) NewExecution(jobs int) string {
 	//                       yyyyMMddHHmm
 	id := time.Now().Format("200601021504")
@@ -123,7 +132,7 @@ func (c *controller) NewExecution(jobs int) string {
 	return id
 }
 
-// AllAdded start the processing
+// AllAdded start the processing.
 func (c *controller) AllAdded(executionID string) error {
 	e, err := c.forID(executionID)
 	if err != nil {
@@ -135,10 +144,17 @@ func (c *controller) AllAdded(executionID string) error {
 		c.log.WithValues("dir ", c.reportDir).Error(err, "could not list report dir files")
 		return err
 	}
-	sort.Slice(files, func(i, j int) bool {
-		ii, _ := files[i].Info()
-		ji, _ := files[j].Info()
-		return ii.ModTime().Before(ji.ModTime())
+
+	slices.SortFunc(files, func(i, j os.DirEntry) int {
+		ii, _ := i.Info()
+		ji, _ := j.Info()
+		if ii.ModTime().Before(ji.ModTime()) {
+			return -1
+		}
+		if ii.ModTime().After(ji.ModTime()) {
+			return 1
+		}
+		return 0
 	})
 
 	if len(files) > c.reportHistory {
@@ -184,7 +200,7 @@ func (e *execution) worker(id int) {
 	}
 }
 
-// AddPod add a new pod
+// AddPod add a new pod.
 func (c *controller) AddPod(job Job) error {
 	e, err := c.forID(job.ID())
 	if err != nil {
@@ -198,7 +214,7 @@ func (c *controller) AddPod(job Job) error {
 	return nil
 }
 
-// PodTerminated pod was terminated
+// PodTerminated pod was terminated.
 func (c *controller) PodTerminated(executionID, node string, phase corev1.PodPhase) error {
 	p, err := c.podForID(executionID, node)
 	if err != nil {
@@ -222,7 +238,6 @@ func (c *controller) PodTerminated(executionID, node string, phase corev1.PodPha
 
 	// if not successful or not report received report an error
 	if phase != corev1.PodSucceeded || p.reportReceived == nil {
-
 		msg := "pod was not successful"
 		if p.reportReceived == nil {
 			msg = "did not receive report"
@@ -236,7 +251,7 @@ func (c *controller) PodTerminated(executionID, node string, phase corev1.PodPha
 	return nil
 }
 
-// ReportReceived report was received
+// ReportReceived report was received.
 func (c *controller) ReportReceived(executionID, node string, processingError error, results metrics.Results) {
 	for k := range results {
 		for _, r := range results[k] {
@@ -260,7 +275,7 @@ func (c *controller) ReportReceived(executionID, node string, processingError er
 	p.status = "ReportReceived"
 }
 
-func (c *controller) Has(node string, executionID string) bool {
+func (c *controller) Has(node, executionID string) bool {
 	if _, ok := c.nodes[node]; !ok {
 		return false
 	}
@@ -271,7 +286,7 @@ func (c *controller) Has(node string, executionID string) bool {
 func (c *controller) forID(id string) (*execution, error) {
 	e, ok := c.executions[id]
 	if !ok {
-		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("execution with id: %q not found", id)}
+		return nil, &ExecutionIDNotFoundError{Err: fmt.Errorf("execution with id: %q not found", id)}
 	}
 	return e, nil
 }
@@ -285,19 +300,16 @@ func (c *controller) podForID(id, node string) (*pod, error) {
 	return e.pod(node)
 }
 
-type execution struct {
-	sync.Map
-	id         string
-	jobChan    chan Job
-	controller *controller
-}
-
 func (e *execution) pod(node string) (*pod, error) {
 	p, ok := e.Load(node)
 	if !ok {
-		return nil, &ExecutionIDNotFound{Err: fmt.Errorf("pod for node: %q is not registered", node)}
+		return nil, &ExecutionIDNotFoundError{Err: fmt.Errorf("pod for node: %q is not registered", node)}
 	}
-	return p.(*pod), nil
+	pod, ok := p.(*pod)
+	if !ok {
+		return nil, errors.New("pod is not of type *pod")
+	}
+	return pod, nil
 }
 
 type pod struct {
@@ -308,7 +320,7 @@ type pod struct {
 	status         string
 }
 
-// Job interface
+// Job interface.
 type Job interface {
 	CreatePod()
 	ID() string

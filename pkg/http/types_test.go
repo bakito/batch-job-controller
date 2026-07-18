@@ -1,10 +1,12 @@
 package http_test
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/bakito/batch-job-controller/pkg/http"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 )
 
 var _ = Describe("types", func() {
@@ -32,7 +34,7 @@ var _ = Describe("types", func() {
 			err := event.Validate()
 			Ω(err).Should(HaveOccurred())
 		})
-		It("should fail with with message empty", func() {
+		It("should fail with message empty", func() {
 			event.Message = ""
 			err := event.Validate()
 			Ω(err).Should(HaveOccurred())

@@ -3,16 +3,18 @@ package metrics
 import (
 	"fmt"
 	"math/rand"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+
 	"github.com/bakito/batch-job-controller/pkg/config"
 	"github.com/bakito/batch-job-controller/version"
-	"github.com/google/uuid"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 var _ = Describe("metrics", func() {
@@ -167,7 +169,7 @@ func checkMissingMetric(collector *Collector, name string) {
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func checkMetric(collector *Collector, help string, name string, labels map[string]string, value string) {
+func checkMetric(collector *Collector, help, name string, labels map[string]string, value string) {
 	l := ""
 	if len(labels) > 0 {
 		var keys []string
@@ -175,11 +177,11 @@ func checkMetric(collector *Collector, help string, name string, labels map[stri
 			keys = append(keys, k)
 		}
 
-		sort.Strings(keys)
+		slices.Sort(keys)
 
 		var labelValues []string
 		for _, k := range keys {
-			labelValues = append(labelValues, fmt.Sprintf(`%s="%s"`, k, labels[k]))
+			labelValues = append(labelValues, fmt.Sprintf("%s=%q", k, labels[k]))
 		}
 		l = fmt.Sprintf("{%s}", strings.Join(labelValues, ","))
 	}
@@ -195,7 +197,7 @@ func checkMetric(collector *Collector, help string, name string, labels map[stri
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz_")
 
-// puuid returns a prom valid uuid
+// puuid returns a prom valid uuid.
 func puuid() string {
 	b := make([]rune, 10)
 	for i := range b {

@@ -6,14 +6,6 @@ import (
 	"reflect"
 	"strconv"
 
-	bjcc "github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/controller"
-	"github.com/bakito/batch-job-controller/pkg/cron"
-	"github.com/bakito/batch-job-controller/pkg/inject"
-	"github.com/bakito/batch-job-controller/pkg/job"
-	"github.com/bakito/batch-job-controller/pkg/lifecycle"
-	"github.com/bakito/batch-job-controller/pkg/metrics"
-	"github.com/bakito/batch-job-controller/version"
 	"github.com/go-logr/zapr"
 	zap2 "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -28,10 +20,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	bjcc "github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/controller"
+	"github.com/bakito/batch-job-controller/pkg/cron"
+	"github.com/bakito/batch-job-controller/pkg/inject"
+	"github.com/bakito/batch-job-controller/pkg/job"
+	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	"github.com/bakito/batch-job-controller/pkg/metrics"
+	"github.com/bakito/batch-job-controller/version"
 )
 
 const (
-	// EnvNamespace namespace env variable name
+	// EnvNamespace namespace env variable name.
 	EnvNamespace = "NAMESPACE"
 )
 
@@ -41,22 +42,30 @@ var (
 	namespace string
 )
 
+// Main struct.
+type Main struct {
+	Config        *bjcc.Config
+	Controller    lifecycle.Controller
+	Manager       manager.Manager
+	eventRecorder events.EventRecorder
+}
+
 func init() {
 	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(appsv1.AddToScheme(scheme))
 }
 
-// Setup setup main
+// Setup main.
 func Setup() *Main {
 	SetupLogger(true, true)
 
 	// read env variables
-	if value, exists := os.LookupEnv(EnvNamespace); exists {
-		namespace = value
-	} else {
+	value, exists := os.LookupEnv(EnvNamespace)
+	if !exists {
 		setupLog.Error(nil, "missing environment variable", "name", EnvNamespace)
 		os.Exit(1)
 	}
+	namespace = value
 
 	config := ctrl.GetConfigOrDie()
 
@@ -118,7 +127,7 @@ func Setup() *Main {
 	}
 }
 
-func SetupLogger(json bool, isoTime bool) {
+func SetupLogger(json, isoTime bool) {
 	o := func(o *zap.Options) {
 		o.DestWriter = os.Stderr
 		o.Development = bjcc.IsDevMode()
@@ -137,13 +146,12 @@ func SetupLogger(json bool, isoTime bool) {
 	klog.SetLogger(ctrl.Log)
 }
 
-// Start start main
+// Start start main.
 func (m *Main) Start(runnables ...manager.Runnable) {
 	var envExtender []job.CustomPodEnv
 
 	// setup runnables
 	for _, r := range runnables {
-
 		m.addToManager(r)
 
 		if e, ok := r.(job.CustomPodEnv); ok {
@@ -210,7 +218,7 @@ func (m *Main) addToManager(r manager.Runnable) {
 	_ = m.Manager.Add(r)
 }
 
-// CustomConfigValue get a custom config value
+// CustomConfigValue get a custom config value.
 func (m *Main) CustomConfigValue(name string) any {
 	if v, ok := m.Config.Custom[name]; ok {
 		return v
@@ -220,7 +228,7 @@ func (m *Main) CustomConfigValue(name string) any {
 	return nil
 }
 
-// CustomConfigString get a custom config value string
+// CustomConfigString get a custom config value string.
 func (m *Main) CustomConfigString(name string) string {
 	v := m.CustomConfigValue(name)
 	if s, ok := v.(string); ok {
@@ -229,12 +237,4 @@ func (m *Main) CustomConfigString(name string) string {
 	setupLog.Error(fmt.Errorf("custom config value %q must be a string", name), "wrong custom config value type")
 	os.Exit(1)
 	return ""
-}
-
-// Main struct
-type Main struct {
-	Config        *bjcc.Config
-	Controller    lifecycle.Controller
-	Manager       manager.Manager
-	eventRecorder events.EventRecorder
 }

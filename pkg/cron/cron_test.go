@@ -2,40 +2,42 @@ package cron
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/job"
-	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
-	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
-	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	gm "go.uber.org/mock/gomock"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/job"
+	mockclient "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mocklifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
+	mocklogr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Cron", func() {
 	var (
 		cj             *cronJob
 		mockCtrl       *gm.Controller // gomock struct
-		mockClient     *mock_client.MockClient
-		mockController *mock_lifecycle.MockController
-		mockSink       *mock_logr.MockLogSink
+		mockClient     *mockclient.MockClient
+		mockController *mocklifecycle.MockController
+		mockSink       *mocklogr.MockLogSink
 		namespace      string
 		configName     string
 		id             string
 	)
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
-		mockClient = mock_client.NewMockClient(mockCtrl)
-		mockController = mock_lifecycle.NewMockController(mockCtrl)
-		mockSink = mock_logr.NewMockLogSink(mockCtrl)
+		mockClient = mockclient.NewMockClient(mockCtrl)
+		mockController = mocklifecycle.NewMockController(mockCtrl)
+		mockSink = mocklogr.NewMockLogSink(mockCtrl)
 		namespace = uuid.New().String()
 		configName = uuid.New().String()
 		id = uuid.New().String()
@@ -46,7 +48,9 @@ var _ = Describe("Cron", func() {
 		mockSink.EXPECT().Init(gm.Any())
 		mockSink.EXPECT().Enabled(gm.Any()).AnyTimes().Return(true)
 		log = logr.New(mockSink)
-		cj = Job().(*cronJob)
+		var ok bool
+		cj, ok = Job().(*cronJob)
+		Ω(ok).Should(BeTrue())
 		cj.InjectController(mockController)
 		cj.InjectConfig(cfg)
 		cj.InjectClient(mockClient)
@@ -59,7 +63,8 @@ var _ = Describe("Cron", func() {
 	})
 	Context("deleteAll", func() {
 		It("should delete all", func() {
-			mockClient.EXPECT().DeleteAllOf(gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{}), client.InNamespace(namespace), job.MatchingLabels(configName), client.PropagationPolicy(metav1.DeletePropagationBackground))
+			mockClient.EXPECT().
+				DeleteAllOf(gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{}), client.InNamespace(namespace), job.MatchingLabels(configName), client.PropagationPolicy(metav1.DeletePropagationBackground))
 
 			err := cj.deleteAll(&corev1.Pod{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -77,7 +82,7 @@ var _ = Describe("Cron", func() {
 			mockController.EXPECT().AddPod(gm.Any())
 			mockClient.EXPECT().DeleteAllOf(gm.Any(), gm.Any(), gm.Any(), gm.Any(), gm.Any())
 			mockClient.EXPECT().List(gm.Any(), gm.AssignableToTypeOf(&corev1.NodeList{}), client.MatchingLabels(nodeSelector)).
-				Do(func(ctx context.Context, list *corev1.NodeList, opts ...client.ListOption) error {
+				Do(func(_ context.Context, list *corev1.NodeList, _ ...client.ListOption) error {
 					list.Items = []corev1.Node{
 						{
 							Spec: corev1.NodeSpec{
@@ -147,7 +152,7 @@ var _ = Describe("Cron", func() {
 				pj.CreatePod()
 			})
 			It("should log an error a pod", func() {
-				err := fmt.Errorf("some error")
+				err := errors.New("some error")
 				mockClient.EXPECT().Create(gm.Any(), pj.pod).Return(err)
 				mockSink.EXPECT().Error(err, "unable to create pod", "node", nodeName)
 

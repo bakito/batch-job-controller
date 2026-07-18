@@ -62,7 +62,7 @@ func processPostedEvent(ctx *gin.Context, s *Server, callback processPostedEvent
 	event := new(Event)
 	err = json.NewDecoder(bytes.NewReader(body)).Decode(&event)
 	if err != nil {
-		ctx.String(http.StatusBadRequest, fmt.Sprintf("error decoding event: %s", err.Error()))
+		ctx.String(http.StatusBadRequest, "error decoding event: "+err.Error())
 		postLog.WithValues("event", string(body)).Error(err, "error decoding event")
 		return
 	}
