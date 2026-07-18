@@ -55,7 +55,7 @@ func (s *Server) Start(ctx context.Context) error {
 		<-ctx.Done()
 		s.Log.Info("shutting down server")
 
-		if err := srv.Shutdown(context.Background()); err != nil {
+		if err := srv.Shutdown(ctx); err != nil {
 			// Error from closing listeners, or context timeout
 			s.Log.Error(err, "error shutting down the HTTP server")
 		}

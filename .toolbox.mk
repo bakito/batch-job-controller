@@ -21,15 +21,21 @@ TB_SEMVER ?= $(TB_LOCALBIN)/semver
 TB_SYFT ?= $(TB_LOCALBIN)/syft
 
 ## Tool Versions
-TB_GOLANGCI_LINT_VERSION ?= v2.10.1
+# renovate: packageName=github.com/golangci/golangci-lint/v2
+TB_GOLANGCI_LINT_VERSION ?= v2.12.2
 TB_GOLANGCI_LINT_VERSION_NUM ?= $(call STRIP_V,$(TB_GOLANGCI_LINT_VERSION))
-TB_GORELEASER_VERSION ?= v2.14.1
+# renovate: packageName=github.com/goreleaser/goreleaser/v2
+TB_GORELEASER_VERSION ?= v2.17.0
 TB_GORELEASER_VERSION_NUM ?= $(call STRIP_V,$(TB_GORELEASER_VERSION))
+# renovate: packageName=github.com/norwoodj/helm-docs/cmd/helm-docs
 TB_HELM_DOCS_VERSION ?= v1.14.2
+# renovate: packageName=github.com/uber/mock
 TB_MOCKGEN_VERSION ?= v0.6.0
+# renovate: packageName=github.com/bakito/semver
 TB_SEMVER_VERSION ?= v1.1.10
 TB_SEMVER_VERSION_NUM ?= $(call STRIP_V,$(TB_SEMVER_VERSION))
-TB_SYFT_VERSION ?= v1.42.1
+# renovate: packageName=github.com/anchore/syft/cmd/syft
+TB_SYFT_VERSION ?= v1.48.0
 TB_SYFT_VERSION_NUM ?= $(call STRIP_V,$(TB_SYFT_VERSION))
 
 ## Tool Installer
@@ -77,7 +83,7 @@ tb.reset:
 ## Update Tools
 .PHONY: tb.update
 tb.update: tb.reset
-	toolbox makefile -f $(TB_LOCALDIR)/Makefile \
+	toolbox makefile --renovate -f $(TB_LOCALDIR)/Makefile \
 		github.com/golangci/golangci-lint/v2/cmd/golangci-lint?--version \
 		github.com/goreleaser/goreleaser/v2?--version \
 		github.com/norwoodj/helm-docs/cmd/helm-docs \

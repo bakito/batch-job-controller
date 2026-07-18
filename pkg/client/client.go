@@ -8,7 +8,7 @@ import (
 	"github.com/bakito/batch-job-controller/pkg/http"
 	"github.com/bakito/batch-job-controller/pkg/job"
 	"github.com/bakito/batch-job-controller/pkg/metrics"
-	"gopkg.in/resty.v1"
+	"github.com/go-resty/resty/v2"
 )
 
 type Client interface {
