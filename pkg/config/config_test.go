@@ -2,19 +2,22 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
-	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	gm "go.uber.org/mock/gomock"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	mockclient "github.com/bakito/batch-job-controller/pkg/mocks/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Config", func() {
@@ -55,7 +58,7 @@ var _ = Describe("Config", func() {
 		var (
 			ctx        context.Context
 			mockCtrl   *gm.Controller // gomock struct
-			mockReader *mock_client.MockReader
+			mockReader *mockclient.MockReader
 			namespace  string
 			cmName     string
 			podName    string
@@ -67,7 +70,7 @@ var _ = Describe("Config", func() {
 			cmName = uuid.New().String()
 			podName = uuid.New().String()
 			mockCtrl = gm.NewController(GinkgoT())
-			mockReader = mock_client.NewMockReader(mockCtrl)
+			mockReader = mockclient.NewMockReader(mockCtrl)
 			_ = os.Setenv(EnvConfigMapName, cmName)
 			_ = os.Setenv(EnvHostname, podName)
 			cmKey = client.ObjectKey{Namespace: namespace, Name: cmName}
@@ -76,7 +79,7 @@ var _ = Describe("Config", func() {
 		Context("error", func() {
 			It("should return an error returned by the reader", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Return(fmt.Errorf("error"))
+					Return(errors.New("error"))
 
 				c, err := getInternal(namespace, mockReader)
 				Ω(c).Should(BeNil())
@@ -86,7 +89,7 @@ var _ = Describe("Config", func() {
 
 			It("should return an error if no config is found", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, cm *corev1.ConfigMap, _ ...client.GetOption) error {
 						cm.Data = map[string]string{}
 						return nil
 					})
@@ -99,7 +102,7 @@ var _ = Describe("Config", func() {
 
 			It("should return an error if no config can not be parsed", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, cm *corev1.ConfigMap, _ ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName: "foo",
 						}
@@ -114,7 +117,7 @@ var _ = Describe("Config", func() {
 
 			It("should return an error if no pod template config is found", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, cm *corev1.ConfigMap, _ ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName: "name: foo",
 						}
@@ -131,7 +134,7 @@ var _ = Describe("Config", func() {
 		Context("success", func() {
 			It("should return a config without owner", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, cm *corev1.ConfigMap, _ ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName:  "name: foo",
 							PodTemplateName: "kind: Pod",
@@ -139,7 +142,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-					Return(fmt.Errorf("pod not found"))
+					Return(errors.New("pod not found"))
 
 				c, err := getInternal(namespace, mockReader)
 				Ω(c).ShouldNot(BeNil())
@@ -151,7 +154,7 @@ var _ = Describe("Config", func() {
 
 			It("should return a config with owner", func() {
 				mockReader.EXPECT().Get(ctx, cmKey, gm.AssignableToTypeOf(&corev1.ConfigMap{})).
-					Do(func(ctx context.Context, key client.ObjectKey, cm *corev1.ConfigMap, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, cm *corev1.ConfigMap, _ ...client.GetOption) error {
 						cm.Data = map[string]string{
 							ConfigFileName:  "name: foo",
 							PodTemplateName: "kind: Pod",
@@ -159,7 +162,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&corev1.Pod{})).
-					Do(func(ctx context.Context, key client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 						pod.OwnerReferences = []metav1.OwnerReference{
 							{
 								Kind: "ReplicaSet",
@@ -169,7 +172,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&unstructured.Unstructured{})).
-					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, us *unstructured.Unstructured, _ ...client.GetOption) error {
 						us.Object["metadata"] = map[string]any{
 							"ownerReferences": []any{
 								map[string]any{
@@ -181,7 +184,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockReader.EXPECT().Get(ctx, gm.Any(), gm.AssignableToTypeOf(&unstructured.Unstructured{})).
-					Do(func(ctx context.Context, key client.ObjectKey, us *unstructured.Unstructured, opts ...client.GetOption) error {
+					Do(func(_ context.Context, _ client.ObjectKey, us *unstructured.Unstructured, _ ...client.GetOption) error {
 						us.Object["metadata"] = map[string]any{
 							"name": "deployment-1",
 						}

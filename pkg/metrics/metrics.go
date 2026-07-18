@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/version"
 	prom "github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/version"
 )
 
 const (
@@ -32,7 +33,7 @@ const (
 	podsMetric             = "pods"
 )
 
-// Collector struct
+// Collector struct.
 type Collector struct {
 	gauges           map[string]customMetric
 	executionIDGauge *prom.GaugeVec
@@ -44,7 +45,7 @@ type Collector struct {
 	latestMetric     bool
 }
 
-// Describe returns all the descriptions of the collector
+// Describe returns all the descriptions of the collector.
 func (c *Collector) Describe(ch chan<- *prom.Desc) {
 	c.executionIDGauge.Describe(ch)
 	c.podsGauge.Describe(ch)
@@ -57,7 +58,7 @@ func (c *Collector) Describe(ch chan<- *prom.Desc) {
 	}
 }
 
-// Collect returns the current state of the metrics
+// Collect returns the current state of the metrics.
 func (c *Collector) Collect(ch chan<- prom.Metric) {
 	c.executionIDGauge.Collect(ch)
 	c.podsGauge.Collect(ch)
@@ -70,12 +71,12 @@ func (c *Collector) Collect(ch chan<- prom.Metric) {
 	}
 }
 
-// ExecutionStarted metric for new executions
+// ExecutionStarted metric for new executions.
 func (c *Collector) ExecutionStarted(executionID float64) {
 	c.executionIDGauge.WithLabelValues().Set(executionID)
 }
 
-// Prune metrics assigned to the given execution ID
+// Prune metrics assigned to the given execution ID.
 func (c *Collector) Prune(executionID string) {
 	c.procErrorGauge.prune(executionID)
 	c.durationGauge.prune(executionID)
@@ -84,8 +85,8 @@ func (c *Collector) Prune(executionID string) {
 	}
 }
 
-// MetricFor record metrics for the given result
-func (c *Collector) MetricFor(executionID string, node string, name string, result Result) {
+// MetricFor record metrics for the given result.
+func (c *Collector) MetricFor(executionID, node, name string, result Result) {
 	if _, ok := c.gauges[name]; ok {
 		g := c.gauges[name]
 		if result.Labels == nil {
@@ -110,8 +111,8 @@ func (c *Collector) MetricFor(executionID string, node string, name string, resu
 	}
 }
 
-// ProcessingFinished record processing finished
-func (c *Collector) ProcessingFinished(node string, executionID string, err bool) {
+// ProcessingFinished record processing finished.
+func (c *Collector) ProcessingFinished(node, executionID string, err bool) {
 	value := 0.
 	if err {
 		value = 1
@@ -122,15 +123,15 @@ func (c *Collector) ProcessingFinished(node string, executionID string, err bool
 	}
 }
 
-// Duration record duration
-func (c *Collector) Duration(node string, executionID string, d float64) {
+// Duration record duration.
+func (c *Collector) Duration(node, executionID string, d float64) {
 	c.durationGauge.withLabelValues(node, executionID).Set(d)
 	if c.latestMetric {
 		c.durationGauge.withLabelValues(node, labelValueLatest).Set(d)
 	}
 }
 
-// Pods record the number of pods started for the current run
+// Pods record the number of pods started for the current run.
 func (c *Collector) Pods(cnt float64) {
 	g, err := c.podsGauge.GetMetricWithLabelValues()
 	if err == nil {
@@ -138,7 +139,7 @@ func (c *Collector) Pods(cnt float64) {
 	}
 }
 
-// NewPromCollector create a new prom collector
+// NewPromCollector create a new prom collector.
 func NewPromCollector(cfg *config.Config) (*Collector, error) {
 	c := &Collector{
 		gauges:       make(map[string]customMetric),

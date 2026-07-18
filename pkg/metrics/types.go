@@ -1,27 +1,29 @@
 package metrics
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
 	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
 )
 
-// Result metrics result
+// Result metrics result.
 type Result struct {
 	Value  float64           `json:"value"`
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-// Results map of results
+// Results map of results.
 type Results map[string][]Result
 
-// Validate the results
+// Validate the results.
 func (r Results) Validate(cfg *config.Config) error {
 	if len(r) == 0 {
-		return fmt.Errorf("results must not be empty")
+		return errors.New("results must not be empty")
 	}
 	for name := range r {
 		if !model.UTF8Validation.IsValidMetricName(cfg.Metrics.NameFor(name)) {

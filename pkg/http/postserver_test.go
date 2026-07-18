@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -11,22 +12,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/inject"
-	mock_client "github.com/bakito/batch-job-controller/pkg/mocks/client"
-	mock_events "github.com/bakito/batch-job-controller/pkg/mocks/events"
-	mock_lifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
-	mock_logr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
-	"github.com/bakito/batch-job-controller/pkg/test"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	gm "go.uber.org/mock/gomock"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/testing"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/inject"
+	mockclient "github.com/bakito/batch-job-controller/pkg/mocks/client"
+	mockevents "github.com/bakito/batch-job-controller/pkg/mocks/events"
+	mocklifecycle "github.com/bakito/batch-job-controller/pkg/mocks/lifecycle"
+	mocklogr "github.com/bakito/batch-job-controller/pkg/mocks/logr"
+	"github.com/bakito/batch-job-controller/pkg/test"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 const (
@@ -47,9 +50,9 @@ var (
 var _ = Describe("HTTP", func() {
 	var (
 		mockCtrl       *gm.Controller // gomock struct
-		mockSink       *mock_logr.MockLogSink
-		mockController *mock_lifecycle.MockController
-		mockReader     *mock_client.MockReader
+		mockSink       *mocklogr.MockLogSink
+		mockController *mocklifecycle.MockController
+		mockReader     *mockclient.MockReader
 		executionID    string
 		node           string
 
@@ -63,9 +66,9 @@ var _ = Describe("HTTP", func() {
 	BeforeEach(func() {
 		gin.SetMode(gin.ReleaseMode)
 		mockCtrl = gm.NewController(GinkgoT())
-		mockSink = mock_logr.NewMockLogSink(mockCtrl)
-		mockReader = mock_client.NewMockReader(mockCtrl)
-		mockController = mock_lifecycle.NewMockController(mockCtrl)
+		mockSink = mocklogr.NewMockLogSink(mockCtrl)
+		mockReader = mockclient.NewMockReader(mockCtrl)
+		mockController = mocklifecycle.NewMockController(mockCtrl)
 		executionID = uuid.New().String()
 		node = uuid.New().String()
 		tmp, err := test.TempDir(executionID)
@@ -111,7 +114,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("name", gm.Any(), "path", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().Info(gm.Any(), "received results")
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(reportJSON))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(reportJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -129,7 +132,7 @@ var _ = Describe("HTTP", func() {
 		It("fails if json is invalid", func() {
 			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 
-			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader("foo"))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -155,7 +158,7 @@ var _ = Describe("HTTP", func() {
 		It("should allow the request", func() {
 			mockController.EXPECT().Has(node, executionID).Return(true)
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -164,7 +167,7 @@ var _ = Describe("HTTP", func() {
 		})
 		It("should allow the request if controller is nil", func() {
 			s.InjectController(nil)
-			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -174,7 +177,7 @@ var _ = Describe("HTTP", func() {
 		It("should deny if execution is not known", func() {
 			mockController.EXPECT().Has(node, executionID).Return(false)
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(""))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(""))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -222,33 +225,37 @@ var _ = Describe("HTTP", func() {
 				})
 			})
 			It("succeed if file is saved with correct name from query parameter", func() {
-				req, err := http.NewRequest("POST", fmt.Sprintf("%s?name=%s", path, fileName), strings.NewReader("foo"))
+				req, err := http.NewRequest(
+					http.MethodPost,
+					fmt.Sprintf("%s?name=%s", path, fileName),
+					strings.NewReader("foo"),
+				)
 				Ω(err).ShouldNot(HaveOccurred())
 				router.ServeHTTP(rr, req)
 			})
 			It("succeed if file is saved with correct name from header", func() {
-				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
-				req.Header.Add("Content-Disposition", fmt.Sprintf(`attachment;filename="%s"`, fileName))
+				req, err := http.NewRequest(http.MethodPost, path, strings.NewReader("foo"))
+				req.Header.Add("Content-Disposition", fmt.Sprintf("attachment;filename=%q", fileName))
 				Ω(err).ShouldNot(HaveOccurred())
 				router.ServeHTTP(rr, req)
 			})
 			It("succeed if file is saved with generated name with .file extension", func() {
 				generatedFileExtension = ".file"
-				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+				req, err := http.NewRequest(http.MethodPost, path, strings.NewReader("foo"))
 				Ω(err).ShouldNot(HaveOccurred())
 				router.ServeHTTP(rr, req)
 			})
 			It("succeed if file is saved with generated name with .txt extension", func() {
 				generatedFileExtension = ".txt"
-				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+				req, err := http.NewRequest(http.MethodPost, path, strings.NewReader("foo"))
 				req.Header.Add("Content-Type", "text/plain")
 				Ω(err).ShouldNot(HaveOccurred())
 				router.ServeHTTP(rr, req)
 			})
 			It("succeed if file is saved with generated name with .json extension", func() {
 				generatedFileExtension = ".json"
-				req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
-				req.Header.Add("content-type", "application/json")
+				req, err := http.NewRequest(http.MethodPost, path, strings.NewReader("foo"))
+				req.Header.Add("Content-Type", "application/json")
 				Ω(err).ShouldNot(HaveOccurred())
 				router.ServeHTTP(rr, req)
 			})
@@ -266,7 +273,7 @@ var _ = Describe("HTTP", func() {
 				_, _ = io.Copy(part2, strings.NewReader("file b"))
 				_ = writer.Close()
 
-				req, _ := http.NewRequest("POST", path, body)
+				req, _ := http.NewRequest(http.MethodPost, path, body)
 				req.Header.Add("Content-Type", writer.FormDataContentType())
 
 				router.ServeHTTP(rr, req)
@@ -276,10 +283,10 @@ var _ = Describe("HTTP", func() {
 	Context("postEvent", func() {
 		var (
 			path       string
-			mockRecord *mock_events.MockEventRecorder
+			mockRecord *mockevents.MockEventRecorder
 		)
 		BeforeEach(func() {
-			mockRecord = mock_events.NewMockEventRecorder(mockCtrl)
+			mockRecord = mockevents.NewMockEventRecorder(mockCtrl)
 			s.InjectEventRecorder(mockRecord)
 			path = fmt.Sprintf("/report/%s/%s%s", node, executionID, CallbackBaseEventSubPath)
 			router.POST(CallbackBasePath+CallbackBaseEventSubPath, s.postEvent)
@@ -287,13 +294,15 @@ var _ = Describe("HTTP", func() {
 		It("succeed if event with message is sent", func() {
 			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
-			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").Return(mockSink)
+			mockSink.EXPECT().
+				WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message").
+				Return(mockSink)
 			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", "TestAction", "test message")
 			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageJSON))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(eventMessageJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -303,13 +312,16 @@ var _ = Describe("HTTP", func() {
 		It("succeed if event with message with args is sent", func() {
 			mockSink.EXPECT().WithValues("node", node, "id", executionID).Return(mockSink)
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
-			mockSink.EXPECT().WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").Return(mockSink)
-			mockRecord.EXPECT().Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", eventActionNotAvailable, "test message: %s", "a1")
+			mockSink.EXPECT().
+				WithValues("pod", gm.Any(), "type", "Warning", "reason", "TestReason", "event-message", "test message: a1").
+				Return(mockSink)
+			mockRecord.EXPECT().
+				Eventf(gm.Any(), gm.Any(), "Warning", "TestReason", eventActionNotAvailable, "test message: %s", "a1")
 			mockSink.EXPECT().Info(gm.Any(), "event created")
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{}))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageArgsJSON))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(eventMessageArgsJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -323,7 +335,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("event", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 
-			req, err := http.NewRequest("POST", path, strings.NewReader("foo"))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader("foo"))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -337,7 +349,7 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().WithValues("length", gm.Any()).Return(mockSink)
 			mockSink.EXPECT().Error(gm.Any(), "event is invalid")
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageInvalidJSON))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(eventMessageInvalidJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)
@@ -352,9 +364,9 @@ var _ = Describe("HTTP", func() {
 			mockSink.EXPECT().Error(gm.Any(), gm.Any())
 			mockReader.EXPECT().
 				Get(gm.Any(), client.ObjectKey{Namespace: s.Config.Namespace, Name: s.Config.PodName(node, executionID)}, gm.AssignableToTypeOf(&corev1.Pod{})).
-				Return(fmt.Errorf("error"))
+				Return(errors.New("error"))
 
-			req, err := http.NewRequest("POST", path, strings.NewReader(eventMessageArgsJSON))
+			req, err := http.NewRequest(http.MethodPost, path, strings.NewReader(eventMessageArgsJSON))
 			Ω(err).ShouldNot(HaveOccurred())
 
 			router.ServeHTTP(rr, req)

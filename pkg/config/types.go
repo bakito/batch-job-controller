@@ -19,7 +19,7 @@ const (
 	defaultMetricsBindAddressAddress = ":9153"
 )
 
-// Config struct
+// Config struct.
 type Config struct {
 	Name                  string                        `json:"name"`
 	JobServiceAccount     string                        `json:"jobServiceAccount"`
@@ -51,8 +51,8 @@ type Config struct {
 	DevMode        bool           `json:"-"`
 }
 
-// PodName get the name of the pod
-func (cfg *Config) PodName(nodeName string, id string) string {
+// PodName get the name of the pod.
+func (cfg *Config) PodName(nodeName, id string) string {
 	nameParts := strings.Split(nodeName, ".")
 	podName := fmt.Sprintf("%s-job-%s-%s", cfg.Name, nameParts[0], id)
 	return podName
@@ -66,7 +66,7 @@ func (cfg *Config) HealthProbeBindAddress() string {
 }
 
 func (cfg *Config) ReportDirExistsChecker() healthz.Checker {
-	return func(req *http.Request) error {
+	return func(*http.Request) error {
 		if _, err := os.Stat(cfg.ReportDirectory); errors.Is(err, os.ErrNotExist) {
 			return err
 		}
@@ -78,18 +78,18 @@ func (cfg Config) MkReportDir(executionID string) error {
 	return os.MkdirAll(filepath.Join(cfg.ReportDirectory, executionID), 0o755)
 }
 
-func (cfg Config) ReportFileName(executionID string, name string) string {
+func (cfg Config) ReportFileName(executionID, name string) string {
 	return filepath.Join(cfg.ReportDirectory, executionID, name)
 }
 
-// Metrics config
+// Metrics config.
 type Metrics struct {
 	Port   int               `json:"port"`
 	Prefix string            `json:"prefix"`
 	Gauges map[string]Metric `json:"gauges"`
 }
 
-// NameFor get the name of a metric
+// NameFor get the name of a metric.
 func (m *Metrics) NameFor(name string) string {
 	return fmt.Sprintf("%s_%s", m.Prefix, name)
 }
@@ -101,7 +101,7 @@ func (m *Metrics) BindAddress() string {
 	return fmt.Sprintf(":%d", m.Port)
 }
 
-// Metric config
+// Metric config.
 type Metric struct {
 	Help   string   `json:"help"`
 	Labels []string `json:"labels"`

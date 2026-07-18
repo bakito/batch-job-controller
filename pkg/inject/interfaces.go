@@ -1,38 +1,39 @@
 package inject
 
 import (
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 )
 
 // injects from "sigs.k8s.io/controller-runtime/pkg/runtime/inject" are set by the manager
 
-// EventRecorder inject the event recorder
+// EventRecorder inject the event recorder.
 type EventRecorder interface {
-	InjectEventRecorder(events.EventRecorder)
+	InjectEventRecorder(e events.EventRecorder)
 }
 
-// Controller inject the cache
+// Controller inject the cache.
 type Controller interface {
-	InjectController(lifecycle.Controller)
+	InjectController(c lifecycle.Controller)
 }
 
-// Reader inject the api reader
+// Reader inject the api reader.
 type Reader interface {
-	InjectReader(client.Reader)
+	InjectReader(c client.Reader)
 }
 
-// Client inject the api client
+// Client inject the api client.
 type Client interface {
-	InjectClient(client.Client)
+	InjectClient(c client.Client)
 }
 
-// Config inject the config
+// Config inject the config.
 type Config interface {
-	InjectConfig(*config.Config)
+	InjectConfig(c *config.Config)
 }
 
 type Healthz interface {

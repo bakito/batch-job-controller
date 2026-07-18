@@ -1,16 +1,18 @@
 package job
 
 import (
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/controller"
 	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/controller"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Job", func() {
@@ -93,9 +95,15 @@ var _ = Describe("Job", func() {
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(envNodeName, nodeName))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(EnvCallbackServiceName, serviceIP))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(EnvCallbackServicePort, "12345"))
-				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(EnvCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
-				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(EnvCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
-				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar(EnvCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
+				Ω(
+					pod.Spec.Containers[0].Env,
+				).Should(HaveEnvVar(EnvCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
+				Ω(
+					pod.Spec.Containers[0].Env,
+				).Should(HaveEnvVar(EnvCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
+				Ω(
+					pod.Spec.Containers[0].Env,
+				).Should(HaveEnvVar(EnvCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
 				Ω(pod.Spec.Containers[0].Env).Should(HaveEnvVar("FOO", "bar"))
 
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envExecutionID, id))
@@ -103,9 +111,15 @@ var _ = Describe("Job", func() {
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(envNodeName, nodeName))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(EnvCallbackServiceName, serviceIP))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(EnvCallbackServicePort, "12345"))
-				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(EnvCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
-				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(EnvCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
-				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar(EnvCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
+				Ω(
+					pod.Spec.InitContainers[0].Env,
+				).Should(HaveEnvVar(EnvCallbackServiceResultURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/result"))
+				Ω(
+					pod.Spec.InitContainers[0].Env,
+				).Should(HaveEnvVar(EnvCallbackServiceFileURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/file"))
+				Ω(
+					pod.Spec.InitContainers[0].Env,
+				).Should(HaveEnvVar(EnvCallbackServiceEventURL, "http://1.1.1.1:12345/report/"+nodeName+"/"+id+"/event"))
 				Ω(pod.Spec.InitContainers[0].Env).Should(HaveEnvVar("BAR", "foo"))
 			})
 
@@ -136,7 +150,7 @@ var _ = Describe("Job", func() {
 
 type customEnv struct{}
 
-func (ce *customEnv) ExtendEnv(_ *config.Config, _ string, _ string, _ string, _ corev1.Container) []corev1.EnvVar {
+func (*customEnv) ExtendEnv(_ *config.Config, _, _, _ string, _ corev1.Container) []corev1.EnvVar {
 	return []corev1.EnvVar{{Name: envNamespace, Value: "notMyNamespace"}, {Name: "CUSTOM", Value: "VALUE"}}
 }
 

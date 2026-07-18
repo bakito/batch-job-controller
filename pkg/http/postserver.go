@@ -6,31 +6,32 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 	"github.com/gin-gonic/gin"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/lifecycle"
 )
 
 const (
-	// CallbackBasePath callback path
+	// CallbackBasePath callback path.
 	CallbackBasePath = "/report/:node/:executionID"
-	// CallbackBaseResultSubPath result sub path
+	// CallbackBaseResultSubPath result sub path.
 	CallbackBaseResultSubPath = "/result"
-	// CallbackBaseFileSubPath file sub path
+	// CallbackBaseFileSubPath file sub path.
 	CallbackBaseFileSubPath = "/file"
-	// CallbackBaseEventSubPath event sub path
+	// CallbackBaseEventSubPath event sub path.
 	CallbackBaseEventSubPath = "/event"
 
-	// FileName query parameter name
+	// FileName query parameter name.
 	FileName = "name"
 )
 
-// GenericAPIServer prepare the generic api server
+// GenericAPIServer prepare the generic api server.
 func GenericAPIServer(port int, cfg *config.Config) manager.Runnable {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -64,7 +65,7 @@ func GenericAPIServer(port int, cfg *config.Config) manager.Runnable {
 	return s
 }
 
-// SetupProfiling setup profiling
+// SetupProfiling setup profiling.
 func SetupProfiling(r *gin.Engine) {
 	r.GET("/debug/pprof/", gin.WrapF(pprof.Index))
 	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
@@ -79,7 +80,7 @@ func SetupProfiling(r *gin.Engine) {
 	r.GET("/debug/pprof/trace", gin.WrapH(pprof.Handler("trace")))
 }
 
-// PostServer post server
+// PostServer post server.
 type PostServer struct {
 	*Server
 	Controller    lifecycle.Controller
@@ -88,33 +89,33 @@ type PostServer struct {
 	Client        client.Reader
 }
 
-// InjectEventRecorder inject the event recorder
+// InjectEventRecorder inject the event recorder.
 func (s *PostServer) InjectEventRecorder(er events.EventRecorder) {
 	s.EventRecorder = er
 }
 
-// InjectController inject the controller
+// InjectController inject the controller.
 func (s *PostServer) InjectController(c lifecycle.Controller) {
 	s.Controller = c
 }
 
-// InjectReader inject the client reader
+// InjectReader inject the client reader.
 func (s *PostServer) InjectReader(reader client.Reader) {
 	s.Client = reader
 }
 
-// InjectConfig inject the config
+// InjectConfig inject the config.
 func (s *PostServer) InjectConfig(cfg *config.Config) {
 	s.Config = cfg
 }
 
-func nodeAndID(ctx *gin.Context) (string, string) {
-	node := ctx.Param("node")
-	executionID := ctx.Param("executionID")
+func nodeAndID(ctx *gin.Context) (node, executionID string) {
+	node = ctx.Param("node")
+	executionID = ctx.Param("executionID")
 	return node, executionID
 }
 
-// SaveFile save a received file
+// SaveFile save a received file.
 func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, error) {
 	if err := s.Config.MkReportDir(executionID); err != nil {
 		return "", err
@@ -124,17 +125,17 @@ func (s *PostServer) SaveFile(executionID, name string, data []byte) (string, er
 	return fileName, os.WriteFile(fileName, data, 0o600)
 }
 
-// Name the name of the server
-func (s *PostServer) Name() string {
+// Name the name of the server.
+func (*PostServer) Name() string {
 	return "api-server"
 }
 
-// ReadyzCheck check if server is running
+// ReadyzCheck check if server is running.
 func (s *PostServer) ReadyzCheck() healthz.Checker {
 	return s.Server.ReadyzCheck()
 }
 
-// HealthzCheck check if server is running
+// HealthzCheck check if server is running.
 func (s *PostServer) HealthzCheck() healthz.Checker {
 	return s.Server.HealthzCheck()
 }

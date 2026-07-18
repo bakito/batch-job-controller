@@ -3,11 +3,10 @@ package job
 import (
 	"bytes"
 	"fmt"
+	"net"
+	"strconv"
 	"text/template"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/controller"
-	"github.com/bakito/batch-job-controller/pkg/http"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,21 +14,25 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/controller"
+	"github.com/bakito/batch-job-controller/pkg/http"
 )
 
 const (
 	envNodeName    = "NODE_NAME"
 	envExecutionID = "EXECUTION_ID"
 	envNamespace   = "NAMESPACE"
-	// EnvCallbackServiceName env var name of the callback service name
+	// EnvCallbackServiceName env var name of the callback service name.
 	EnvCallbackServiceName = "CALLBACK_SERVICE_NAME"
-	// EnvCallbackServicePort env var name of the callback service port
+	// EnvCallbackServicePort env var name of the callback service port.
 	EnvCallbackServicePort = "CALLBACK_SERVICE_PORT"
-	// EnvCallbackServiceResultURL env var name of the callback service result endpoint
+	// EnvCallbackServiceResultURL env var name of the callback service result endpoint.
 	EnvCallbackServiceResultURL = "CALLBACK_SERVICE_RESULT_URL"
-	// EnvCallbackServiceFileURL env var name of the callback service file endpoint
+	// EnvCallbackServiceFileURL env var name of the callback service file endpoint.
 	EnvCallbackServiceFileURL = "CALLBACK_SERVICE_FILE_URL"
-	// EnvCallbackServiceEventURL env var name of the callback service event endpoint
+	// EnvCallbackServiceEventURL env var name of the callback service event endpoint.
 	EnvCallbackServiceEventURL = "CALLBACK_SERVICE_EVENT_URL"
 )
 
@@ -49,13 +52,18 @@ func init() {
 	utilruntime.Must(corev1.AddToScheme(scheme))
 }
 
-// MatchingLabels the filter match labels for a job
+// MatchingLabels the filter match labels for a job.
 func MatchingLabels(name string) client.MatchingLabels {
 	return client.MatchingLabels{controller.LabelOwner: name}
 }
 
-// New create a new job
-func New(cfg *config.Config, nodeName, id, callbackAddress string, owner runtime.Object, extender ...CustomPodEnv) (*corev1.Pod, error) {
+// New create a new job.
+func New(
+	cfg *config.Config,
+	nodeName, id, callbackAddress string,
+	owner runtime.Object,
+	extender ...CustomPodEnv,
+) (*corev1.Pod, error) {
 	podName := cfg.PodName(nodeName, id)
 
 	data := map[string]string{
@@ -124,7 +132,14 @@ func New(cfg *config.Config, nodeName, id, callbackAddress string, owner runtime
 	return pod, err
 }
 
-func mergeEnv(cfg *config.Config, nodeName string, id string, callbackAddress string, container corev1.Container, extender []CustomPodEnv) []corev1.EnvVar {
+func mergeEnv(
+	cfg *config.Config,
+	nodeName string,
+	id string,
+	callbackAddress string,
+	container corev1.Container,
+	extender []CustomPodEnv,
+) []corev1.EnvVar {
 	var newEnv []corev1.EnvVar
 	for _, e := range container.Env {
 		// keep all non reserved env variables
@@ -137,23 +152,43 @@ func mergeEnv(cfg *config.Config, nodeName string, id string, callbackAddress st
 		newEnv = append(newEnv, e.ExtendEnv(cfg, nodeName, id, callbackAddress, container)...)
 	}
 
-	newEnv = append(newEnv, corev1.EnvVar{Name: envExecutionID, Value: id})
-	newEnv = append(newEnv, corev1.EnvVar{Name: envNamespace, Value: cfg.Namespace})
-	newEnv = append(newEnv, corev1.EnvVar{Name: envNodeName, Value: nodeName})
-	newEnv = append(newEnv, corev1.EnvVar{Name: EnvCallbackServiceName, Value: callbackAddress})
-	newEnv = append(newEnv, corev1.EnvVar{Name: EnvCallbackServicePort, Value: fmt.Sprintf("%d", cfg.CallbackServicePort)})
-	newEnv = append(newEnv, corev1.EnvVar{
-		Name:  EnvCallbackServiceResultURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", callbackAddress, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseResultSubPath),
-	})
-	newEnv = append(newEnv, corev1.EnvVar{
-		Name:  EnvCallbackServiceFileURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", callbackAddress, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseFileSubPath),
-	})
-	newEnv = append(newEnv, corev1.EnvVar{
-		Name:  EnvCallbackServiceEventURL,
-		Value: fmt.Sprintf("http://%s:%d/report/%s/%s%s", callbackAddress, cfg.CallbackServicePort, nodeName, id, http.CallbackBaseEventSubPath),
-	})
+	newEnv = append(newEnv,
+		corev1.EnvVar{Name: envExecutionID, Value: id},
+		corev1.EnvVar{Name: envNamespace, Value: cfg.Namespace},
+		corev1.EnvVar{Name: envNodeName, Value: nodeName},
+		corev1.EnvVar{Name: EnvCallbackServiceName, Value: callbackAddress},
+		corev1.EnvVar{Name: EnvCallbackServicePort, Value: strconv.Itoa(cfg.CallbackServicePort)},
+		corev1.EnvVar{
+			Name: EnvCallbackServiceResultURL,
+			Value: fmt.Sprintf(
+				"http://%s/report/%s/%s%s", //nolint:revive // ok for internal communication
+				net.JoinHostPort(callbackAddress, strconv.Itoa(cfg.CallbackServicePort)),
+				nodeName,
+				id,
+				http.CallbackBaseResultSubPath,
+			),
+		},
+		corev1.EnvVar{
+			Name: EnvCallbackServiceFileURL,
+			Value: fmt.Sprintf(
+				"http://%s/report/%s/%s%s", //nolint:revive // ok for internal communication
+				net.JoinHostPort(callbackAddress, strconv.Itoa(cfg.CallbackServicePort)),
+				nodeName,
+				id,
+				http.CallbackBaseFileSubPath,
+			),
+		},
+		corev1.EnvVar{
+			Name: EnvCallbackServiceEventURL,
+			Value: fmt.Sprintf(
+				"http://%s/report/%s/%s%s", //nolint:revive // ok for internal communication
+				net.JoinHostPort(callbackAddress, strconv.Itoa(cfg.CallbackServicePort)),
+				nodeName,
+				id,
+				http.CallbackBaseEventSubPath,
+			),
+		},
+	)
 
 	return newEnv
 }

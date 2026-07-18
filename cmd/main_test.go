@@ -3,29 +3,31 @@ package cmd
 import (
 	"context"
 
-	"github.com/bakito/batch-job-controller/pkg/config"
-	"github.com/bakito/batch-job-controller/pkg/lifecycle"
-	mock_events "github.com/bakito/batch-job-controller/pkg/mocks/events"
-	mock_manager "github.com/bakito/batch-job-controller/pkg/mocks/manager"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	gm "go.uber.org/mock/gomock"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/bakito/batch-job-controller/pkg/config"
+	"github.com/bakito/batch-job-controller/pkg/lifecycle"
+	mockevents "github.com/bakito/batch-job-controller/pkg/mocks/events"
+	mockmanager "github.com/bakito/batch-job-controller/pkg/mocks/manager"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Main", func() {
 	var (
 		m                 *Main
 		mockCtrl          *gm.Controller // gomock struct
-		mockManager       *mock_manager.MockManager
-		mockEventRecorder *mock_events.MockEventRecorder
+		mockManager       *mockmanager.MockManager
+		mockEventRecorder *mockevents.MockEventRecorder
 	)
 
 	BeforeEach(func() {
 		mockCtrl = gm.NewController(GinkgoT())
-		mockManager = mock_manager.NewMockManager(mockCtrl)
-		mockEventRecorder = mock_events.NewMockEventRecorder(mockCtrl)
+		mockManager = mockmanager.NewMockManager(mockCtrl)
+		mockEventRecorder = mockevents.NewMockEventRecorder(mockCtrl)
 		m = &Main{
 			Manager: mockManager,
 			Config:  &config.Config{},
@@ -53,26 +55,26 @@ type r struct {
 	withReader        bool
 }
 
-func (r r) Start(_ context.Context) error {
+func (*r) Start(_ context.Context) error {
 	return nil
 }
 
-// InjectConfig inject the config
+// InjectConfig inject the config.
 func (r *r) InjectConfig(_ *config.Config) {
 	r.withConfig = true
 }
 
-// InjectController inject the cache
+// InjectController inject the cache.
 func (r *r) InjectController(_ lifecycle.Controller) {
 	r.withController = true
 }
 
-// InjectEventRecorder inject the event recorder
+// InjectEventRecorder inject the event recorder.
 func (r *r) InjectEventRecorder(_ events.EventRecorder) {
 	r.withEventRecorder = true
 }
 
-// InjectReader inject the cache
+// InjectReader inject the cache.
 func (r *r) InjectReader(_ client.Reader) {
 	r.withReader = true
 }

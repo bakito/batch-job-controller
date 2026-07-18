@@ -18,35 +18,35 @@ import (
 )
 
 const (
-	// EnvHostname hostname env variable
+	// EnvHostname hostname env variable.
 	EnvHostname = "HOSTNAME"
-	// EnvConfigMapName configmap name env variable
+	// EnvConfigMapName configmap name env variable.
 	EnvConfigMapName = "CONFIG_MAP_NAME"
-	// EnvPodIP the controller pod's IP
+	// EnvPodIP the controller pod's IP.
 	EnvPodIP = "POD_IP"
-	// EnvDevMode enable dev mode
+	// EnvDevMode enable dev mode.
 	EnvDevMode = "DEV_MODE"
-	// EnvReportDirectory override for report directory
+	// EnvReportDirectory override for report directory.
 	EnvReportDirectory = "REPORT_DIRECTORY"
 
-	// PodTemplateName key of the pod template in the configmap
+	// PodTemplateName key of the pod template in the configmap.
 	PodTemplateName = "pod-template.yaml"
-	// ConfigFileName key of the config yaml file in the configmap
+	// ConfigFileName key of the config yaml file in the configmap.
 	ConfigFileName = "config.yaml"
 
-	// LabelVersion version label
+	// LabelVersion version label.
 	LabelVersion = "version"
-	// LabelName name label
+	// LabelName name label.
 	LabelName = "name"
-	// LabelPoolSize poolSize label
+	// LabelPoolSize poolSize label.
 	LabelPoolSize = "poolSize"
-	// LabelReportHistory reportHistory label
+	// LabelReportHistory reportHistory label.
 	LabelReportHistory = "reportHistory"
 )
 
 var log = ctrl.Log.WithName("config")
 
-// Get read the config from the configmap
+// Get read the config from the configmap.
 func Get(namespace string, config *rest.Config, scheme *runtime.Scheme) (*Config, error) {
 	apiReader, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
@@ -66,14 +66,24 @@ func getInternal(namespace string, apiReader client.Reader) (*Config, error) {
 		decoder := yaml.NewYAMLOrJSONDecoder(strings.NewReader(c), 20)
 		err = decoder.Decode(cfg)
 		if err != nil {
-			return nil, fmt.Errorf("could not read config file %q in configmap %q: %w", ConfigFileName, os.Getenv(EnvConfigMapName), err)
+			return nil, fmt.Errorf(
+				"could not read config file %q in configmap %q: %w",
+				ConfigFileName,
+				os.Getenv(EnvConfigMapName),
+				err,
+			)
 		}
 
-		if t, ok := cm.Data[PodTemplateName]; ok {
-			cfg.JobPodTemplate = t
-		} else {
-			return nil, fmt.Errorf("could not find pod template %q in configmap %q", PodTemplateName, os.Getenv(EnvConfigMapName))
+		t, ok := cm.Data[PodTemplateName]
+		if !ok {
+			return nil, fmt.Errorf(
+				"could not find pod template %q in configmap %q",
+				PodTemplateName,
+				os.Getenv(EnvConfigMapName),
+			)
 		}
+
+		cfg.JobPodTemplate = t
 
 		cfg.Namespace = namespace
 
@@ -124,26 +134,29 @@ func findPodOwner(namespace string, cl client.Reader) runtime.Object {
 	return owner
 }
 
-func findOwner(obj client.Object, namespace string, name string, cl client.Reader) (string, runtime.Object) {
+func findOwner(obj client.Object, namespace, name string, cl client.Reader) (string, runtime.Object) {
 	err := cl.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: name}, obj)
 	if err == nil {
 		if ob, ok := obj.(metav1.Object); ok {
-			for _, or := range ob.GetOwnerReferences() {
+			ownerRefs := ob.GetOwnerReferences()
+			if len(ownerRefs) > 0 {
+				or := ownerRefs[0]
 				var us runtime.Unstructured = &unstructured.Unstructured{
 					Object: map[string]any{
 						"kind":       or.Kind,
 						"apiVersion": or.APIVersion,
 					},
 				}
-				return findOwner(us.(client.Object), namespace, or.Name, cl)
+				obj, ok := us.(client.Object)
+				if !ok {
+					return name, nil
+				}
+				return findOwner(obj, namespace, or.Name, cl)
 			}
 			return name, obj
 		}
 	} else {
-		log.WithValues(
-			"kind", obj.GetObjectKind().GroupVersionKind().Kind,
-			"name", name,
-		).V(4).Info("error finding owner")
+		log.WithValues("kind", obj.GetObjectKind().GroupVersionKind().Kind, "name", name).V(4).Info("error finding owner")
 	}
 	return name, nil
 }
