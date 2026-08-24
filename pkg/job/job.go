@@ -83,10 +83,8 @@ func New(
 	}
 
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: make(map[string]string),
-			Labels:      make(map[string]string),
-		},
+		Annotations: make(map[string]string),
+		Labels:      make(map[string]string),
 	}
 	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(buf.Bytes()), 20)
 	err = decoder.Decode(pod)

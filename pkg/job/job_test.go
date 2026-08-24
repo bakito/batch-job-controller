@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/onsi/gomega/types"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
 	"github.com/bakito/batch-job-controller/pkg/config"
@@ -127,10 +126,8 @@ var _ = Describe("Job", func() {
 				ownerID := uuid.New().String()
 				ownerName := uuid.New().String()
 				pod, _ := New(cfg, nodeName, id, serviceIP, &corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						UID:  ktypes.UID(ownerID),
-						Name: ownerName,
-					},
+					UID:  ktypes.UID(ownerID),
+					Name: ownerName,
 				})
 
 				Ω(pod.OwnerReferences).Should(HaveLen(1))
