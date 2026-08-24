@@ -40,11 +40,9 @@ var _ = Describe("Controller", func() {
 		)
 		BeforeEach(func() {
 			m1 = &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						LabelExecutionID: "foo",
-						LabelOwner:       "bar",
-					},
+				Labels: map[string]string{
+					LabelExecutionID: "foo",
+					LabelOwner:       "bar",
 				},
 			}
 			m2 = &corev1.Pod{}
