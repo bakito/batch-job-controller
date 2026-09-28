@@ -167,10 +167,11 @@ func (m *Main) Start(runnables ...manager.Runnable) {
 	// Setup a new controller to reconcile ReplicaSets
 	setupLog.Info("Setting up controller")
 
-	if err := (&controller.PodReconciler{
+	err := (&controller.PodReconciler{
 		Client:     m.Manager.GetClient(),
 		Controller: m.Controller,
-	}).SetupWithManager(m.Manager); err != nil {
+	}).SetupWithManager(m.Manager)
+	if err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		os.Exit(1)
 	}
