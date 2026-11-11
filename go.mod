@@ -1,6 +1,6 @@
 module github.com/bakito/batch-job-controller
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/ghodss/yaml v1.0.0
